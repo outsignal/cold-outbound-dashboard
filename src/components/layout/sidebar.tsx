@@ -13,7 +13,7 @@ import {
   UserPlus,
   ClipboardList,
   ChevronRight,
-  Linkedin,
+  LinkedinIcon,
   Building2,
   ListChecks,
   Briefcase,
@@ -49,13 +49,12 @@ interface SidebarProps {
 interface NavItem {
   href: string;
   label: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 const STORAGE_KEY = "sidebar-collapsed";
 
-// Navigation organized into logical groups — dividers rendered between groups
+// Navigation organized into logical groups with dividers between them
 const navGroups: NavItem[][] = [
   // Group 1 — Core
   [
@@ -73,7 +72,7 @@ const navGroups: NavItem[][] = [
   ],
   // Group 3 — LinkedIn
   [
-    { href: "/senders", label: "Senders", icon: Linkedin },
+    { href: "/senders", label: "Senders", icon: LinkedinIcon },
     { href: "/linkedin-queue", label: "LinkedIn Queue", icon: ListOrdered },
   ],
   // Group 4 — Operations
@@ -339,7 +338,7 @@ export function Sidebar({ workspaces }: SidebarProps) {
                             : "text-sidebar-foreground/50 hover:text-sidebar-foreground/70",
                         )}
                       >
-                        <Linkedin className="h-3 w-3" />
+                        <LinkedinIcon className="h-3 w-3" />
                         LinkedIn
                       </Link>
                       <Link
