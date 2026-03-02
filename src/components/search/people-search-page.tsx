@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useQueryStates, parseAsString, parseAsArrayOf, parseAsInteger } from "nuqs";
 import { useDebouncedCallback } from "use-debounce";
 import { Search } from "lucide-react";
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -480,11 +481,17 @@ export function PeopleSearchPage() {
                           />
                         </TableCell>
                         <TableCell className="py-2 font-medium text-sm text-foreground">
-                          {[person.firstName, person.lastName]
-                            .filter(Boolean)
-                            .join(" ") || (
-                            <span className="text-muted-foreground">—</span>
-                          )}
+                          <Link
+                            href={`/people/${person.id}`}
+                            className="hover:underline underline-offset-2"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {[person.firstName, person.lastName]
+                              .filter(Boolean)
+                              .join(" ") || (
+                              <span className="text-muted-foreground">—</span>
+                            )}
+                          </Link>
                         </TableCell>
                         <TableCell className="py-2 text-sm text-muted-foreground">
                           {person.email}
