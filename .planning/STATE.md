@@ -22,9 +22,9 @@ See: .planning/PROJECT.md (updated 2026-02-27)
 
 ## Current Position
 
-Phase: 12 of 12 (Dashboard & Admin UX — Plan 04 COMPLETE: Agent Run Monitoring)
-Plan: 4 of 7 in current phase (12-01 done: dashboard home, 12-02 done: person detail, 12-03 done: webhook log, 12-04 done: agent run monitoring)
-Status: Phase 12 in progress. Plan 4/7 complete. /agent-runs page live with compact table, expandable details, filters, auto-refresh.
+Phase: 12 of 12 (Dashboard & Admin UX — Plan 08 COMPLETE: Proposals/Onboarding CRUD)
+Plan: 8 of 8 in current phase (12-01 done: dashboard home, 12-02 done: person detail, 12-03 done: webhook log, 12-04 done: agent run monitoring)
+Status: Phase 12 COMPLETE. All 8/8 plans done. /agent-runs page live with compact table, expandable details, filters, auto-refresh.
 Last activity: 2026-03-02 — Executed Plan 04: GET /api/agent-runs endpoint, AgentRunTable component (Datadog-style density, accordion rows), /agent-runs page with nuqs filters and auto-refresh for running jobs.
 
 Progress: [████░░░░░░] 40% (v1.1 — Phase 8 complete)
@@ -125,6 +125,12 @@ v1.0 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 12-04]: AgentRunTable uses single expandedId state — only one row open at a time; clicking active row closes it (toggle pattern)
 - [Phase 12-04]: Auto-refresh (30s) only activates when data includes a run with status=running — no unnecessary polling on idle views
 - [Phase 12-04]: Workspace filter options populated from first-page API fetch — no separate workspace list endpoint needed
+- [Phase 12-08]: OnboardPageClient client component wraps all interactive UI; page.tsx stays as server component fetching data
+- [Phase 12-08]: pdf-parse v2 dynamic import with any cast to avoid @types/pdf-parse v1 conflict
+- [Phase 12-08]: OnboardingInvite DELETE blocks on completed status only; draft/sent/viewed are deletable
+- [Phase 12-01]: Dashboard page converted to "use client" for nuqs URL state — API types exported from route.ts and imported by components
+- [Phase 12-01]: recharts AreaChart used (not LineChart) — filled area improves visual density; custom tooltip uses plain interface not recharts 3.x TooltipContentProps generic
+- [Phase 12-01]: Alerts positioned above KPIs — critical items need immediate visibility; LEAD_INTERESTED counted as reply in time-series
 
 ### Blockers/Concerns
 
@@ -136,5 +142,5 @@ v1.0 decisions archived in PROJECT.md Key Decisions table.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 12-04-PLAN.md (Agent Run Monitoring). /agent-runs page with compact table, expandable accordion rows, filters (nuqs), and auto-refresh for running jobs. Phase 12: 4/7 plans done.
+Stopped at: Completed 12-08-PLAN.md (Proposals CRUD + Document Upload). Phase 12 complete: all 8/8 plans done.
 Resume file: None

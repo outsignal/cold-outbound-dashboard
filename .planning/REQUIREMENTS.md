@@ -92,8 +92,8 @@ Requirements for v1.1 Outbound Pipeline milestone. Each maps to roadmap phases.
 - [ ] **DASH-10**: Sender add/edit via modal dialog form — all sender fields (name, email, proxy URL, daily limits, LinkedIn profile URL, tier), consistent with proposal management pattern
 - [ ] **DASH-11**: Webhook event log viewer with search box for free text (email, subject) plus quick-filter preset chips ("Errors only", "Replies only", "Last 24h") that combine
 - [ ] **DASH-12**: Sidebar navigation includes all new Phase 12 pages organized into logical groups with visual separators
-- [ ] **DASH-13**: Proposal and onboarding pages support edit and delete via modal dialogs, consistent with sender management modal pattern
-- [ ] **DASH-14**: Document upload triggers auto-parse — upload content (paste from PDF/Google Doc) and system extracts fields to pre-fill proposal/onboarding form for user review before saving
+- [x] **DASH-13**: Proposal and onboarding pages support edit and delete via modal dialogs, consistent with sender management modal pattern
+- [x] **DASH-14**: Document upload triggers auto-parse — upload content (paste from PDF/Google Doc) and system extracts fields to pre-fill proposal/onboarding form for user review before saving
 
 ## Future Requirements
 
@@ -203,8 +203,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DASH-10 | Phase 12 | Pending |
 | DASH-11 | Phase 12 | Pending |
 | DASH-12 | Phase 12 | Pending |
-| DASH-13 | Phase 12 | Pending |
-| DASH-14 | Phase 12 | Pending |
+| DASH-13 | Phase 12 | Complete |
+| DASH-14 | Phase 12 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 62 total (37 complete, 25 pending)
