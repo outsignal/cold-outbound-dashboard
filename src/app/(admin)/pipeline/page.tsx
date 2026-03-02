@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Plus,
@@ -10,28 +10,16 @@ import {
   ArrowRight,
   Search,
   Building2,
+  Globe,
+  Mail,
+  User,
+  Clock,
 } from "lucide-react";
 import { Header } from "@/components/layout/header";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -47,7 +35,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PIPELINE_STATUSES } from "@/lib/clients/task-templates";
+import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -136,37 +126,189 @@ function StatusBadge({
   );
 }
 
-// ─── Skeleton Rows ────────────────────────────────────────────────────────────
+// ─── Prospect Card ────────────────────────────────────────────────────────────
 
-function SkeletonRows() {
+function ProspectCard({
+  prospect,
+  onStatusChange,
+  onDelete,
+  onConvert,
+  onEdit,
+}: {
+  prospect: Prospect;
+  onStatusChange: (newStatus: string) => void;
+  onDelete: () => void;
+  onConvert: () => void;
+  onEdit: () => void;
+}) {
+  const domain = prospect.website
+    ? prospect.website.replace(/^https?:\/\//, "").replace(/\/$/, "")
+    : null;
+
   return (
-    <>
-      {Array.from({ length: 6 }).map((_, i) => (
-        <TableRow key={i} className="border-border">
-          <TableCell>
-            <div className="h-3.5 bg-muted rounded animate-pulse w-32" />
-          </TableCell>
-          <TableCell>
-            <div className="h-5 bg-muted rounded-full animate-pulse w-24" />
-          </TableCell>
-          <TableCell>
-            <div className="h-3.5 bg-muted rounded animate-pulse w-40" />
-          </TableCell>
-          <TableCell>
-            <div className="h-3.5 bg-muted rounded animate-pulse w-28" />
-          </TableCell>
-          <TableCell>
-            <div className="h-3.5 bg-muted rounded animate-pulse w-36" />
-          </TableCell>
-          <TableCell>
-            <div className="h-3.5 bg-muted rounded animate-pulse w-16" />
-          </TableCell>
-          <TableCell>
-            <div className="h-3.5 bg-muted rounded animate-pulse w-8" />
-          </TableCell>
-        </TableRow>
+    <div className="group rounded-lg border border-border/50 bg-card p-3 transition-all hover:border-border hover:shadow-sm">
+      {/* Top row: company name + action menu */}
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="min-w-0 flex-1">
+          {prospect.pipelineStatus === "closed_won" ? (
+            <a
+              href={`/clients/${prospect.id}`}
+              className="text-sm font-semibold leading-tight hover:underline text-foreground block truncate"
+            >
+              {prospect.name}
+            </a>
+          ) : (
+            <p className="text-sm font-semibold leading-tight text-foreground truncate">
+              {prospect.name}
+            </p>
+          )}
+        </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+            >
+              <MoreHorizontal className="h-3.5 w-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={onEdit}>
+              <ArrowRight className="h-4 w-4 mr-2" />
+              View / Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onConvert}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Convert to Client
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" onClick={onDelete}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Details */}
+      <div className="space-y-1 mb-2.5">
+        {prospect.contactName && (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <User className="h-3 w-3 shrink-0" />
+            <span className="truncate">{prospect.contactName}</span>
+          </div>
+        )}
+        {prospect.contactEmail && (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Mail className="h-3 w-3 shrink-0" />
+            <span className="truncate">{prospect.contactEmail}</span>
+          </div>
+        )}
+        {domain && (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <Globe className="h-3 w-3 shrink-0" />
+            <a
+              href={prospect.website!}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="truncate hover:underline hover:text-foreground"
+            >
+              {domain}
+            </a>
+          </div>
+        )}
+      </div>
+
+      {/* Bottom row: status badge + time */}
+      <div className="flex items-center justify-between gap-2">
+        <StatusBadge status={prospect.pipelineStatus} onStatusChange={onStatusChange} />
+        <span className="flex items-center gap-1 text-[10px] text-muted-foreground/70 shrink-0">
+          <Clock className="h-2.5 w-2.5" />
+          {relativeTime(prospect.createdAt)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Skeleton Column ──────────────────────────────────────────────────────────
+
+function SkeletonColumn() {
+  return (
+    <div className="space-y-2">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-lg border border-border/30 bg-card p-3 space-y-2"
+        >
+          <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
+          <div className="h-3 bg-muted rounded animate-pulse w-1/2" />
+          <div className="h-3 bg-muted rounded animate-pulse w-2/3" />
+          <div className="flex items-center justify-between pt-1">
+            <div className="h-5 bg-muted rounded-full animate-pulse w-20" />
+            <div className="h-3 bg-muted rounded animate-pulse w-12" />
+          </div>
+        </div>
       ))}
-    </>
+    </div>
+  );
+}
+
+// ─── Kanban Column ────────────────────────────────────────────────────────────
+
+function KanbanColumn({
+  status,
+  prospects,
+  onStatusChange,
+  onDelete,
+  onConvert,
+  onEdit,
+}: {
+  status: { value: string; label: string; color: string };
+  prospects: Prospect[];
+  onStatusChange: (id: string, newStatus: string) => void;
+  onDelete: (id: string, name: string) => void;
+  onConvert: (id: string) => void;
+  onEdit: (id: string) => void;
+}) {
+  return (
+    <div className="flex flex-col min-h-0">
+      {/* Column header */}
+      <div className="mb-3 flex items-center gap-2">
+        <span
+          className="h-2.5 w-2.5 rounded-full shrink-0"
+          style={{ backgroundColor: status.color }}
+        />
+        <h3 className="text-sm font-semibold tracking-tight truncate">
+          {status.label}
+        </h3>
+        <span className="ml-auto text-xs text-muted-foreground tabular-nums shrink-0">
+          {prospects.length}
+        </span>
+      </div>
+
+      {/* Cards */}
+      <div className="space-y-2 flex-1">
+        {prospects.map((p) => (
+          <ProspectCard
+            key={p.id}
+            prospect={p}
+            onStatusChange={(newStatus) => onStatusChange(p.id, newStatus)}
+            onDelete={() => onDelete(p.id, p.name)}
+            onConvert={() => onConvert(p.id)}
+            onEdit={() => onEdit(p.id)}
+          />
+        ))}
+
+        {prospects.length === 0 && (
+          <p className="text-xs text-muted-foreground/50 text-center py-6">
+            No prospects
+          </p>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -176,7 +318,6 @@ export default function PipelinePage() {
   const router = useRouter();
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -206,21 +347,38 @@ export default function PipelinePage() {
     fetchProspects();
   }, [fetchProspects]);
 
-  // ─── Filtered data ───────────────────────────────────────────────────────
+  // ─── Filtered + grouped data ──────────────────────────────────────────────
 
-  const filtered = prospects.filter((p) => {
-    if (statusFilter !== "all" && p.pipelineStatus !== statusFilter) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      const matchName = p.name?.toLowerCase().includes(q);
-      const matchEmail = p.contactEmail?.toLowerCase().includes(q);
-      const matchContact = p.contactName?.toLowerCase().includes(q);
-      if (!matchName && !matchEmail && !matchContact) return false;
+  const filtered = useMemo(() => {
+    return prospects.filter((p) => {
+      if (search) {
+        const q = search.toLowerCase();
+        const matchName = p.name?.toLowerCase().includes(q);
+        const matchEmail = p.contactEmail?.toLowerCase().includes(q);
+        const matchContact = p.contactName?.toLowerCase().includes(q);
+        if (!matchName && !matchEmail && !matchContact) return false;
+      }
+      return true;
+    });
+  }, [prospects, search]);
+
+  const prospectsByStatus = useMemo(() => {
+    const grouped: Record<string, Prospect[]> = {};
+    for (const status of PIPELINE_STATUSES) {
+      grouped[status.value] = [];
     }
-    return true;
-  });
+    for (const p of filtered) {
+      if (grouped[p.pipelineStatus]) {
+        grouped[p.pipelineStatus].push(p);
+      } else {
+        // Unknown status — put in first column
+        grouped[PIPELINE_STATUSES[0].value].push(p);
+      }
+    }
+    return grouped;
+  }, [filtered]);
 
-  // ─── Handlers ────────────────────────────────────────────────────────────
+  // ─── Handlers ─────────────────────────────────────────────────────────────
 
   async function handleStatusChange(id: string, newStatus: string) {
     // Optimistic update
@@ -299,7 +457,11 @@ export default function PipelinePage() {
     router.push(`/clients/${id}`);
   }
 
-  // ─── Render ──────────────────────────────────────────────────────────────
+  function handleEdit(id: string) {
+    router.push(`/clients/${id}`);
+  }
+
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div>
@@ -424,31 +586,8 @@ export default function PipelinePage() {
       />
 
       <div className="p-8">
-        {/* Filters */}
+        {/* Search + count */}
         <div className="flex items-center gap-3 mb-6">
-          <Select
-            value={statusFilter}
-            onValueChange={(val) => setStatusFilter(val)}
-          >
-            <SelectTrigger size="sm">
-              <SelectValue placeholder="All statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              {PIPELINE_STATUSES.map((s) => (
-                <SelectItem key={s.value} value={s.value}>
-                  <span className="flex items-center gap-2">
-                    <span
-                      className="h-2 w-2 rounded-full shrink-0"
-                      style={{ backgroundColor: s.color }}
-                    />
-                    {s.label}
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
@@ -466,124 +605,111 @@ export default function PipelinePage() {
           )}
         </div>
 
-        {/* Table */}
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Contact Email</TableHead>
-                  <TableHead>Contact Name</TableHead>
-                  <TableHead>Website</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead className="w-12"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <SkeletonRows />
-                ) : filtered.length > 0 ? (
-                  filtered.map((p) => (
-                    <TableRow key={p.id} className="border-border">
-                      <TableCell className="font-medium text-sm">
-                        {p.pipelineStatus === "closed_won" ? (
-                          <a
-                            href={`/clients/${p.id}`}
-                            className="hover:underline text-foreground"
-                          >
-                            {p.name}
-                          </a>
-                        ) : (
-                          p.name
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge
-                          status={p.pipelineStatus}
-                          onStatusChange={(newStatus) =>
-                            handleStatusChange(p.id, newStatus)
-                          }
+        {/* Kanban board */}
+        {loading ? (
+          <>
+            {/* Desktop skeleton */}
+            <div className="hidden lg:flex gap-4 overflow-x-auto pb-4">
+              {PIPELINE_STATUSES.map((status) => (
+                <div
+                  key={status.value}
+                  className="min-w-[280px] flex-1 rounded-lg bg-muted/30 p-3 border border-border/30"
+                >
+                  <div className="mb-3 flex items-center gap-2">
+                    <span
+                      className="h-2.5 w-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: status.color }}
+                    />
+                    <div className="h-4 bg-muted rounded animate-pulse w-24" />
+                  </div>
+                  <SkeletonColumn />
+                </div>
+              ))}
+            </div>
+            {/* Mobile skeleton */}
+            <div className="lg:hidden rounded-lg bg-muted/30 p-3 border border-border/30">
+              <SkeletonColumn />
+            </div>
+          </>
+        ) : filtered.length === 0 && search ? (
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+            <Building2 className="h-8 w-8 text-muted-foreground/40 mb-2" />
+            <p className="text-sm">No prospects match your search.</p>
+          </div>
+        ) : (
+          <>
+            {/* Desktop: horizontal scrollable columns */}
+            <div className="hidden lg:flex gap-4 overflow-x-auto pb-4">
+              {PIPELINE_STATUSES.map((status) => (
+                <div
+                  key={status.value}
+                  className={cn(
+                    "min-w-[280px] flex-1 rounded-lg bg-muted/30 p-3 border border-border/30",
+                    // Slightly dim "done" state columns
+                    (status.value === "closed_won" ||
+                      status.value === "closed_lost" ||
+                      status.value === "unqualified" ||
+                      status.value === "churned") &&
+                      "opacity-80"
+                  )}
+                >
+                  <KanbanColumn
+                    status={status}
+                    prospects={prospectsByStatus[status.value] ?? []}
+                    onStatusChange={handleStatusChange}
+                    onDelete={handleDelete}
+                    onConvert={handleConvertToClient}
+                    onEdit={handleEdit}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Mobile/tablet: tabs */}
+            <div className="lg:hidden">
+              <Tabs defaultValue="new_lead">
+                <TabsList className="w-full overflow-x-auto flex-nowrap justify-start">
+                  {PIPELINE_STATUSES.map((status) => {
+                    const count = (prospectsByStatus[status.value] ?? []).length;
+                    return (
+                      <TabsTrigger
+                        key={status.value}
+                        value={status.value}
+                        className="shrink-0"
+                      >
+                        <span
+                          className="h-2 w-2 rounded-full shrink-0 mr-1.5"
+                          style={{ backgroundColor: status.color }}
                         />
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {p.contactEmail || "\u2014"}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {p.contactName || "\u2014"}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">
-                        {p.website ? (
-                          <a
-                            href={p.website}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hover:underline hover:text-foreground"
-                          >
-                            {p.website.replace(/^https?:\/\//, "")}
-                          </a>
-                        ) : (
-                          "\u2014"
+                        {status.label}
+                        {count > 0 && (
+                          <span className="ml-1 text-[10px] text-muted-foreground">
+                            {count}
+                          </span>
                         )}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {relativeTime(p.createdAt)}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => router.push(`/clients/${p.id}`)}
-                            >
-                              <ArrowRight className="h-4 w-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleConvertToClient(p.id)}
-                            >
-                              <UserPlus className="h-4 w-4 mr-2" />
-                              Convert to Client
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              variant="destructive"
-                              onClick={() => handleDelete(p.id, p.name)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className="py-12 text-center text-muted-foreground"
-                    >
-                      <div className="flex flex-col items-center gap-2">
-                        <Building2 className="h-8 w-8 text-muted-foreground/40" />
-                        <p className="text-sm">
-                          {search || statusFilter !== "all"
-                            ? "No prospects match your filters."
-                            : "No prospects yet. Add your first one to get started."}
-                        </p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                      </TabsTrigger>
+                    );
+                  })}
+                </TabsList>
+
+                {PIPELINE_STATUSES.map((status) => (
+                  <TabsContent key={status.value} value={status.value}>
+                    <div className="rounded-lg bg-muted/30 p-3 border border-border/30">
+                      <KanbanColumn
+                        status={status}
+                        prospects={prospectsByStatus[status.value] ?? []}
+                        onStatusChange={handleStatusChange}
+                        onDelete={handleDelete}
+                        onConvert={handleConvertToClient}
+                        onEdit={handleEdit}
+                      />
+                    </div>
+                  </TabsContent>
+                ))}
+              </Tabs>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
