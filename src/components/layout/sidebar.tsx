@@ -21,6 +21,7 @@ import {
   Bell,
   PanelLeftClose,
   PanelLeftOpen,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -54,6 +55,7 @@ const mainNav = [
   { href: "/pipeline", label: "Pipeline", icon: Target },
   { href: "/onboard", label: "Proposals", icon: UserPlus },
   { href: "/onboarding", label: "Onboarding", icon: ClipboardList },
+  { href: "/agent-runs", label: "Agent Runs", icon: Activity },
   { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
