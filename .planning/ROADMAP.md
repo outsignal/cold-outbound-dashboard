@@ -138,6 +138,10 @@ Plans:
 | 8. Campaign Entity + Writer Integration | 6/6 | Complete   | 2026-03-01 | - |
 | 9. Client Portal Campaign Approval | 5/5 | Complete   | 2026-03-01 | - |
 | 10. Auto-Deploy on Approval | v1.1 | 0/TBD | Not started | - |
+| 11. LinkedIn Voyager API Client | — | 3/3 | Code complete | 2026-03-02 |
+| 12. Dashboard & Admin UX | — | 0/TBD | Not started | - |
+| 13. Smart Sender Health | — | 0/TBD | Not started | - |
+| 14. LinkedIn Cookie Chrome Extension | — | 0/TBD | Not started | - |
 
 ### Phase 11: LinkedIn Voyager API Client
 **Goal**: Replace browser automation (LinkedInBrowser) with direct HTTP calls to LinkedIn's Voyager API (VoyagerClient) for all LinkedIn actions (connect, message, profile_view, check_connection), reducing detection risk and improving reliability. Keep agent-browser for initial cookie capture only.
@@ -177,3 +181,13 @@ Plans:
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 13 to break down)
+
+### Phase 14: LinkedIn Cookie Chrome Extension
+
+**Goal:** Ship a lightweight Chrome extension that lets clients (and admins) connect their LinkedIn account to Outsignal with one click — no DevTools required. Extension reads `li_at` + `JSESSIONID` cookies from linkedin.com, POSTs them to the sender session API, and confirms success. Includes auto-detection of cookie expiry (periodic check) with a badge notification prompting re-auth. Pairs with Phase 12's LinkedIn sender management page.
+**Requirements**: TBD
+**Depends on:** Phase 12 (sender management UI exists for pairing)
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 14 to break down)

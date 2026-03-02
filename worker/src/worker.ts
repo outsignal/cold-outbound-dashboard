@@ -4,15 +4,13 @@
  * For each active sender:
  *   1. Check business hours
  *   2. Poll /api/linkedin/actions/next
- *   3. Load Voyager cookies from API (or extract via browser login if missing)
+ *   3. Load Voyager cookies from API (or env vars as fallback)
  *   4. Create VoyagerClient per sender and execute actions via HTTP
  *   5. Random delays between actions (30-90s)
  *   6. Report results back via API
- *   7. LinkedInBrowser is only used for login + cookie extraction (no action execution)
  */
 
 import { ApiClient } from "./api-client.js";
-import { LinkedInBrowser } from "./linkedin-browser.js";
 import { VoyagerClient } from "./voyager-client.js";
 import type { ActionResult } from "./voyager-client.js";
 import {
@@ -215,8 +213,8 @@ export class Worker {
    * Get or create a VoyagerClient for a sender.
    *
    * Tries to reuse an existing client instance within the same tick.
-   * Falls back to loading stored Voyager cookies from the API.
-   * If no cookies are stored, launches a browser for login + cookie extraction.
+   * Falls back to loading stored Voyager cookies from the API, then env vars.
+   * If no cookies are available from either source, throws — no browser fallback.
    */
   private async getOrCreateVoyagerClient(sender: SenderConfig): Promise<VoyagerClient> {
     // Reuse existing client if available
@@ -227,67 +225,24 @@ export class Worker {
     let cookies = await this.api.getVoyagerCookies(sender.id);
 
     if (!cookies) {
-      // No stored cookies — need to login via browser and extract
-      console.log(`[Worker] No Voyager cookies for ${sender.name} — launching browser for login`);
-      cookies = await this.loginAndExtractCookies(sender);
-      if (!cookies) {
-        throw new Error("Failed to obtain Voyager cookies via browser login");
+      // Fallback: check env vars (temporary workaround while Vercel deploy is blocked)
+      const envLiAt = process.env.VOYAGER_LI_AT;
+      const envJsessionId = process.env.VOYAGER_JSESSIONID;
+      if (envLiAt && envJsessionId) {
+        console.log(`[Worker] Using Voyager cookies from environment variables for ${sender.name}`);
+        cookies = { liAt: envLiAt, jsessionId: envJsessionId };
       }
+    }
+
+    if (!cookies) {
+      throw new Error(
+        `No Voyager cookies available for sender ${sender.name} — seed cookies via Chrome extension or local browser`,
+      );
     }
 
     const client = new VoyagerClient(cookies.liAt, cookies.jsessionId, sender.proxyUrl ?? undefined);
     this.activeClients.set(sender.id, client);
     return client;
-  }
-
-  /**
-   * Login via LinkedInBrowser and extract Voyager cookies.
-   * LinkedInBrowser is ONLY used here — all action execution goes through VoyagerClient.
-   *
-   * After successful login, the extracted li_at + JSESSIONID are saved to the API
-   * for future use (no browser launch needed on next tick).
-   */
-  private async loginAndExtractCookies(
-    sender: SenderConfig,
-  ): Promise<{ liAt: string; jsessionId: string } | null> {
-    const browser = new LinkedInBrowser([], sender.proxyUrl ?? undefined);
-    browser.setSenderId(sender.id);
-
-    try {
-      const launchResult = await browser.launch();
-
-      if (launchResult.needsLogin) {
-        const credentials = await this.api.getSenderCredentials(sender.id);
-        if (!credentials) {
-          console.error(`[Worker] No credentials for ${sender.name} — cannot login`);
-          return null;
-        }
-
-        const loginSuccess = await browser.login(
-          credentials.email,
-          credentials.password,
-          credentials.totpSecret,
-          { daemonAlreadyRunning: true },
-        );
-
-        if (!loginSuccess) {
-          console.error(`[Worker] Login failed for ${sender.name}`);
-          return null;
-        }
-      }
-
-      // Extract Voyager cookies from the browser session
-      const cookies = await browser.extractVoyagerCookies();
-      if (cookies) {
-        // Persist cookies to API for future use
-        await this.api.saveVoyagerCookies(sender.id, cookies);
-        console.log(`[Worker] Voyager cookies extracted and saved for ${sender.name}`);
-      }
-
-      return cookies;
-    } finally {
-      await browser.close();
-    }
   }
 
   /**

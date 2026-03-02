@@ -3,18 +3,19 @@
  *
  * Replaces LinkedInBrowser for all LinkedIn action execution.
  * Makes direct HTTP requests to LinkedIn's internal Voyager REST API
- * using cookie-based authentication (li_at + JSESSIONID) and SOCKS5
- * proxy routing via socks-proxy-agent.
+ * using cookie-based authentication (li_at + JSESSIONID) and HTTP/SOCKS5
+ * proxy routing via undici ProxyAgent (HTTP) or fetch-socks (SOCKS5).
  *
  * Key design decisions:
- * - Uses Node.js native fetch (global, Node 18+) — no undici import
- * - SocksProxyAgent created once in constructor, reused for all requests
+ * - Uses Node.js native fetch (global, Node 18+) with undici dispatcher for proxy
+ * - Proxy dispatcher created once in constructor, reused for all requests
  * - CSRF token = JSESSIONID with quotes stripped (high-confidence pattern)
  * - viewProfile() always called first to extract memberUrn for write ops
  * - Each sender gets its own VoyagerClient instance — no shared sessions
  */
 
-import { SocksProxyAgent } from "socks-proxy-agent";
+import { socksDispatcher } from "fetch-socks";
+import { ProxyAgent } from "undici";
 
 // NOTE: This ConnectionStatus matches worker/src/linkedin-browser.ts, NOT
 // src/lib/linkedin/types.ts. The shared server type uses different values
@@ -46,7 +47,8 @@ export class VoyagerClient {
   private readonly liAt: string;
   private readonly jsessionId: string;
   private readonly csrfToken: string;
-  private readonly proxyAgent: SocksProxyAgent | undefined;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  private readonly proxyDispatcher: any;
   private readonly baseUrl = "https://www.linkedin.com/voyager/api";
 
   constructor(liAt: string, jsessionId: string, proxyUrl?: string) {
@@ -57,9 +59,21 @@ export class VoyagerClient {
     this.jsessionId = jsessionId;
     this.csrfToken = jsessionId.replace(/"/g, "");
 
-    // Create proxy agent once — reuse for all requests (not per-request)
+    // Create proxy dispatcher — supports both HTTP(S) and SOCKS5 URLs
     if (proxyUrl) {
-      this.proxyAgent = new SocksProxyAgent(proxyUrl);
+      const parsed = new URL(proxyUrl);
+      if (parsed.protocol === "socks5:" || parsed.protocol === "socks5h:") {
+        this.proxyDispatcher = socksDispatcher({
+          type: 5,
+          host: parsed.hostname,
+          port: parseInt(parsed.port, 10),
+          userId: parsed.username || undefined,
+          password: parsed.password || undefined,
+        });
+      } else {
+        // HTTP/HTTPS proxy — use undici's built-in ProxyAgent
+        this.proxyDispatcher = new ProxyAgent(proxyUrl);
+      }
     }
   }
 
@@ -91,7 +105,7 @@ export class VoyagerClient {
       ...fetchOptions,
       headers,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ...(this.proxyAgent ? { dispatcher: this.proxyAgent as any } : {}),
+      ...(this.proxyDispatcher ? { dispatcher: this.proxyDispatcher as any } : {}),
     });
 
     // Detect checkpoint/challenge redirects (account under verification)
@@ -134,8 +148,10 @@ export class VoyagerClient {
         return { success: false, error: "invalid_profile_url" };
       }
 
+      // Use /identity/dash/profiles endpoint (the old /identity/profiles/{id}/profileView
+      // was deprecated by LinkedIn, returning 410 Gone)
       const response = await this.request(
-        `/identity/profiles/${profileId}/profileView`
+        `/identity/dash/profiles?q=memberIdentity&memberIdentity=${profileId}&decorationId=com.linkedin.voyager.dash.deco.identity.profile.WebTopCardCore-6`
       );
 
       // Checkpoint detection
@@ -152,11 +168,13 @@ export class VoyagerClient {
 
       const data = (await response.json()) as Record<string, unknown>;
 
-      // Extract memberUrn from entityUrn: "urn:li:fsd_profile:ACoAAA..."
-      // Return just the ACoAAA... part (strip the prefix)
-      const entityUrn =
-        (data.entityUrn as string) ||
-        (data as Record<string, Record<string, unknown>>).profile?.entityUrn as string;
+      // Response is a collection — extract first element's entityUrn from included entities
+      // The elements array contains URNs like "urn:li:fsd_profile:ACoAAA..."
+      const elements = (data as Record<string, unknown[]>).data
+        ? ((data as Record<string, Record<string, unknown[]>>).data?.["*elements"] ?? [])
+        : [];
+
+      const entityUrn = (elements[0] as string) ?? null;
 
       if (!entityUrn) {
         return {

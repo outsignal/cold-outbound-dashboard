@@ -64,9 +64,9 @@ function isAdminPageRoute(pathname: string): boolean {
   return false;
 }
 
-// ─── Middleware ──────────────────────────────────────────────────────
+// ─── Proxy ──────────────────────────────────────────────────────────
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const hostname = req.headers.get("host") ?? "";
 
@@ -84,7 +84,7 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // ── Portal auth (unchanged) ──────────────────────────────────────
+  // ── Portal auth ──────────────────────────────────────────────────
   if (pathname.startsWith("/portal")) {
     // Allow login page through
     if (pathname === "/portal/login") {
@@ -182,7 +182,7 @@ export const config = {
     "/onboard/:path*",
     "/onboarding/:path*",
     "/workspace/:path*",
-    // API routes (all — public ones are filtered in middleware logic)
+    // API routes (all — public ones are filtered in proxy logic)
     "/api/:path*",
   ],
 };
