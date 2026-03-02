@@ -462,8 +462,38 @@ export default function PipelinePage() {
     }
   }
 
-  function handleConvertToClient(id: string) {
-    router.push(`/clients/${id}`);
+  async function handleConvertToClient(id: string) {
+    const prospect = prospects.find((p) => p.id === id);
+    if (
+      !confirm(
+        `Convert "${prospect?.name}" to a client? This will set them to Closed Won and create onboarding tasks.`,
+      )
+    ) {
+      return;
+    }
+
+    // Set status to closed_won (backend auto-populates tasks)
+    setProspects((prev) =>
+      prev.map((p) =>
+        p.id === id ? { ...p, pipelineStatus: "closed_won" } : p,
+      ),
+    );
+
+    try {
+      const res = await fetch(`/api/clients/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pipelineStatus: "closed_won" }),
+      });
+
+      if (res.ok) {
+        router.push(`/clients/${id}`);
+      } else {
+        fetchProspects();
+      }
+    } catch {
+      fetchProspects();
+    }
   }
 
   function handleEdit(prospect: Prospect) {
