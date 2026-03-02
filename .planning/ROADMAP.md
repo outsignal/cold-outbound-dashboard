@@ -139,7 +139,7 @@ Plans:
 | 9. Client Portal Campaign Approval | 5/5 | Complete   | 2026-03-01 | - |
 | 10. Auto-Deploy on Approval | v1.1 | 0/TBD | Not started | - |
 | 11. LinkedIn Voyager API Client | — | 3/3 | Code complete | 2026-03-02 |
-| 12. Dashboard & Admin UX | — | 0/TBD | Not started | - |
+| 12. Dashboard & Admin UX | — | 0/7 | Planned | - |
 | 13. Smart Sender Health | — | 0/TBD | Not started | - |
 | 14. LinkedIn Cookie Chrome Extension | — | 0/TBD | Not started | - |
 
@@ -165,12 +165,29 @@ Plans:
 ### Phase 12: Dashboard & Admin UX
 
 **Goal:** Upgrade the admin dashboard from a read-only overview to a full operational command center. Add activity graphs (reply volume, sent/bounce trends from WebhookEvent table) filterable by client or all. Agent run monitoring UI (AgentRun model). LinkedIn action queue viewer (LinkedInAction model). Proposal and onboarding CRUD (edit, delete). Manual document upload/ingest for proposals and onboarding docs (PDF/Google Doc parsing to auto-create records). Person detail page. LinkedIn sender management (add/edit/pause/delete, proxy URL, daily limits). Webhook event log viewer.
-**Requirements**: TBD
+**Requirements**: DASH-01, DASH-02, DASH-03, DASH-04, DASH-05, DASH-06, DASH-07, DASH-08, DASH-09, DASH-10, DASH-11, DASH-12, DASH-13, DASH-14
 **Depends on:** Phase 11
-**Plans:** 0 plans
+**Success Criteria** (what must be TRUE):
+  1. Dashboard home shows KPI cards (email, LinkedIn, pipeline, health) with a client filter dropdown that controls all views
+  2. Line charts show reply volume, sent/bounce trends over configurable time ranges from WebhookEvent data
+  3. Critical alerts section shows flagged senders, failed agent runs, disconnected inboxes — no noise
+  4. Person detail page at /people/[id] shows header, overview timeline, and channel-specific tabs
+  5. Agent run monitoring page has compact expandable table with inline run details
+  6. LinkedIn action queue viewer shows queue status counts and next-up actions
+  7. Webhook event log has search + combinable filter chips (Errors, Replies, Last 24h)
+  8. Sender management page uses card grid with modal add/edit, pause/delete from card
+  9. Sidebar navigation includes all new pages in logical groups
+  10. Proposals support edit/delete via modal, document upload auto-parses content
+**Plans:** 7 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 12 to break down)
+- [ ] 12-01-PLAN.md — Dashboard home KPIs, activity charts, alerts, client filter
+- [ ] 12-02-PLAN.md — Person detail page with tabs and timeline
+- [ ] 12-03-PLAN.md — Sender management card grid and CRUD modal
+- [ ] 12-04-PLAN.md — Agent run monitoring with expandable accordion table
+- [ ] 12-05-PLAN.md — LinkedIn action queue viewer
+- [ ] 12-06-PLAN.md — Webhook event log with search and filter chips
+- [ ] 12-07-PLAN.md — Sidebar navigation + proposal CRUD + document upload
 
 ### Phase 13: Smart Sender Health
 

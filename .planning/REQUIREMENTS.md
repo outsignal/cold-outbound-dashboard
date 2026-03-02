@@ -78,6 +78,23 @@ Requirements for v1.1 Outbound Pipeline milestone. Each maps to roadmap phases.
 - [x] **NOTIF-02**: Admin receives email notification when client approves or rejects (leads or content)
 - [ ] **NOTIF-03**: Admin receives notification when deploy completes or fails
 
+### Dashboard & Admin UX
+
+- [ ] **DASH-01**: Dashboard home shows KPI cards with email stats (sent, replies, bounces), LinkedIn stats (connections, messages, pending), pipeline status (contacted, interested, meetings), and health indicators (sender status, campaign active/paused, inboxes connected vs disconnected)
+- [ ] **DASH-02**: Dashboard has a client/campaign dropdown filter that controls ALL views (KPIs, charts, alerts) — "All Campaigns" plus per-client options
+- [ ] **DASH-03**: Dashboard shows line charts for reply volume, sent/bounce trends from WebhookEvent data over time, with configurable time range (default 7 days)
+- [ ] **DASH-04**: Critical alerts section below KPIs shows flagged senders, failed agent runs, and disconnected inboxes — no activity feed noise
+- [ ] **DASH-05**: Person detail page at /people/[id] with tabbed layout — header with name/email/company/title, overview timeline, email history, LinkedIn activity, enrichment data, and workspaces tabs
+- [ ] **DASH-06**: Person overview tab shows unified chronological timeline with color-coded icons per event type (emails, LinkedIn actions, enrichment) — view-only, no inline actions
+- [ ] **DASH-07**: Agent run monitoring page with compact Datadog-style table — summary rows expand into inline accordion showing full run details (input, output, steps, errors), filterable by agent type/status/workspace
+- [ ] **DASH-08**: LinkedIn action queue viewer with queue status focus — pending/scheduled/completed/failed counts, next actions, sender assignment, execution timing, filterable by status/action type/workspace/sender
+- [ ] **DASH-09**: LinkedIn sender management page with card grid layout — each sender card shows name, email, proxy URL, daily limits, status badge (active/paused/flagged), with pause/delete actions accessible from the card
+- [ ] **DASH-10**: Sender add/edit via modal dialog form — all sender fields (name, email, proxy URL, daily limits, LinkedIn profile URL, tier), consistent with proposal management pattern
+- [ ] **DASH-11**: Webhook event log viewer with search box for free text (email, subject) plus quick-filter preset chips ("Errors only", "Replies only", "Last 24h") that combine
+- [ ] **DASH-12**: Sidebar navigation includes all new Phase 12 pages organized into logical groups with visual separators
+- [ ] **DASH-13**: Proposal and onboarding pages support edit and delete via modal dialogs, consistent with sender management modal pattern
+- [ ] **DASH-14**: Document upload triggers auto-parse — upload content (paste from PDF/Google Doc) and system extracts fields to pre-fill proposal/onboarding form for user review before saving
+
 ## Future Requirements
 
 Deferred to later milestones. Tracked but not in current roadmap.
@@ -174,12 +191,26 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VOYAGER-03 | Phase 11 | Complete |
 | VOYAGER-04 | Phase 11 | Complete |
 | VOYAGER-05 | Phase 11 | Complete |
+| DASH-01 | Phase 12 | Pending |
+| DASH-02 | Phase 12 | Pending |
+| DASH-03 | Phase 12 | Pending |
+| DASH-04 | Phase 12 | Pending |
+| DASH-05 | Phase 12 | Pending |
+| DASH-06 | Phase 12 | Pending |
+| DASH-07 | Phase 12 | Pending |
+| DASH-08 | Phase 12 | Pending |
+| DASH-09 | Phase 12 | Pending |
+| DASH-10 | Phase 12 | Pending |
+| DASH-11 | Phase 12 | Pending |
+| DASH-12 | Phase 12 | Pending |
+| DASH-13 | Phase 12 | Pending |
+| DASH-14 | Phase 12 | Pending |
 
 **Coverage:**
-- v1.1 requirements: 48 total (7 complete, 41 pending)
-- Mapped to phases: 48
+- v1.1 requirements: 62 total (37 complete, 25 pending)
+- Mapped to phases: 62
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-27*
-*Last updated: 2026-03-01 — Added SEQ-01 to SEQ-05 (Email ↔ LinkedIn sequencing) to Phase 10*
+*Last updated: 2026-03-02 — Added DASH-01 to DASH-14 (Dashboard & Admin UX) to Phase 12*
