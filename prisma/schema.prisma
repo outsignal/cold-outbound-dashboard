@@ -628,3 +628,77 @@ model Notification {
   @@index([type])
   @@index([read])
 }
+
+// --- Client CRM Pipeline ---
+
+model Client {
+  id              String    @id @default(cuid())
+  name            String
+  contactEmail    String?
+  contactName     String?
+  website         String?
+  companyOverview String?
+  notes           String?
+
+  // CRM pipeline: new_lead | contacted | qualified | demo | proposal | negotiation | closed_won | closed_lost | unqualified | churned
+  pipelineStatus  String    @default("new_lead")
+
+  // Campaign type: email | email_linkedin | scale
+  campaignType    String    @default("email_linkedin")
+
+  // Optional link to workspace (null for external-infrastructure clients)
+  workspaceSlug   String?
+
+  // Optional link to proposal
+  proposalId      String?
+
+  startedAt       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  tasks           ClientTask[]
+
+  @@index([pipelineStatus])
+  @@index([workspaceSlug])
+}
+
+model ClientTask {
+  id        String   @id @default(cuid())
+  clientId  String
+
+  // Stage: onboarding | campaign_setup | campaign_launch | customer_success
+  stage     String
+
+  title     String
+  status    String   @default("todo") // todo | in_progress | complete
+  order     Int      @default(0)
+  dueDate   DateTime?
+  notes     String?
+
+  // Dependencies — JSON array of ClientTask IDs this task is blocked by
+  blockedBy String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  client    Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  subtasks  ClientSubtask[]
+
+  @@index([clientId, stage])
+  @@index([status])
+}
+
+model ClientSubtask {
+  id       String   @id @default(cuid())
+  taskId   String
+  title    String
+  status   String   @default("todo") // todo | in_progress | complete
+  order    Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  task     ClientTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+}

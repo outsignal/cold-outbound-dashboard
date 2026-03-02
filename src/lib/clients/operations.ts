@@ -1,0 +1,799 @@
+/**
+ * Shared operations layer for the Client Management feature.
+ *
+ * ALL Prisma queries and business logic for clients live here.
+ * API routes and MCP tools are thin wrappers that call these functions.
+ * Never put DB queries or business logic inside route handlers directly.
+ *
+ * Exports: listClients, getClient, createClient, updateClient, deleteClient,
+ *          populateClientTasks, updateTaskStatus, updateSubtaskStatus,
+ *          addTask, updateTask, deleteTask
+ */
+
+import { prisma } from "@/lib/db";
+import { TASK_TEMPLATES, type TemplateType } from "./task-templates";
+
+// ---------------------------------------------------------------------------
+// Pipeline status groups
+// ---------------------------------------------------------------------------
+
+const PIPELINE_STATUSES = [
+  "new_lead",
+  "contacted",
+  "qualified",
+  "demo",
+  "proposal",
+  "negotiation",
+];
+
+const POST_PIPELINE_STATUSES = ["closed_won", "closed_lost", "unqualified", "churned"];
+
+// ---------------------------------------------------------------------------
+// Result types
+// ---------------------------------------------------------------------------
+
+export interface StageProgress {
+  stage: string;
+  total: number;
+  completed: number;
+  percentage: number;
+}
+
+export interface ClientSummary {
+  id: string;
+  name: string;
+  pipelineStatus: string;
+  campaignType: string;
+  workspaceSlug: string | null;
+  contactEmail: string | null;
+  contactName: string | null;
+  stageProgress: StageProgress[];
+  createdAt: Date;
+}
+
+export interface ClientTaskDetail {
+  id: string;
+  stage: string;
+  title: string;
+  status: string;
+  order: number;
+  dueDate: Date | null;
+  notes: string | null;
+  blockedBy: string[];
+  subtasks: { id: string; title: string; status: string; order: number }[];
+  subtaskProgress: { total: number; completed: number };
+}
+
+export interface ClientDetail extends ClientSummary {
+  website: string | null;
+  companyOverview: string | null;
+  proposalId: string | null;
+  notes: string | null;
+  startedAt: Date | null;
+  tasks: ClientTaskDetail[];
+  updatedAt: Date;
+}
+
+export interface CreateClientParams {
+  name: string;
+  contactEmail?: string;
+  contactName?: string;
+  website?: string;
+  companyOverview?: string;
+  notes?: string;
+  pipelineStatus?: string;
+  campaignType?: string;
+  workspaceSlug?: string;
+  proposalId?: string;
+}
+
+export interface UpdateClientParams {
+  name?: string;
+  contactEmail?: string;
+  contactName?: string;
+  website?: string;
+  companyOverview?: string;
+  notes?: string;
+  pipelineStatus?: string;
+  campaignType?: string;
+  workspaceSlug?: string;
+  proposalId?: string;
+}
+
+export interface ClientFilters {
+  pipelineStatus?: string;
+  hasWorkspace?: boolean;
+  search?: string;
+  isPipeline?: boolean; // true = pre-closed_won statuses only, false = closed_won+
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Parse a JSON string into a string array (blockedBy field).
+ */
+function parseBlockedBy(value: string | null): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Compute stage progress from a list of tasks.
+ */
+function computeStageProgress(
+  tasks: { stage: string; status: string }[],
+): StageProgress[] {
+  const stageMap = new Map<string, { total: number; completed: number }>();
+
+  for (const task of tasks) {
+    const entry = stageMap.get(task.stage) ?? { total: 0, completed: 0 };
+    entry.total += 1;
+    if (task.status === "complete") {
+      entry.completed += 1;
+    }
+    stageMap.set(task.stage, entry);
+  }
+
+  return Array.from(stageMap.entries()).map(([stage, counts]) => ({
+    stage,
+    total: counts.total,
+    completed: counts.completed,
+    percentage: counts.total > 0 ? Math.round((counts.completed / counts.total) * 100) : 0,
+  }));
+}
+
+/**
+ * Format a raw task record (with subtasks) into ClientTaskDetail.
+ */
+function formatTaskDetail(
+  raw: {
+    id: string;
+    stage: string;
+    title: string;
+    status: string;
+    order: number;
+    dueDate: Date | null;
+    notes: string | null;
+    blockedBy: string | null;
+    subtasks: { id: string; title: string; status: string; order: number }[];
+  },
+): ClientTaskDetail {
+  const sortedSubtasks = [...raw.subtasks].sort((a, b) => a.order - b.order);
+  const completed = sortedSubtasks.filter((s) => s.status === "complete").length;
+
+  return {
+    id: raw.id,
+    stage: raw.stage,
+    title: raw.title,
+    status: raw.status,
+    order: raw.order,
+    dueDate: raw.dueDate,
+    notes: raw.notes,
+    blockedBy: parseBlockedBy(raw.blockedBy),
+    subtasks: sortedSubtasks.map((s) => ({
+      id: s.id,
+      title: s.title,
+      status: s.status,
+      order: s.order,
+    })),
+    subtaskProgress: {
+      total: sortedSubtasks.length,
+      completed,
+    },
+  };
+}
+
+/**
+ * Format a raw client record (with tasks and subtasks) into ClientDetail.
+ */
+function formatClientDetail(
+  raw: {
+    id: string;
+    name: string;
+    pipelineStatus: string;
+    campaignType: string;
+    workspaceSlug: string | null;
+    contactEmail: string | null;
+    contactName: string | null;
+    website: string | null;
+    companyOverview: string | null;
+    proposalId: string | null;
+    notes: string | null;
+    startedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    tasks: {
+      id: string;
+      stage: string;
+      title: string;
+      status: string;
+      order: number;
+      dueDate: Date | null;
+      notes: string | null;
+      blockedBy: string | null;
+      subtasks: { id: string; title: string; status: string; order: number }[];
+    }[];
+  },
+): ClientDetail {
+  // Sort tasks by stage order then by order within stage
+  const stageOrder = ["onboarding", "campaign_setup", "campaign_launch", "customer_success"];
+  const sortedTasks = [...raw.tasks].sort((a, b) => {
+    const stageA = stageOrder.indexOf(a.stage);
+    const stageB = stageOrder.indexOf(b.stage);
+    if (stageA !== stageB) return stageA - stageB;
+    return a.order - b.order;
+  });
+
+  return {
+    id: raw.id,
+    name: raw.name,
+    pipelineStatus: raw.pipelineStatus,
+    campaignType: raw.campaignType,
+    workspaceSlug: raw.workspaceSlug,
+    contactEmail: raw.contactEmail,
+    contactName: raw.contactName,
+    stageProgress: computeStageProgress(raw.tasks),
+    createdAt: raw.createdAt,
+    website: raw.website,
+    companyOverview: raw.companyOverview,
+    proposalId: raw.proposalId,
+    notes: raw.notes,
+    startedAt: raw.startedAt,
+    tasks: sortedTasks.map(formatTaskDetail),
+    updatedAt: raw.updatedAt,
+  };
+}
+
+/**
+ * Prisma include for tasks with subtasks.
+ */
+const tasksInclude = {
+  tasks: {
+    include: {
+      subtasks: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          order: true,
+        },
+      },
+    },
+  },
+} as const;
+
+// ---------------------------------------------------------------------------
+// 1. listClients — list clients with optional filters
+// ---------------------------------------------------------------------------
+
+/**
+ * List clients with optional filters, ordered by createdAt descending.
+ *
+ * Filters:
+ *   - pipelineStatus: exact match
+ *   - search: name contains (case-insensitive)
+ *   - hasWorkspace: true = workspaceSlug is not null, false = is null
+ *   - isPipeline: true = pre-closed_won statuses, false = post-pipeline statuses
+ *
+ * @param filters - Optional filtering criteria
+ * @returns Array of ClientSummary objects
+ */
+export async function listClients(
+  filters?: ClientFilters,
+): Promise<ClientSummary[]> {
+  const where: Record<string, unknown> = {};
+
+  if (filters?.pipelineStatus) {
+    where.pipelineStatus = filters.pipelineStatus;
+  }
+
+  if (filters?.search) {
+    where.name = { contains: filters.search, mode: "insensitive" };
+  }
+
+  if (filters?.hasWorkspace === true) {
+    where.workspaceSlug = { not: null };
+  } else if (filters?.hasWorkspace === false) {
+    where.workspaceSlug = null;
+  }
+
+  if (filters?.isPipeline === true) {
+    where.pipelineStatus = { in: PIPELINE_STATUSES };
+  } else if (filters?.isPipeline === false) {
+    where.pipelineStatus = { in: POST_PIPELINE_STATUSES };
+  }
+
+  const clients = await prisma.client.findMany({
+    where,
+    include: {
+      tasks: {
+        select: {
+          stage: true,
+          status: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return clients.map((c) => ({
+    id: c.id,
+    name: c.name,
+    pipelineStatus: c.pipelineStatus,
+    campaignType: c.campaignType,
+    workspaceSlug: c.workspaceSlug,
+    contactEmail: c.contactEmail,
+    contactName: c.contactName,
+    stageProgress: computeStageProgress(c.tasks),
+    createdAt: c.createdAt,
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// 2. getClient — get a single client by ID
+// ---------------------------------------------------------------------------
+
+/**
+ * Get a single client by ID with all tasks and subtasks.
+ *
+ * Tasks are ordered by [stage, order], subtasks ordered by order.
+ * blockedBy JSON string is parsed into a string array.
+ *
+ * @param id - Client ID
+ * @returns ClientDetail or null if not found
+ */
+export async function getClient(id: string): Promise<ClientDetail | null> {
+  const client = await prisma.client.findUnique({
+    where: { id },
+    include: tasksInclude,
+  });
+
+  if (!client) return null;
+
+  return formatClientDetail(client);
+}
+
+// ---------------------------------------------------------------------------
+// 3. createClient — create a new client
+// ---------------------------------------------------------------------------
+
+/**
+ * Create a new client record.
+ *
+ * If pipelineStatus is "closed_won", automatically populates tasks from
+ * the template matching the client's campaignType.
+ *
+ * @param params - Client creation parameters
+ * @returns The created ClientDetail
+ */
+export async function createClient(
+  params: CreateClientParams,
+): Promise<ClientDetail> {
+  const client = await prisma.client.create({
+    data: {
+      name: params.name,
+      contactEmail: params.contactEmail ?? null,
+      contactName: params.contactName ?? null,
+      website: params.website ?? null,
+      companyOverview: params.companyOverview ?? null,
+      notes: params.notes ?? null,
+      pipelineStatus: params.pipelineStatus ?? "new_lead",
+      campaignType: params.campaignType ?? "email_linkedin",
+      workspaceSlug: params.workspaceSlug ?? null,
+      proposalId: params.proposalId ?? null,
+    },
+    include: tasksInclude,
+  });
+
+  // Auto-populate tasks if created as closed_won
+  if (client.pipelineStatus === "closed_won") {
+    await populateClientTasks(
+      client.id,
+      client.campaignType as TemplateType,
+    );
+
+    // Re-fetch to include the populated tasks
+    const updated = await prisma.client.findUnique({
+      where: { id: client.id },
+      include: tasksInclude,
+    });
+
+    return formatClientDetail(updated!);
+  }
+
+  return formatClientDetail(client);
+}
+
+// ---------------------------------------------------------------------------
+// 4. updateClient — update client metadata
+// ---------------------------------------------------------------------------
+
+/**
+ * Update client fields. Only provided fields are updated.
+ *
+ * If pipelineStatus changes to "closed_won" and the client has no tasks yet,
+ * automatically populates tasks from the template.
+ *
+ * @param id - Client ID
+ * @param params - Fields to update
+ * @returns Updated ClientDetail
+ * @throws If client not found
+ */
+export async function updateClient(
+  id: string,
+  params: UpdateClientParams,
+): Promise<ClientDetail> {
+  // Check current state for auto-populate logic
+  const current = await prisma.client.findUnique({
+    where: { id },
+    select: {
+      pipelineStatus: true,
+      campaignType: true,
+      _count: { select: { tasks: true } },
+    },
+  });
+
+  if (!current) {
+    throw new Error(`Client not found: '${id}'`);
+  }
+
+  // Build update data with only provided fields
+  const data: Record<string, unknown> = {};
+  if (params.name !== undefined) data.name = params.name;
+  if (params.contactEmail !== undefined) data.contactEmail = params.contactEmail;
+  if (params.contactName !== undefined) data.contactName = params.contactName;
+  if (params.website !== undefined) data.website = params.website;
+  if (params.companyOverview !== undefined) data.companyOverview = params.companyOverview;
+  if (params.notes !== undefined) data.notes = params.notes;
+  if (params.pipelineStatus !== undefined) data.pipelineStatus = params.pipelineStatus;
+  if (params.campaignType !== undefined) data.campaignType = params.campaignType;
+  if (params.workspaceSlug !== undefined) data.workspaceSlug = params.workspaceSlug;
+  if (params.proposalId !== undefined) data.proposalId = params.proposalId;
+
+  const client = await prisma.client.update({
+    where: { id },
+    data,
+    include: tasksInclude,
+  });
+
+  // Auto-populate tasks if status changed to closed_won and no tasks exist
+  const statusChangedToClosedWon =
+    params.pipelineStatus === "closed_won" &&
+    current.pipelineStatus !== "closed_won";
+
+  if (statusChangedToClosedWon && current._count.tasks === 0) {
+    const templateType = (params.campaignType ?? current.campaignType) as TemplateType;
+    await populateClientTasks(client.id, templateType);
+
+    // Re-fetch to include populated tasks
+    const updated = await prisma.client.findUnique({
+      where: { id: client.id },
+      include: tasksInclude,
+    });
+
+    return formatClientDetail(updated!);
+  }
+
+  return formatClientDetail(client);
+}
+
+// ---------------------------------------------------------------------------
+// 5. deleteClient — delete a client (cascade handles tasks/subtasks)
+// ---------------------------------------------------------------------------
+
+/**
+ * Delete a client by ID. Cascade delete handles tasks and subtasks.
+ *
+ * @param id - Client ID
+ * @throws If client not found
+ */
+export async function deleteClient(id: string): Promise<void> {
+  const existing = await prisma.client.findUnique({
+    where: { id },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    throw new Error(`Client not found: '${id}'`);
+  }
+
+  await prisma.client.delete({ where: { id } });
+}
+
+// ---------------------------------------------------------------------------
+// 6. populateClientTasks — create tasks from template
+// ---------------------------------------------------------------------------
+
+/**
+ * Populate a client with tasks and subtasks from a template.
+ *
+ * Reads from TASK_TEMPLATES[templateType], creates ClientTask records with
+ * ClientSubtask children, sets client.startedAt to now(), and resolves
+ * blockedByIndices to actual task IDs.
+ *
+ * @param clientId - Client ID to populate
+ * @param templateType - Template to use ("email", "email_linkedin", or "scale")
+ * @throws If template type is invalid or client not found
+ */
+export async function populateClientTasks(
+  clientId: string,
+  templateType: TemplateType,
+): Promise<void> {
+  const templates = TASK_TEMPLATES[templateType];
+  if (!templates) {
+    throw new Error(`Invalid template type: '${templateType}'`);
+  }
+
+  // Create all tasks first (without blockedBy) to get their IDs
+  const createdTaskIds: string[] = [];
+
+  for (const template of templates) {
+    const task = await prisma.clientTask.create({
+      data: {
+        clientId,
+        stage: template.stage,
+        title: template.title,
+        order: template.order,
+        status: "todo",
+        subtasks: {
+          create: template.subtasks.map((sub) => ({
+            title: sub.title,
+            order: sub.order,
+            status: "todo",
+          })),
+        },
+      },
+    });
+
+    createdTaskIds.push(task.id);
+  }
+
+  // Resolve blockedByIndices to actual task IDs
+  for (let i = 0; i < templates.length; i++) {
+    const template = templates[i];
+    if (template.blockedByIndices && template.blockedByIndices.length > 0) {
+      const blockedByIds = template.blockedByIndices
+        .filter((idx) => idx >= 0 && idx < createdTaskIds.length)
+        .map((idx) => createdTaskIds[idx]);
+
+      if (blockedByIds.length > 0) {
+        await prisma.clientTask.update({
+          where: { id: createdTaskIds[i] },
+          data: { blockedBy: JSON.stringify(blockedByIds) },
+        });
+      }
+    }
+  }
+
+  // Set startedAt on the client
+  await prisma.client.update({
+    where: { id: clientId },
+    data: { startedAt: new Date() },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// 7. updateTaskStatus — update a task's status
+// ---------------------------------------------------------------------------
+
+/**
+ * Update the status of a client task.
+ *
+ * @param taskId - ClientTask ID
+ * @param status - New status ("todo", "in_progress", or "complete")
+ * @returns Updated ClientTaskDetail
+ * @throws If task not found
+ */
+export async function updateTaskStatus(
+  taskId: string,
+  status: string,
+): Promise<ClientTaskDetail> {
+  const task = await prisma.clientTask.update({
+    where: { id: taskId },
+    data: { status },
+    include: {
+      subtasks: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          order: true,
+        },
+      },
+    },
+  });
+
+  return formatTaskDetail(task);
+}
+
+// ---------------------------------------------------------------------------
+// 8. updateSubtaskStatus — update a subtask's status with auto-parent sync
+// ---------------------------------------------------------------------------
+
+/**
+ * Update a subtask's status and auto-update the parent task status.
+ *
+ * Auto-sync rules:
+ *   - If all subtasks are "complete" -> parent task becomes "complete"
+ *   - If any subtask is "in_progress" or "complete" -> parent becomes "in_progress"
+ *   - Otherwise -> parent stays/becomes "todo"
+ *
+ * @param subtaskId - ClientSubtask ID
+ * @param status - New status ("todo", "in_progress", or "complete")
+ * @throws If subtask not found
+ */
+export async function updateSubtaskStatus(
+  subtaskId: string,
+  status: string,
+): Promise<void> {
+  // Update the subtask
+  const subtask = await prisma.clientSubtask.update({
+    where: { id: subtaskId },
+    data: { status },
+    select: { taskId: true },
+  });
+
+  // Fetch all sibling subtasks to determine parent status
+  const siblings = await prisma.clientSubtask.findMany({
+    where: { taskId: subtask.taskId },
+    select: { status: true },
+  });
+
+  let parentStatus: string;
+
+  if (siblings.length === 0) {
+    // No subtasks — leave parent unchanged
+    return;
+  }
+
+  const allComplete = siblings.every((s) => s.status === "complete");
+  const anyActive = siblings.some(
+    (s) => s.status === "in_progress" || s.status === "complete",
+  );
+
+  if (allComplete) {
+    parentStatus = "complete";
+  } else if (anyActive) {
+    parentStatus = "in_progress";
+  } else {
+    parentStatus = "todo";
+  }
+
+  await prisma.clientTask.update({
+    where: { id: subtask.taskId },
+    data: { status: parentStatus },
+  });
+}
+
+// ---------------------------------------------------------------------------
+// 9. addTask — add a new task to a client
+// ---------------------------------------------------------------------------
+
+/**
+ * Add a new task to a client at the end of the specified stage.
+ *
+ * Order is automatically set to max(order) + 1 within the stage.
+ *
+ * @param clientId - Client ID
+ * @param params - { stage, title, dueDate? }
+ * @returns Created ClientTaskDetail
+ * @throws If client not found
+ */
+export async function addTask(
+  clientId: string,
+  params: { stage: string; title: string; dueDate?: Date },
+): Promise<ClientTaskDetail> {
+  // Verify client exists
+  const client = await prisma.client.findUnique({
+    where: { id: clientId },
+    select: { id: true },
+  });
+
+  if (!client) {
+    throw new Error(`Client not found: '${clientId}'`);
+  }
+
+  // Find the max order in this stage for this client
+  const maxOrderTask = await prisma.clientTask.findFirst({
+    where: { clientId, stage: params.stage },
+    orderBy: { order: "desc" },
+    select: { order: true },
+  });
+
+  const nextOrder = (maxOrderTask?.order ?? -1) + 1;
+
+  const task = await prisma.clientTask.create({
+    data: {
+      clientId,
+      stage: params.stage,
+      title: params.title,
+      order: nextOrder,
+      dueDate: params.dueDate ?? null,
+      status: "todo",
+    },
+    include: {
+      subtasks: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          order: true,
+        },
+      },
+    },
+  });
+
+  return formatTaskDetail(task);
+}
+
+// ---------------------------------------------------------------------------
+// 10. updateTask — update task fields
+// ---------------------------------------------------------------------------
+
+/**
+ * Update task fields (title, dueDate, notes, status).
+ *
+ * Only provided fields are updated.
+ *
+ * @param taskId - ClientTask ID
+ * @param params - Fields to update
+ * @returns Updated ClientTaskDetail
+ * @throws If task not found
+ */
+export async function updateTask(
+  taskId: string,
+  params: { title?: string; dueDate?: Date | null; notes?: string; status?: string },
+): Promise<ClientTaskDetail> {
+  const data: Record<string, unknown> = {};
+  if (params.title !== undefined) data.title = params.title;
+  if (params.dueDate !== undefined) data.dueDate = params.dueDate;
+  if (params.notes !== undefined) data.notes = params.notes;
+  if (params.status !== undefined) data.status = params.status;
+
+  const task = await prisma.clientTask.update({
+    where: { id: taskId },
+    data,
+    include: {
+      subtasks: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          order: true,
+        },
+      },
+    },
+  });
+
+  return formatTaskDetail(task);
+}
+
+// ---------------------------------------------------------------------------
+// 11. deleteTask — delete a task (cascade handles subtasks)
+// ---------------------------------------------------------------------------
+
+/**
+ * Delete a client task by ID. Cascade delete handles subtasks.
+ *
+ * @param taskId - ClientTask ID
+ * @throws If task not found
+ */
+export async function deleteTask(taskId: string): Promise<void> {
+  const existing = await prisma.clientTask.findUnique({
+    where: { id: taskId },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    throw new Error(`Task not found: '${taskId}'`);
+  }
+
+  await prisma.clientTask.delete({ where: { id: taskId } });
+}

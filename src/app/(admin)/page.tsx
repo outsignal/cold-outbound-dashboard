@@ -84,7 +84,18 @@ async function fetchWorkspaceSummaries(): Promise<WorkspaceSummary[]> {
 
 export default async function DashboardPage() {
   const summaries = await fetchWorkspaceSummaries();
-  const dbPeopleCount = await prisma.person.count();
+  const [dbPeopleCount, activeClientsCount, pipelineProspectsCount] =
+    await Promise.all([
+      prisma.person.count(),
+      prisma.client.count({ where: { pipelineStatus: "closed_won" } }),
+      prisma.client.count({
+        where: {
+          pipelineStatus: {
+            notIn: ["closed_won", "closed_lost", "unqualified", "churned"],
+          },
+        },
+      }),
+    ]);
 
   const totalActiveCampaigns = summaries.reduce(
     (sum, s) => sum + s.activeCampaigns,
@@ -104,7 +115,7 @@ export default async function DashboardPage() {
         description={`${summaries.length} workspace${summaries.length !== 1 ? "s" : ""} connected`}
       />
       <div className="p-6 space-y-5">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
           <MetricCard
             label="Active Campaigns"
             value={totalActiveCampaigns}
@@ -128,6 +139,18 @@ export default async function DashboardPage() {
             value={totalFlagged}
             trend={totalFlagged > 0 ? "warning" : "neutral"}
             detail={totalFlagged > 0 ? "High bounce rate detected" : "All healthy"}
+          />
+          <MetricCard
+            label="Active Clients"
+            value={activeClientsCount}
+            trend={activeClientsCount > 0 ? "up" : "neutral"}
+            detail="Closed won"
+          />
+          <MetricCard
+            label="Pipeline Prospects"
+            value={pipelineProspectsCount}
+            trend={pipelineProspectsCount > 0 ? "up" : "neutral"}
+            detail="In active pipeline stages"
           />
         </div>
 

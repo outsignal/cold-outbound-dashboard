@@ -16,6 +16,8 @@ import {
   Linkedin,
   Building2,
   ListChecks,
+  Briefcase,
+  Target,
   Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -39,6 +41,8 @@ const mainNav = [
   { href: "/people", label: "People", icon: Users },
   { href: "/companies", label: "Companies", icon: Building2 },
   { href: "/lists", label: "Lists", icon: ListChecks },
+  { href: "/clients", label: "Clients", icon: Briefcase },
+  { href: "/pipeline", label: "Pipeline", icon: Target },
   { href: "/onboard", label: "Proposals", icon: UserPlus },
   { href: "/onboarding", label: "Onboarding", icon: ClipboardList },
   { href: "/notifications", label: "Notifications", icon: Bell },
