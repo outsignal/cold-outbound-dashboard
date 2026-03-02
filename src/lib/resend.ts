@@ -35,18 +35,57 @@ export async function sendOnboardingInviteEmail(params: {
   await sendNotificationEmail({
     to: [params.clientEmail],
     subject: "Complete your onboarding with Outsignal",
-    html: `<div style="font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;">
-<p>Hi ${params.clientName},</p>
-<p>We're ready to get you onboarded. Please complete the short questionnaire below so we can set up your campaigns:</p>
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0;">
+    html: `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f4f4f5;margin:0;padding:0;">
   <tr>
-    <td style="background-color:#F0FF7A;border-radius:6px;padding:0;">
-      <a href="${params.inviteUrl}" target="_blank" style="display:inline-block;padding:14px 28px;font-size:14px;font-weight:600;color:#18181b;text-decoration:none;border-radius:6px;"><span style="color:#18181b;text-decoration:none;">Complete Onboarding</span></a>
+    <td align="center" style="padding:40px 16px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:100%;">
+        <!-- Header -->
+        <tr>
+          <td style="background-color:#18181b;padding:20px 32px;border-radius:8px 8px 0 0;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;letter-spacing:3px;color:#F0FF7A;">OUTSIGNAL</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <!-- Body -->
+        <tr>
+          <td style="background-color:#ffffff;padding:32px 32px 24px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#18181b;padding-bottom:24px;line-height:1.3;">Complete Your Onboarding</td>
+              </tr>
+              <tr>
+                <td style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#3f3f46;padding-bottom:24px;line-height:1.7;">Hi ${params.clientName}, we're ready to get you onboarded. Please complete the short questionnaire below so we can set up your campaigns.</td>
+              </tr>
+              <!-- CTA button -->
+              <tr>
+                <td style="padding-bottom:24px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="background-color:#F0FF7A;border-radius:8px;">
+                        <a href="${params.inviteUrl}" target="_blank" style="display:inline-block;padding:14px 32px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;color:#18181b;text-decoration:none;">Complete Onboarding</a>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <tr>
+                <td style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#a1a1aa;line-height:1.5;">This link is unique to you &mdash; please do not share it.</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+          <td style="background-color:#fafafa;padding:20px 32px;border-top:1px solid #e4e4e7;border-radius:0 0 8px 8px;">
+            <p style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#a1a1aa;margin:0;line-height:1.5;">Outsignal &mdash; You received this because you were invited to onboard.</p>
+          </td>
+        </tr>
+      </table>
     </td>
   </tr>
-</table>
-<p style="font-size:13px;color:#6b7280;">This link is unique to you — please do not share it.</p>
-<p>Best regards,<br/>Outsignal</p>
-</div>`,
+</table>`,
   });
 }
