@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState, useCallback } from "react";
 import { useQueryState } from "nuqs";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Header } from "@/components/layout/header";
@@ -194,12 +195,14 @@ export default function DashboardPage() {
               />
 
               {/* Health KPIs */}
-              <MetricCard
-                label="Active Senders"
-                value={kpis.sendersHealthy.toLocaleString()}
-                trend={unhealthySenders > 0 ? "warning" : "up"}
-                detail={unhealthySenders > 0 ? `${unhealthySenders} need attention` : "All healthy"}
-              />
+              <Link href="/senders" className="block cursor-pointer">
+                <MetricCard
+                  label="Sender Health"
+                  value={`${kpis.sendersHealthy}/${kpis.sendersActiveTotal || kpis.sendersHealthy + unhealthySenders}`}
+                  trend={unhealthySenders > 0 ? "warning" : "up"}
+                  detail={unhealthySenders > 0 ? `${unhealthySenders} need attention` : "All healthy"}
+                />
+              </Link>
               <MetricCard
                 label="Campaigns Active"
                 value={kpis.campaignsActive.toLocaleString()}

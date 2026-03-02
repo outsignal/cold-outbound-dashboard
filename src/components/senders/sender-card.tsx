@@ -12,7 +12,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { SenderFormModal } from "./sender-form-modal";
+import { SenderHealthPanel } from "./sender-health-panel";
 import type { SenderWithWorkspace } from "./types";
 
 interface SenderCardProps {
@@ -48,8 +50,12 @@ export function SenderCard({ sender, workspaces }: SenderCardProps) {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [toggling, setToggling] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [reactivating, setReactivating] = useState(false);
 
   const isPaused = sender.status === "paused";
+  const isHardFlagged =
+    sender.healthStatus === "blocked" || sender.healthStatus === "session_expired";
 
   async function handleTogglePause() {
     setToggling(true);
@@ -90,6 +96,23 @@ export function SenderCard({ sender, workspaces }: SenderCardProps) {
       router.refresh();
     } finally {
       setDeleting(false);
+    }
+  }
+
+  async function handleReactivate() {
+    setReactivating(true);
+    try {
+      const res = await fetch(`/api/senders/${sender.id}/reactivate`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        console.error("Reactivate failed:", data.error);
+      } else {
+        router.refresh();
+      }
+    } finally {
+      setReactivating(false);
     }
   }
 
@@ -162,7 +185,24 @@ export function SenderCard({ sender, workspaces }: SenderCardProps) {
               {sender.warmupDay > 0 ? `Day ${sender.warmupDay}` : "Not started"}
             </span>
           </div>
+
+          {/* Health history toggle */}
+          <button
+            type="button"
+            onClick={() => setExpanded((v) => !v)}
+            className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors mt-1 w-full pt-1 border-t border-border/40"
+          >
+            {expanded ? (
+              <ChevronUp className="h-3 w-3 shrink-0" />
+            ) : (
+              <ChevronDown className="h-3 w-3 shrink-0" />
+            )}
+            Health history
+          </button>
         </CardContent>
+
+        {/* Expandable health panel */}
+        <SenderHealthPanel senderId={sender.id} isExpanded={expanded} />
 
         {/* Action buttons */}
         <div className="border-t border-border/50 px-4 py-3 flex items-center gap-2">
@@ -183,6 +223,17 @@ export function SenderCard({ sender, workspaces }: SenderCardProps) {
           >
             {toggling ? "..." : isPaused ? "Resume" : "Pause"}
           </Button>
+          {isHardFlagged && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs text-emerald-600 border-emerald-600/30 hover:bg-emerald-600/10 hover:text-emerald-600"
+              onClick={handleReactivate}
+              disabled={reactivating}
+            >
+              {reactivating ? "Reactivating..." : "Reactivate"}
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"

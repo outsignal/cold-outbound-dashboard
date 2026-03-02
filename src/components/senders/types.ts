@@ -13,6 +13,7 @@ export interface SenderWithWorkspace {
   ssiScore: number | null;
   acceptanceRate: number | null;
   healthStatus: string;
+  healthFlaggedAt: Date | string | null;
   warmupDay: number;
   warmupStartedAt: Date | string | null;
   lastActiveAt: Date | string | null;
