@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Outbound Pipeline
 status: unknown
-last_updated: "2026-03-02T12:01:28.893Z"
+last_updated: "2026-03-02T21:31:53.446Z"
 progress:
-  total_phases: 7
-  completed_phases: 5
-  total_plans: 21
-  completed_plans: 22
+  total_phases: 9
+  completed_phases: 6
+  total_plans: 29
+  completed_plans: 30
 ---
 
 # Project State
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-02-27)
 
 ## Current Position
 
-Phase: 12 of 12 (Dashboard & Admin UX — Plan 08 COMPLETE: Proposals/Onboarding CRUD)
-Plan: 8 of 8 in current phase (12-01 done: dashboard home, 12-02 done: person detail, 12-03 done: webhook log, 12-04 done: agent run monitoring)
-Status: Phase 12 COMPLETE. All 8/8 plans done. /agent-runs page live with compact table, expandable details, filters, auto-refresh.
-Last activity: 2026-03-02 — Executed Plan 04: GET /api/agent-runs endpoint, AgentRunTable component (Datadog-style density, accordion rows), /agent-runs page with nuqs filters and auto-refresh for running jobs.
+Phase: 12 of 12 (Dashboard & Admin UX — Plan 07 COMPLETE: Sidebar navigation reorganized into logical groups)
+Plan: 7 of 8 in current phase (12-01 done: dashboard home, 12-02 done: person detail, 12-03 done: webhook log, 12-04 done: agent run monitoring, 12-05 done: linkedin queue, 12-06 done: senders, 12-07 done: sidebar nav)
+Status: Phase 12 — 7/8 plans done. Sidebar now has 5 logical groups with dividers; LinkedIn Queue added. Plan 08 (Proposals/Onboarding CRUD) remains.
+Last activity: 2026-03-02 — Executed Plan 07: Sidebar reorganized into navGroups (Core, Business, LinkedIn, Operations, Config) with thin dividers; LinkedIn Queue nav item added.
 
 Progress: [████░░░░░░] 40% (v1.1 — Phase 8 complete)
 
@@ -131,6 +131,7 @@ v1.0 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 12-01]: Dashboard page converted to "use client" for nuqs URL state — API types exported from route.ts and imported by components
 - [Phase 12-01]: recharts AreaChart used (not LineChart) — filled area improves visual density; custom tooltip uses plain interface not recharts 3.x TooltipContentProps generic
 - [Phase 12-01]: Alerts positioned above KPIs — critical items need immediate visibility; LEAD_INTERESTED counted as reply in time-series
+- [Phase 12]: Kept Linkedin icon (deprecated hint not error) — no non-deprecated replacement in lucide-react v0.575.0
 
 ### Blockers/Concerns
 
@@ -142,5 +143,5 @@ v1.0 decisions archived in PROJECT.md Key Decisions table.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 12-08-PLAN.md (Proposals CRUD + Document Upload). Phase 12 complete: all 8/8 plans done.
+Stopped at: Completed 12-07-PLAN.md (Sidebar navigation reorganized into logical groups with dividers, LinkedIn Queue added).
 Resume file: None
