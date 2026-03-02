@@ -23,6 +23,7 @@ import {
   PanelLeftOpen,
   Activity,
   Webhook,
+  ListOrdered,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -45,22 +46,46 @@ interface SidebarProps {
   workspaces: WorkspaceItem[];
 }
 
+interface NavItem {
+  href: string;
+  label: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  icon: React.ComponentType<any>;
+}
+
 const STORAGE_KEY = "sidebar-collapsed";
 
-const mainNav = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/people", label: "People", icon: Users },
-  { href: "/companies", label: "Companies", icon: Building2 },
-  { href: "/lists", label: "Lists", icon: ListChecks },
-  { href: "/clients", label: "Clients", icon: Briefcase },
-  { href: "/pipeline", label: "Pipeline", icon: Target },
-  { href: "/onboard", label: "Proposals", icon: UserPlus },
-  { href: "/onboarding", label: "Onboarding", icon: ClipboardList },
-  { href: "/senders", label: "Senders", icon: Linkedin },
-  { href: "/agent-runs", label: "Agent Runs", icon: Activity },
-  { href: "/webhook-log", label: "Webhook Log", icon: Webhook },
-  { href: "/notifications", label: "Notifications", icon: Bell },
-  { href: "/settings", label: "Settings", icon: Settings },
+// Navigation organized into logical groups — dividers rendered between groups
+const navGroups: NavItem[][] = [
+  // Group 1 — Core
+  [
+    { href: "/", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/people", label: "People", icon: Users },
+    { href: "/companies", label: "Companies", icon: Building2 },
+    { href: "/lists", label: "Lists", icon: ListChecks },
+  ],
+  // Group 2 — Business
+  [
+    { href: "/clients", label: "Clients", icon: Briefcase },
+    { href: "/pipeline", label: "Pipeline", icon: Target },
+    { href: "/onboard", label: "Proposals", icon: UserPlus },
+    { href: "/onboarding", label: "Onboarding", icon: ClipboardList },
+  ],
+  // Group 3 — LinkedIn
+  [
+    { href: "/senders", label: "Senders", icon: Linkedin },
+    { href: "/linkedin-queue", label: "LinkedIn Queue", icon: ListOrdered },
+  ],
+  // Group 4 — Operations
+  [
+    { href: "/agent-runs", label: "Agent Runs", icon: Activity },
+    { href: "/webhook-log", label: "Webhook Log", icon: Webhook },
+    { href: "/notifications", label: "Notifications", icon: Bell },
+  ],
+  // Group 5 — Config
+  [
+    { href: "/settings", label: "Settings", icon: Settings },
+  ],
 ];
 
 export function Sidebar({ workspaces }: SidebarProps) {
@@ -109,6 +134,63 @@ export function Sidebar({ workspaces }: SidebarProps) {
   // Prevent layout shift: render expanded width until client hydration completes
   const isCollapsed = mounted ? collapsed : false;
 
+  function renderNavItem(item: NavItem) {
+    const isActive =
+      item.href === "/"
+        ? pathname === "/"
+        : pathname === item.href || pathname.startsWith(item.href + "/");
+
+    const linkContent = (
+      <Link
+        href={item.href}
+        className={cn(
+          "flex items-center rounded-lg text-sm transition-colors duration-150",
+          isCollapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-2",
+          isActive
+            ? "bg-sidebar-accent text-sidebar-accent-foreground border-l-2 border-brand"
+            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground border-l-2 border-transparent",
+        )}
+      >
+        <item.icon className="h-4 w-4 shrink-0" />
+        {!isCollapsed && <>{item.label}</>}
+        {item.href === "/notifications" && unreadCount > 0 && (
+          <span
+            className={cn(
+              "flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white",
+              isCollapsed ? "absolute -top-1 -right-1" : "ml-auto",
+            )}
+          >
+            {unreadCount > 99 ? "99+" : unreadCount}
+          </span>
+        )}
+      </Link>
+    );
+
+    if (isCollapsed) {
+      return (
+        <Tooltip key={item.href}>
+          <TooltipTrigger asChild>
+            <div className="relative">
+              {linkContent}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="right" sideOffset={8}>
+            {item.label}
+            {item.href === "/notifications" && unreadCount > 0 && (
+              <span className="ml-1.5 text-red-400">({unreadCount})</span>
+            )}
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
+
+    return (
+      <div key={item.href}>
+        {linkContent}
+      </div>
+    );
+  }
+
   return (
     <aside
       className={cn(
@@ -132,63 +214,18 @@ export function Sidebar({ workspaces }: SidebarProps) {
 
       {/* Scrollable nav */}
       <ScrollArea className={cn("flex-1 py-4", isCollapsed ? "px-1.5" : "px-3")}>
-        <nav className="space-y-1">
-          {mainNav.map((item) => {
-            const isActive =
-              item.href === "/"
-                ? pathname === "/"
-                : pathname === item.href || pathname.startsWith(item.href + "/");
-
-            const linkContent = (
-              <Link
-                href={item.href}
-                className={cn(
-                  "flex items-center rounded-lg text-sm transition-colors duration-150",
-                  isCollapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-2",
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground border-l-2 border-brand"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground border-l-2 border-transparent",
-                )}
-              >
-                <item.icon className="h-4 w-4 shrink-0" />
-                {!isCollapsed && <>{item.label}</>}
-                {item.href === "/notifications" && unreadCount > 0 && (
-                  <span
-                    className={cn(
-                      "flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white",
-                      isCollapsed ? "absolute -top-1 -right-1" : "ml-auto",
-                    )}
-                  >
-                    {unreadCount > 99 ? "99+" : unreadCount}
-                  </span>
-                )}
-              </Link>
-            );
-
-            if (isCollapsed) {
-              return (
-                <Tooltip key={item.href}>
-                  <TooltipTrigger asChild>
-                    <div className="relative">
-                      {linkContent}
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" sideOffset={8}>
-                    {item.label}
-                    {item.href === "/notifications" && unreadCount > 0 && (
-                      <span className="ml-1.5 text-red-400">({unreadCount})</span>
-                    )}
-                  </TooltipContent>
-                </Tooltip>
-              );
-            }
-
-            return (
-              <div key={item.href}>
-                {linkContent}
+        <nav>
+          {navGroups.map((group, groupIndex) => (
+            <div key={groupIndex}>
+              {/* Divider between groups (not before first group) */}
+              {groupIndex > 0 && (
+                <div className={cn("h-px bg-sidebar-border my-2", isCollapsed ? "mx-1" : "mx-3")} />
+              )}
+              <div className="space-y-1">
+                {group.map((item) => renderNavItem(item))}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </nav>
 
         {/* Workspaces section */}
