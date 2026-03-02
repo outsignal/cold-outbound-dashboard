@@ -22,6 +22,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Activity,
+  Webhook,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -55,7 +56,9 @@ const mainNav = [
   { href: "/pipeline", label: "Pipeline", icon: Target },
   { href: "/onboard", label: "Proposals", icon: UserPlus },
   { href: "/onboarding", label: "Onboarding", icon: ClipboardList },
+  { href: "/senders", label: "Senders", icon: Linkedin },
   { href: "/agent-runs", label: "Agent Runs", icon: Activity },
+  { href: "/webhook-log", label: "Webhook Log", icon: Webhook },
   { href: "/notifications", label: "Notifications", icon: Bell },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
