@@ -1,8 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import pdfParse from "pdf-parse";
 
 // NOTE: This route intentionally uses the default Node.js runtime.
 // Do NOT add `export const runtime = "edge"` — pdf-parse requires Node.js fs.
+
+// pdf-parse v2 exports { PDFParse } class (not a function). We use dynamic
+// import with any cast to avoid conflict with @types/pdf-parse (v1 types).
+async function extractPdfText(buffer: Buffer): Promise<string> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const pdfModule = (await import("pdf-parse")) as any;
+  const PDFParseClass = pdfModule.PDFParse ?? pdfModule.default?.PDFParse;
+  if (!PDFParseClass) {
+    throw new Error("pdf-parse module does not export PDFParse class");
+  }
+  const parser = new PDFParseClass({ data: buffer });
+  const result = await parser.getText();
+  return (result.text as string) ?? "";
+}
 
 // ---------------------------------------------------------------------------
 // Heuristic field parser
@@ -155,8 +168,7 @@ export async function POST(request: NextRequest) {
     let text: string;
     try {
       const buffer = Buffer.from(await file.arrayBuffer());
-      const parsed = await pdfParse(buffer);
-      text = parsed.text;
+      text = await extractPdfText(buffer);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
       return NextResponse.json(
