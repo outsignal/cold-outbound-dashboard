@@ -5,6 +5,7 @@ export interface InboxStatusChange {
   workspaceSlug: string;
   workspaceName: string;
   newDisconnections: string[];
+  persistentDisconnections: string[];
   reconnections: string[];
   totalDisconnected: number;
   totalConnected: number;
@@ -60,17 +61,21 @@ async function checkWorkspace(
 
   // Compute diffs
   const newDisconnections: string[] = [];
+  const persistentDisconnections: string[] = [];
   const reconnections: string[] = [];
   const currentDisconnected: string[] = [];
 
   for (const [email, status] of Object.entries(currentStatuses)) {
     if (status !== "Connected") {
       currentDisconnected.push(email);
-      // Only flag as new disconnection if we had a previous snapshot (first run = no alerts)
       if (previous) {
         const prevStatus = prevStatuses[email];
         if (prevStatus === "Connected" || prevStatus === undefined) {
+          // Was connected (or new) last time, now disconnected
           newDisconnections.push(email);
+        } else if (prevDisconnected.includes(email)) {
+          // Was already disconnected last check and still is
+          persistentDisconnections.push(email);
         }
       }
     } else {
@@ -96,8 +101,12 @@ async function checkWorkspace(
     },
   });
 
-  // Only return if there are changes to report
-  if (newDisconnections.length === 0 && reconnections.length === 0) {
+  // Return if there are any disconnected inboxes or reconnections to report
+  if (
+    newDisconnections.length === 0 &&
+    persistentDisconnections.length === 0 &&
+    reconnections.length === 0
+  ) {
     return null;
   }
 
@@ -109,6 +118,7 @@ async function checkWorkspace(
     workspaceSlug: slug,
     workspaceName: name,
     newDisconnections,
+    persistentDisconnections,
     reconnections,
     totalDisconnected: currentDisconnected.length,
     totalConnected,

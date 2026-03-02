@@ -19,19 +19,37 @@ export async function GET(request: Request) {
     const changes = await checkAllWorkspaces();
 
     for (const change of changes) {
-      if (change.newDisconnections.length > 0) {
+      const hasNewDisconnections = change.newDisconnections.length > 0;
+      const hasPersistentDisconnections = change.persistentDisconnections.length > 0;
+
+      if (hasNewDisconnections || hasPersistentDisconnections) {
         // Workspace-specific notification (Slack channel + email)
         await notifyInboxDisconnect(change);
 
         // In-app notification + ops Slack
+        const parts: string[] = [];
+        if (hasNewDisconnections) {
+          parts.push(
+            `${change.newDisconnections.length} newly disconnected: ${change.newDisconnections.slice(0, 5).join(", ")}${change.newDisconnections.length > 5 ? ` (+${change.newDisconnections.length - 5} more)` : ""}`,
+          );
+        }
+        if (hasPersistentDisconnections) {
+          parts.push(
+            `${change.persistentDisconnections.length} still disconnected: ${change.persistentDisconnections.slice(0, 5).join(", ")}${change.persistentDisconnections.length > 5 ? ` (+${change.persistentDisconnections.length - 5} more)` : ""}`,
+          );
+        }
+
         await notify({
           type: "system",
-          severity: "error",
-          title: `${change.newDisconnections.length} inbox${change.newDisconnections.length !== 1 ? "es" : ""} disconnected`,
-          message: `${change.workspaceName}: ${change.newDisconnections.slice(0, 5).join(", ")}${change.newDisconnections.length > 5 ? ` (+${change.newDisconnections.length - 5} more)` : ""}`,
+          severity: hasNewDisconnections ? "error" : "warning",
+          title: hasNewDisconnections
+            ? `${change.newDisconnections.length} inbox${change.newDisconnections.length !== 1 ? "es" : ""} disconnected`
+            : `${change.persistentDisconnections.length} inbox${change.persistentDisconnections.length !== 1 ? "es" : ""} still disconnected`,
+          message: `${change.workspaceName}: ${parts.join(" | ")}`,
           workspaceSlug: change.workspaceSlug,
           metadata: {
             newDisconnections: change.newDisconnections,
+            persistentDisconnections: change.persistentDisconnections,
             reconnections: change.reconnections,
             totalDisconnected: change.totalDisconnected,
             totalConnected: change.totalConnected,
@@ -39,7 +57,7 @@ export async function GET(request: Request) {
         });
       }
 
-      if (change.reconnections.length > 0 && change.newDisconnections.length === 0) {
+      if (change.reconnections.length > 0 && !hasNewDisconnections && !hasPersistentDisconnections) {
         await notify({
           type: "system",
           severity: "info",
@@ -58,7 +76,8 @@ export async function GET(request: Request) {
       checked: changes.length,
       workspacesWithChanges: changes.map((c) => ({
         workspace: c.workspaceSlug,
-        disconnections: c.newDisconnections.length,
+        newDisconnections: c.newDisconnections.length,
+        persistentDisconnections: c.persistentDisconnections.length,
         reconnections: c.reconnections.length,
       })),
     });

@@ -304,6 +304,7 @@ export async function notifyInboxDisconnect(params: {
   workspaceSlug: string;
   workspaceName: string;
   newDisconnections: string[];
+  persistentDisconnections: string[];
   reconnections: string[];
   totalDisconnected: number;
   totalConnected: number;
@@ -316,67 +317,104 @@ export async function notifyInboxDisconnect(params: {
   const adminBaseUrl =
     process.env.NEXT_PUBLIC_APP_URL ?? "https://admin.outsignal.ai";
   const inboxHealthUrl = `${adminBaseUrl}/workspace/${params.workspaceSlug}/inbox-health`;
-  const count = params.newDisconnections.length;
+  const newCount = params.newDisconnections.length;
+  const persistentCount = params.persistentDisconnections.length;
+  const hasNew = newCount > 0;
+  const hasPersistent = persistentCount > 0;
+
+  // Determine header based on what we have
+  const headerText = hasNew
+    ? "Inbox Disconnection Alert"
+    : "Inbox Still Disconnected";
 
   // --- Slack ---
-  if (workspace.slackChannelId && count > 0) {
-    const emailList = params.newDisconnections.slice(0, 10);
-    const overflow =
-      count > 10 ? `\n...and ${count - 10} more` : "";
-
+  if (workspace.slackChannelId && (hasNew || hasPersistent)) {
     const blocks: KnownBlock[] = [
       {
         type: "header",
-        text: { type: "plain_text", text: "Inbox Disconnection Alert" },
-      },
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: `*${count} inbox${count !== 1 ? "es" : ""} disconnected* for *${params.workspaceName}*`,
-        },
-      },
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: emailList.map((e) => `• \`${e}\``).join("\n") + overflow,
-        },
-      },
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: `*Status:* ${params.totalConnected} connected / ${params.totalDisconnected} disconnected`,
-        },
-      },
-      ...(params.reconnections.length > 0
-        ? ([
-            {
-              type: "section",
-              text: {
-                type: "mrkdwn",
-                text: `:white_check_mark: ${params.reconnections.length} inbox${params.reconnections.length !== 1 ? "es" : ""} reconnected`,
-              },
-            },
-          ] as KnownBlock[])
-        : []),
-      {
-        type: "actions",
-        elements: [
-          {
-            type: "button",
-            text: { type: "plain_text", text: "View Inbox Health" },
-            url: inboxHealthUrl,
-          },
-        ],
+        text: { type: "plain_text", text: headerText },
       },
     ];
 
+    if (hasNew) {
+      const emailList = params.newDisconnections.slice(0, 10);
+      const overflow =
+        newCount > 10 ? `\n...and ${newCount - 10} more` : "";
+      blocks.push(
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: `*${newCount} inbox${newCount !== 1 ? "es" : ""} newly disconnected* for *${params.workspaceName}*`,
+          },
+        },
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: emailList.map((e) => `• \`${e}\``).join("\n") + overflow,
+          },
+        },
+      );
+    }
+
+    if (hasPersistent) {
+      const persistentList = params.persistentDisconnections.slice(0, 10);
+      const persistentOverflow =
+        persistentCount > 10
+          ? `\n...and ${persistentCount - 10} more`
+          : "";
+      blocks.push({
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `:warning: *Still disconnected (${persistentCount} inbox${persistentCount !== 1 ? "es" : ""}):* ${persistentList.map((e) => `\`${e}\``).join(", ")}${persistentOverflow}`,
+        },
+      });
+    }
+
+    blocks.push({
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `*Status:* ${params.totalConnected} connected / ${params.totalDisconnected} disconnected`,
+      },
+    });
+
+    if (params.reconnections.length > 0) {
+      blocks.push({
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `:white_check_mark: ${params.reconnections.length} inbox${params.reconnections.length !== 1 ? "es" : ""} reconnected`,
+        },
+      });
+    }
+
+    blocks.push({
+      type: "actions",
+      elements: [
+        {
+          type: "button",
+          text: { type: "plain_text", text: "View Inbox Health" },
+          url: inboxHealthUrl,
+        },
+      ],
+    });
+
     try {
+      const fallbackParts: string[] = [];
+      if (hasNew)
+        fallbackParts.push(
+          `${newCount} inbox${newCount !== 1 ? "es" : ""} disconnected`,
+        );
+      if (hasPersistent)
+        fallbackParts.push(
+          `${persistentCount} still disconnected`,
+        );
       await postMessage(
         workspace.slackChannelId,
-        `${count} inbox${count !== 1 ? "es" : ""} disconnected for ${params.workspaceName}`,
+        `${fallbackParts.join(", ")} for ${params.workspaceName}`,
         blocks,
       );
     } catch (err) {
@@ -385,32 +423,74 @@ export async function notifyInboxDisconnect(params: {
   }
 
   // --- Email ---
-  if (workspace.notificationEmails && count > 0) {
+  if (workspace.notificationEmails && (hasNew || hasPersistent)) {
     try {
       const recipients: string[] = JSON.parse(workspace.notificationEmails);
       if (recipients.length > 0) {
-        const emailListHtml = params.newDisconnections
-          .slice(0, 20)
-          .map(
-            (e) =>
-              `<li style="font-family:monospace;font-size:13px;">${e}</li>`,
-          )
-          .join("");
-        const overflowHtml =
-          count > 20
-            ? `<li style="color:#6b7280;">...and ${count - 20} more</li>`
-            : "";
+        // Build subject line
+        const subjectParts: string[] = [];
+        if (hasNew)
+          subjectParts.push(
+            `${newCount} Inbox${newCount !== 1 ? "es" : ""} Disconnected`,
+          );
+        if (hasPersistent)
+          subjectParts.push(
+            `${persistentCount} Still Disconnected`,
+          );
+        const subject = `[${params.workspaceName}] ${subjectParts.join(" + ")}`;
+
+        // New disconnections HTML (red box)
+        let newDisconnectionsHtml = "";
+        if (hasNew) {
+          const emailListHtml = params.newDisconnections
+            .slice(0, 20)
+            .map(
+              (e) =>
+                `<li style="font-family:monospace;font-size:13px;">${e}</li>`,
+            )
+            .join("");
+          const overflowHtml =
+            newCount > 20
+              ? `<li style="color:#6b7280;">...and ${newCount - 20} more</li>`
+              : "";
+          newDisconnectionsHtml = `
+<div style="background-color:#fef2f2;border-left:3px solid #dc2626;padding:12px 16px;margin:16px 0;border-radius:4px;">
+  <p style="margin:0 0 8px 0;font-weight:600;color:#991b1b;">Newly disconnected (${newCount}):</p>
+  <ul style="margin:0;padding-left:20px;">${emailListHtml}${overflowHtml}</ul>
+</div>`;
+        }
+
+        // Persistent disconnections HTML (amber/yellow box)
+        let persistentDisconnectionsHtml = "";
+        if (hasPersistent) {
+          const persistentListHtml = params.persistentDisconnections
+            .slice(0, 20)
+            .map(
+              (e) =>
+                `<li style="font-family:monospace;font-size:13px;">${e}</li>`,
+            )
+            .join("");
+          const persistentOverflowHtml =
+            persistentCount > 20
+              ? `<li style="color:#6b7280;">...and ${persistentCount - 20} more</li>`
+              : "";
+          persistentDisconnectionsHtml = `
+<div style="background-color:#fffbeb;border-left:3px solid #f59e0b;padding:12px 16px;margin:16px 0;border-radius:4px;">
+  <p style="margin:0 0 8px 0;font-weight:600;color:#92400e;">Still disconnected (${persistentCount}):</p>
+  <ul style="margin:0;padding-left:20px;">${persistentListHtml}${persistentOverflowHtml}</ul>
+</div>`;
+        }
+
+        const headerColor = hasNew ? "#dc2626" : "#d97706";
 
         await sendNotificationEmail({
           to: recipients,
-          subject: `[${params.workspaceName}] ${count} Inbox${count !== 1 ? "es" : ""} Disconnected`,
+          subject,
           html: `<div style="font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;">
-<h2 style="margin-bottom:16px;color:#dc2626;">Inbox Disconnection Alert</h2>
-<p><strong>${count} inbox${count !== 1 ? "es" : ""}</strong> disconnected for <strong>${params.workspaceName}</strong>.</p>
-<div style="background-color:#fef2f2;border-left:3px solid #dc2626;padding:12px 16px;margin:16px 0;border-radius:4px;">
-  <p style="margin:0 0 8px 0;font-weight:600;color:#991b1b;">Disconnected inboxes:</p>
-  <ul style="margin:0;padding-left:20px;">${emailListHtml}${overflowHtml}</ul>
-</div>
+<h2 style="margin-bottom:16px;color:${headerColor};">${headerText}</h2>
+<p><strong>${params.totalDisconnected} inbox${params.totalDisconnected !== 1 ? "es" : ""}</strong> disconnected for <strong>${params.workspaceName}</strong>.</p>
+${newDisconnectionsHtml}
+${persistentDisconnectionsHtml}
 <p style="color:#6b7280;">Status: ${params.totalConnected} connected / ${params.totalDisconnected} disconnected</p>
 ${params.reconnections.length > 0 ? `<p style="color:#059669;">${params.reconnections.length} inbox${params.reconnections.length !== 1 ? "es" : ""} reconnected since last check.</p>` : ""}
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:24px 0;">
