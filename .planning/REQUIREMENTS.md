@@ -95,6 +95,20 @@ Requirements for v1.1 Outbound Pipeline milestone. Each maps to roadmap phases.
 - [x] **DASH-13**: Proposal and onboarding pages support edit and delete via modal dialogs, consistent with sender management modal pattern
 - [x] **DASH-14**: Document upload triggers auto-parse — upload content (paste from PDF/Google Doc) and system extracts fields to pre-fill proposal/onboarding form for user review before saving
 
+### Smart Sender Health
+
+- [ ] **HEALTH-01**: Daily cron detects unhealthy senders — bounce rate >5% (24h window, min 10 sends), CAPTCHA, LinkedIn restriction, session expired
+- [ ] **HEALTH-02**: SenderHealthEvent audit trail records every health state change with status, reason, detail, and timestamp
+- [ ] **HEALTH-03**: Flagged sender auto-removed from campaign rotation; campaign continues running with remaining healthy senders
+- [ ] **HEALTH-04**: Pending LinkedIn actions auto-reassign to healthy sender in same workspace (least-loaded with budget check)
+- [ ] **HEALTH-05**: If workspace has only one sender and it's flagged, all active campaigns pause and urgent critical alert fires
+- [ ] **HEALTH-06**: Soft flags (bounce rate) auto-recover after 48h cooldown when rate normalizes; hard flags (CAPTCHA, restriction, session expired) require manual admin reactivation
+- [ ] **HEALTH-07**: Critical alerts (CAPTCHA, restriction, session expired, last sender down) fire Slack + email notification immediately
+- [ ] **HEALTH-08**: Warning alerts (bounce rate) batched into daily health digest — Slack only
+- [ ] **HEALTH-09**: Sender cards enhanced with expandable health history panel, sparkline trends, health event log, and summary metrics
+- [ ] **HEALTH-10**: Admin reactivate button for hard-flagged senders (blocked, session_expired) with POST /api/senders/[id]/reactivate endpoint
+- [ ] **HEALTH-11**: Dashboard sender health KPI card with healthy/total count and link to /senders page
+
 ## Future Requirements
 
 Deferred to later milestones. Tracked but not in current roadmap.
@@ -205,12 +219,23 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DASH-12 | Phase 12 | Complete |
 | DASH-13 | Phase 12 | Complete |
 | DASH-14 | Phase 12 | Complete |
+| HEALTH-01 | Phase 13 | Pending |
+| HEALTH-02 | Phase 13 | Pending |
+| HEALTH-03 | Phase 13 | Pending |
+| HEALTH-04 | Phase 13 | Pending |
+| HEALTH-05 | Phase 13 | Pending |
+| HEALTH-06 | Phase 13 | Pending |
+| HEALTH-07 | Phase 13 | Pending |
+| HEALTH-08 | Phase 13 | Pending |
+| HEALTH-09 | Phase 13 | Pending |
+| HEALTH-10 | Phase 13 | Pending |
+| HEALTH-11 | Phase 13 | Pending |
 
 **Coverage:**
-- v1.1 requirements: 62 total (37 complete, 25 pending)
-- Mapped to phases: 62
+- v1.1 requirements: 73 total (37 complete, 36 pending)
+- Mapped to phases: 73
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-27*
-*Last updated: 2026-03-02 — Added DASH-01 to DASH-14 (Dashboard & Admin UX) to Phase 12*
+*Last updated: 2026-03-02 — Added HEALTH-01 to HEALTH-11 (Smart Sender Health) to Phase 13*

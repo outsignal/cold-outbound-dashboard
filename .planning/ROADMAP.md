@@ -191,13 +191,15 @@ Plans:
 
 ### Phase 13: Smart Sender Health
 
-**Goal:** Automated sender health management. Auto-detect flagged senders (bounce rate >5%, CAPTCHA, restriction, session expired). Auto-remove flagged sender from campaign rotation (not pause whole campaign). Reassign pending LinkedIn actions to healthy senders. Slack + email notifications on health events. Sender swap workflow in admin UI. Health history tracking and trend visualization.
-**Requirements**: TBD
+**Goal:** Automated sender health management. Auto-detect flagged senders (bounce rate >5%, CAPTCHA, restriction, session expired). Auto-remove flagged sender from campaign rotation (not pause whole campaign). Reassign pending LinkedIn actions to healthy senders. Slack + email notifications on health events. Reactivate workflow for hard-flagged senders. Health history tracking and trend visualization with sparkline charts.
+**Requirements**: HEALTH-01, HEALTH-02, HEALTH-03, HEALTH-04, HEALTH-05, HEALTH-06, HEALTH-07, HEALTH-08, HEALTH-09, HEALTH-10, HEALTH-11
 **Depends on:** Phase 12
-**Plans:** 0 plans
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 13 to break down)
+- [ ] 13-01-PLAN.md — Schema (SenderHealthEvent model) + health check detection engine + cron integration
+- [ ] 13-02-PLAN.md — Health notifications (critical Slack+email, warning daily digest) + cron wiring
+- [ ] 13-03-PLAN.md — Sender card UI enhancement (health panel, sparkline, reactivate) + dashboard KPI card
 
 ### Phase 14: LinkedIn Cookie Chrome Extension
 
