@@ -164,7 +164,10 @@ function ProspectCard({
     : null;
 
   return (
-    <div className="group rounded-lg border border-border/50 bg-card p-3 transition-all hover:border-border hover:shadow-sm">
+    <div
+      className="group rounded-lg border border-border/50 bg-card p-3 transition-all hover:border-border hover:shadow-sm cursor-pointer"
+      onClick={onEdit}
+    >
       {/* Top row: company name + action menu */}
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="min-w-0 flex-1">
@@ -172,6 +175,7 @@ function ProspectCard({
             <a
               href={`/clients/${prospect.id}`}
               className="text-sm font-semibold leading-tight hover:underline text-foreground block truncate"
+              onClick={(e) => e.stopPropagation()}
             >
               {prospect.name}
             </a>
@@ -188,6 +192,7 @@ function ProspectCard({
               variant="ghost"
               size="sm"
               className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+              onClick={(e) => e.stopPropagation()}
             >
               <MoreHorizontal className="h-3.5 w-3.5" />
             </Button>
@@ -232,6 +237,7 @@ function ProspectCard({
               target="_blank"
               rel="noopener noreferrer"
               className="truncate hover:underline hover:text-foreground"
+              onClick={(e) => e.stopPropagation()}
             >
               {domain}
             </a>
@@ -240,7 +246,8 @@ function ProspectCard({
       </div>
 
       {/* Bottom row: status badge + time */}
-      <div className="flex items-center justify-between gap-2">
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
+      <div className="flex items-center justify-between gap-2" onClick={(e) => e.stopPropagation()}>
         <StatusBadge status={prospect.pipelineStatus} onStatusChange={onStatusChange} />
         <span className="flex items-center gap-1 text-[10px] text-muted-foreground/70 shrink-0">
           <Clock className="h-2.5 w-2.5" />
