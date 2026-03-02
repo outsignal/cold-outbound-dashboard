@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-02-27)
 
 ## Current Position
 
-Phase: 11 of 11 (LinkedIn Voyager API Client — Plan 03 COMPLETE: Worker Voyager integration)
-Plan: 3 of 3 in current phase (11-01 done: VoyagerClient, 11-02 done: cookie bridge + endpoints, 11-03 done: worker integration)
-Status: Phase 11 COMPLETE. All 3 plans done. LinkedIn action execution now via VoyagerClient HTTP (not browser automation).
-Last activity: 2026-03-02 — Executed Plan 03: worker.ts uses VoyagerClient for all action execution, LinkedInBrowser demoted to cookie capture only, getOrCreateVoyagerClient/loginAndExtractCookies/executeAction(senderId) implemented.
+Phase: 12 of 12 (Dashboard & Admin UX — Plan 04 COMPLETE: Agent Run Monitoring)
+Plan: 4 of 7 in current phase (12-01 done: dashboard home, 12-02 done: person detail, 12-03 done: webhook log, 12-04 done: agent run monitoring)
+Status: Phase 12 in progress. Plan 4/7 complete. /agent-runs page live with compact table, expandable details, filters, auto-refresh.
+Last activity: 2026-03-02 — Executed Plan 04: GET /api/agent-runs endpoint, AgentRunTable component (Datadog-style density, accordion rows), /agent-runs page with nuqs filters and auto-refresh for running jobs.
 
 Progress: [████░░░░░░] 40% (v1.1 — Phase 8 complete)
 
@@ -122,6 +122,9 @@ v1.0 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 11-02]: Health endpoint validates against explicit allowlist: healthy/warning/paused/blocked/session_expired
 - [Phase 11-03]: executeAction receives senderId as third param — cleanest approach for activeClients.delete() and updateSenderHealth() without reverse-lookup on the map
 - [Phase 11-03]: loginAndExtractCookies wraps browser in try/finally with browser.close() — ensures cleanup even on error; LinkedInBrowser used only here
+- [Phase 12-04]: AgentRunTable uses single expandedId state — only one row open at a time; clicking active row closes it (toggle pattern)
+- [Phase 12-04]: Auto-refresh (30s) only activates when data includes a run with status=running — no unnecessary polling on idle views
+- [Phase 12-04]: Workspace filter options populated from first-page API fetch — no separate workspace list endpoint needed
 
 ### Blockers/Concerns
 
@@ -133,5 +136,5 @@ v1.0 decisions archived in PROJECT.md Key Decisions table.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 11-03-PLAN.md (Worker Voyager Integration). worker.ts fully swapped to VoyagerClient HTTP execution. Phase 11 complete: all 3/3 plans done.
+Stopped at: Completed 12-04-PLAN.md (Agent Run Monitoring). /agent-runs page with compact table, expandable accordion rows, filters (nuqs), and auto-refresh for running jobs. Phase 12: 4/7 plans done.
 Resume file: None
