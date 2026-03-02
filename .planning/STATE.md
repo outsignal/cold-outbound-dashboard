@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Outbound Pipeline
 status: unknown
-last_updated: "2026-03-02T21:45:14.141Z"
+last_updated: "2026-03-02T22:28:30Z"
 progress:
   total_phases: 9
   completed_phases: 6
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-02-27)
 
 ## Current Position
 
-Phase: 13 of 13 (Smart Sender Health — Plan 01 COMPLETE: SenderHealthEvent schema + runSenderHealthCheck() detection engine)
-Plan: 1 of 3 in current phase (13-01 done: schema + detection engine)
-Status: Phase 13 — 1/3 plans done. SenderHealthEvent model added, bounce rate/CAPTCHA/restriction/session expiry detection implemented, cron integrated.
-Last activity: 2026-03-02 — Executed Plan 01: SenderHealthEvent model added to DB via prisma db push; runSenderHealthCheck() detects 4 health signals with auto-recovery and action reassignment; integrated into inbox-health cron.
+Phase: 13 of 13 (Smart Sender Health — Plan 02 COMPLETE: Sender health notifications + daily digest wired into cron)
+Plan: 2 of 3 in current phase (13-02 done: notifySenderHealth + sendSenderHealthDigest + cron wiring)
+Status: Phase 13 — 2/3 plans done. Critical alerts fire Slack + email immediately; warning-level bounces batched into daily Slack digest.
+Last activity: 2026-03-02 — Executed Plan 02: notifySenderHealth() and sendSenderHealthDigest() added to notifications.ts; cron pipeline wired to fire critical alerts immediately and collect warnings for daily digest.
 
 Progress: [████░░░░░░] 40% (v1.1 — Phase 8 complete)
 
@@ -142,6 +142,10 @@ v1.0 decisions archived in PROJECT.md Key Decisions table.
 - [13-01]: Case-insensitive email matching for senderEmail <-> Sender.emailAddress using .toLowerCase() on both sides
 - [13-01]: Least-loaded reassignment scoring: pendingCount - remainingBudget (lower score = better target sender)
 - [13-01]: prisma.$transaction for atomic workspace campaign pause when last healthy sender goes down
+- [13-02]: notifySenderHealth() uses workspace.slackChannelId (client channel) for alerts — ops channel gets coverage via notify() DB+Slack call
+- [13-02]: Email only for critical severity — warning-level bounce rate alerts are low urgency, Slack digest sufficient per CONTEXT.md
+- [13-02]: sendSenderHealthDigest() groups by workspaceSlug — one Slack message per workspace regardless of how many senders have warnings
+- [13-02]: verifySlackChannel guard uses return (exit function) in notifySenderHealth and continue (skip workspace) in sendSenderHealthDigest loop
 
 ### Blockers/Concerns
 
@@ -153,5 +157,5 @@ v1.0 decisions archived in PROJECT.md Key Decisions table.
 ## Session Continuity
 
 Last session: 2026-03-02
-Stopped at: Completed 13-01-PLAN.md (SenderHealthEvent schema added to DB; runSenderHealthCheck() detection engine implemented with bounce rate, CAPTCHA, restriction, session expiry detection, auto-recovery, and cron integration).
+Stopped at: Completed 13-02-PLAN.md (notifySenderHealth + sendSenderHealthDigest added to notifications.ts; cron pipeline wired for immediate critical Slack+email alerts and daily warning digest).
 Resume file: None

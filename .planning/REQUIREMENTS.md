@@ -100,11 +100,11 @@ Requirements for v1.1 Outbound Pipeline milestone. Each maps to roadmap phases.
 - [x] **HEALTH-01**: Daily cron detects unhealthy senders — bounce rate >5% (24h window, min 10 sends), CAPTCHA, LinkedIn restriction, session expired
 - [x] **HEALTH-02**: SenderHealthEvent audit trail records every health state change with status, reason, detail, and timestamp
 - [x] **HEALTH-03**: Flagged sender auto-removed from campaign rotation; campaign continues running with remaining healthy senders
-- [ ] **HEALTH-04**: Pending LinkedIn actions auto-reassign to healthy sender in same workspace (least-loaded with budget check)
+- [x] **HEALTH-04**: Pending LinkedIn actions auto-reassign to healthy sender in same workspace (least-loaded with budget check)
 - [x] **HEALTH-05**: If workspace has only one sender and it's flagged, all active campaigns pause and urgent critical alert fires
 - [x] **HEALTH-06**: Soft flags (bounce rate) auto-recover after 48h cooldown when rate normalizes; hard flags (CAPTCHA, restriction, session expired) require manual admin reactivation
-- [ ] **HEALTH-07**: Critical alerts (CAPTCHA, restriction, session expired, last sender down) fire Slack + email notification immediately
-- [ ] **HEALTH-08**: Warning alerts (bounce rate) batched into daily health digest — Slack only
+- [x] **HEALTH-07**: Critical alerts (CAPTCHA, restriction, session expired, last sender down) fire Slack + email notification immediately
+- [x] **HEALTH-08**: Warning alerts (bounce rate) batched into daily health digest — Slack only
 - [ ] **HEALTH-09**: Sender cards enhanced with expandable health history panel, sparkline trends, health event log, and summary metrics
 - [ ] **HEALTH-10**: Admin reactivate button for hard-flagged senders (blocked, session_expired) with POST /api/senders/[id]/reactivate endpoint
 - [ ] **HEALTH-11**: Dashboard sender health KPI card with healthy/total count and link to /senders page
@@ -222,11 +222,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HEALTH-01 | Phase 13 | Complete |
 | HEALTH-02 | Phase 13 | Complete |
 | HEALTH-03 | Phase 13 | Complete |
-| HEALTH-04 | Phase 13 | Pending |
+| HEALTH-04 | Phase 13 | Complete |
 | HEALTH-05 | Phase 13 | Complete |
 | HEALTH-06 | Phase 13 | Complete |
-| HEALTH-07 | Phase 13 | Pending |
-| HEALTH-08 | Phase 13 | Pending |
+| HEALTH-07 | Phase 13 | Complete |
+| HEALTH-08 | Phase 13 | Complete |
 | HEALTH-09 | Phase 13 | Pending |
 | HEALTH-10 | Phase 13 | Pending |
 | HEALTH-11 | Phase 13 | Pending |
