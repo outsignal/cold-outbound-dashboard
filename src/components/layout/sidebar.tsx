@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -19,10 +19,17 @@ import {
   Briefcase,
   Target,
   Bell,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { OutsignalLogo } from "@/components/brand/outsignal-logo";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 
 interface WorkspaceItem {
   slug: string;
@@ -35,6 +42,8 @@ interface WorkspaceItem {
 interface SidebarProps {
   workspaces: WorkspaceItem[];
 }
+
+const STORAGE_KEY = "sidebar-collapsed";
 
 const mainNav = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -52,14 +61,35 @@ const mainNav = [
 export function Sidebar({ workspaces }: SidebarProps) {
   const pathname = usePathname();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [collapsed, setCollapsed] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Hydrate collapsed state from localStorage after mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored === "true") setCollapsed(true);
+    } catch {}
+    setMounted(true);
+  }, []);
+
+  const toggleCollapsed = useCallback(() => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(STORAGE_KEY, String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
-    let mounted = true;
+    let active = true;
     async function fetchUnread() {
       try {
         const res = await fetch("/api/notifications?page=1");
         const json = await res.json();
-        if (mounted) {
+        if (active) {
           setUnreadCount(
             json.notifications?.filter((n: { read: boolean }) => !n.read).length ?? 0,
           );
@@ -68,55 +98,135 @@ export function Sidebar({ workspaces }: SidebarProps) {
     }
     fetchUnread();
     const interval = setInterval(fetchUnread, 60_000);
-    return () => { mounted = false; clearInterval(interval); };
+    return () => { active = false; clearInterval(interval); };
   }, []);
 
+  // Prevent layout shift: render expanded width until client hydration completes
+  const isCollapsed = mounted ? collapsed : false;
+
   return (
-    <aside className="flex h-screen w-64 flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
-      <div className="flex h-14 items-center px-6 border-b border-sidebar-border/50 text-white">
-        <OutsignalLogo className="h-7 w-auto" />
+    <aside
+      className={cn(
+        "flex h-screen flex-col bg-sidebar text-sidebar-foreground border-r border-sidebar-border transition-all duration-200",
+        isCollapsed ? "w-16" : "w-64",
+      )}
+    >
+      {/* Logo header */}
+      <div
+        className={cn(
+          "flex h-14 items-center border-b border-sidebar-border/50 text-white",
+          isCollapsed ? "justify-center px-2" : "px-6",
+        )}
+      >
+        {isCollapsed ? (
+          <OutsignalLogo variant="mark" className="h-7 w-7" />
+        ) : (
+          <OutsignalLogo className="h-7 w-auto" />
+        )}
       </div>
 
-      <ScrollArea className="flex-1 px-3 py-4">
+      {/* Scrollable nav */}
+      <ScrollArea className={cn("flex-1 py-4", isCollapsed ? "px-1.5" : "px-3")}>
         <nav className="space-y-1">
           {mainNav.map((item) => {
             const isActive =
-            item.href === "/"
-              ? pathname === "/"
-              : pathname === item.href || pathname.startsWith(item.href + "/");
-            return (
+              item.href === "/"
+                ? pathname === "/"
+                : pathname === item.href || pathname.startsWith(item.href + "/");
+
+            const linkContent = (
               <Link
-                key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors duration-150",
+                  "flex items-center rounded-lg text-sm transition-colors duration-150",
+                  isCollapsed ? "justify-center px-2 py-2" : "gap-3 px-3 py-2",
                   isActive
                     ? "bg-sidebar-accent text-sidebar-accent-foreground border-l-2 border-brand"
                     : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground border-l-2 border-transparent",
                 )}
               >
-                <item.icon className="h-4 w-4" />
-                {item.label}
+                <item.icon className="h-4 w-4 shrink-0" />
+                {!isCollapsed && <>{item.label}</>}
                 {item.href === "/notifications" && unreadCount > 0 && (
-                  <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
+                  <span
+                    className={cn(
+                      "flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white",
+                      isCollapsed ? "absolute -top-1 -right-1" : "ml-auto",
+                    )}
+                  >
                     {unreadCount > 99 ? "99+" : unreadCount}
                   </span>
                 )}
               </Link>
             );
+
+            if (isCollapsed) {
+              return (
+                <Tooltip key={item.href}>
+                  <TooltipTrigger asChild>
+                    <div className="relative">
+                      {linkContent}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" sideOffset={8}>
+                    {item.label}
+                    {item.href === "/notifications" && unreadCount > 0 && (
+                      <span className="ml-1.5 text-red-400">({unreadCount})</span>
+                    )}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            }
+
+            return (
+              <div key={item.href}>
+                {linkContent}
+              </div>
+            );
           })}
         </nav>
 
+        {/* Workspaces section */}
         <div className="mt-6">
-          <div className="h-px bg-sidebar-border mx-3 mb-4" />
-          <p className="px-3 text-xs font-medium text-sidebar-foreground/50 uppercase tracking-wider mb-2">
-            Workspaces
-          </p>
+          <div className={cn("h-px bg-sidebar-border mb-4", isCollapsed ? "mx-1" : "mx-3")} />
+          {!isCollapsed && (
+            <p className="px-3 text-xs font-medium text-sidebar-foreground/50 uppercase tracking-wider mb-2">
+              Workspaces
+            </p>
+          )}
           <nav className="space-y-1">
             {workspaces.map((ws) => {
               const wsPath = `/workspace/${ws.slug}`;
               const isActive = pathname.startsWith(wsPath);
               const isPending = !ws.hasApiToken;
+
+              if (isCollapsed) {
+                return (
+                  <Tooltip key={ws.slug}>
+                    <TooltipTrigger asChild>
+                      <Link
+                        href={wsPath}
+                        className={cn(
+                          "flex items-center justify-center rounded-lg px-2 py-2 transition-colors",
+                          isActive
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
+                          isPending && "opacity-70",
+                        )}
+                      >
+                        <Mail className="h-4 w-4 shrink-0" />
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" sideOffset={8}>
+                      {ws.name}
+                      {isPending && (
+                        <span className="ml-1.5 text-yellow-300">(Setup)</span>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              }
+
               return (
                 <div key={ws.slug}>
                   <Link
@@ -210,6 +320,35 @@ export function Sidebar({ workspaces }: SidebarProps) {
           </nav>
         </div>
       </ScrollArea>
+
+      {/* Collapse/expand toggle footer */}
+      <div className="border-t border-sidebar-border/50 p-2">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={toggleCollapsed}
+              className={cn(
+                "flex w-full items-center rounded-lg py-2 text-sm text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors duration-150",
+                isCollapsed ? "justify-center px-2" : "gap-3 px-3",
+              )}
+            >
+              {isCollapsed ? (
+                <PanelLeftOpen className="h-4 w-4 shrink-0" />
+              ) : (
+                <>
+                  <PanelLeftClose className="h-4 w-4 shrink-0" />
+                  <span>Collapse</span>
+                </>
+              )}
+            </button>
+          </TooltipTrigger>
+          {isCollapsed && (
+            <TooltipContent side="right" sideOffset={8}>
+              Expand sidebar
+            </TooltipContent>
+          )}
+        </Tooltip>
+      </div>
     </aside>
   );
 }
