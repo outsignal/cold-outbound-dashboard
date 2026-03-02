@@ -189,6 +189,38 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Handle BOUNCE — mark person as bounced
+    if (eventType === "BOUNCE" && leadEmail) {
+      await prisma.person.updateMany({
+        where: { email: leadEmail },
+        data: { status: "bounced" },
+      });
+
+      notify({
+        type: "system",
+        severity: "warning",
+        title: `Email bounced: ${leadEmail}`,
+        workspaceSlug,
+        metadata: { event: "BOUNCE", leadEmail, senderEmail: data.sender_email },
+      }).catch(() => {});
+    }
+
+    // Handle UNSUBSCRIBED — mark person as unsubscribed
+    if (eventType === "UNSUBSCRIBED" && leadEmail) {
+      await prisma.person.updateMany({
+        where: { email: leadEmail },
+        data: { status: "unsubscribed" },
+      });
+
+      notify({
+        type: "system",
+        severity: "info",
+        title: `Lead unsubscribed: ${leadEmail}`,
+        workspaceSlug,
+        metadata: { event: "UNSUBSCRIBED", leadEmail },
+      }).catch(() => {});
+    }
+
     return NextResponse.json({ received: true });
   } catch (error) {
     console.error("Webhook processing error:", error);
