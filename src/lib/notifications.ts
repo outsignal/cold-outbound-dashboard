@@ -327,11 +327,13 @@ export async function notifyInboxDisconnect(params: {
     ? "Inbox Disconnection Alert"
     : "Inbox Still Disconnected";
 
-  // --- Email only (Slack goes via ops channel in notify()) ---
-  if (workspace.notificationEmails && (hasNew || hasPersistent)) {
+  // --- Email to admin only (Slack goes via ops channel in notify()) ---
+  // Use ADMIN_EMAIL env var — workspace.notificationEmails are client emails
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (adminEmail && (hasNew || hasPersistent)) {
     try {
-      const recipients: string[] = JSON.parse(workspace.notificationEmails);
-      if (recipients.length > 0) {
+      const recipients = [adminEmail];
+      {
         // Build subject line
         const subjectParts: string[] = [];
         if (hasNew)
