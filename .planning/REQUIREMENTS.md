@@ -86,7 +86,7 @@ Requirements for v1.1 Outbound Pipeline milestone. Each maps to roadmap phases.
 - [ ] **DASH-04**: Critical alerts section below KPIs shows flagged senders, failed agent runs, and disconnected inboxes — no activity feed noise
 - [ ] **DASH-05**: Person detail page at /people/[id] with tabbed layout — header with name/email/company/title, overview timeline, email history, LinkedIn activity, enrichment data, and workspaces tabs
 - [ ] **DASH-06**: Person overview tab shows unified chronological timeline with color-coded icons per event type (emails, LinkedIn actions, enrichment) — view-only, no inline actions
-- [ ] **DASH-07**: Agent run monitoring page with compact Datadog-style table — summary rows expand into inline accordion showing full run details (input, output, steps, errors), filterable by agent type/status/workspace
+- [x] **DASH-07**: Agent run monitoring page with compact Datadog-style table — summary rows expand into inline accordion showing full run details (input, output, steps, errors), filterable by agent type/status/workspace
 - [ ] **DASH-08**: LinkedIn action queue viewer with queue status focus — pending/scheduled/completed/failed counts, next actions, sender assignment, execution timing, filterable by status/action type/workspace/sender
 - [ ] **DASH-09**: LinkedIn sender management page with card grid layout — each sender card shows name, email, proxy URL, daily limits, status badge (active/paused/flagged), with pause/delete actions accessible from the card
 - [ ] **DASH-10**: Sender add/edit via modal dialog form — all sender fields (name, email, proxy URL, daily limits, LinkedIn profile URL, tier), consistent with proposal management pattern
@@ -197,7 +197,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DASH-04 | Phase 12 | Pending |
 | DASH-05 | Phase 12 | Pending |
 | DASH-06 | Phase 12 | Pending |
-| DASH-07 | Phase 12 | Pending |
+| DASH-07 | Phase 12 | Complete |
 | DASH-08 | Phase 12 | Pending |
 | DASH-09 | Phase 12 | Pending |
 | DASH-10 | Phase 12 | Pending |
