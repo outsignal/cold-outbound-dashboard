@@ -106,6 +106,16 @@ None - no external service configuration required.
 - The full auto-deploy pipeline is operational end-to-end: portal approval -> status=approved -> admin sees Deploy button -> confirmation modal -> fire-and-forget deploy -> deploy history visible on campaign detail page
 - Phase 12 (Dashboard & Admin UX) may want to add campaign list page linking to /campaigns/[id]
 
+## Self-Check: PASSED
+
+- FOUND: src/app/(admin)/campaigns/[id]/DeployButton.tsx
+- FOUND: src/app/(admin)/campaigns/[id]/DeployHistory.tsx
+- FOUND: src/app/(admin)/campaigns/[id]/page.tsx
+- FOUND: .planning/phases/10-auto-deploy-on-approval/10-05-SUMMARY.md
+- FOUND commit 83a60bc (Task 1: DeployButton with confirmation modal)
+- FOUND commit 9d272a1 (Task 2: DeployHistory and campaign detail page)
+- TypeScript: npx tsc --noEmit passes with zero errors
+
 ---
 *Phase: 10-auto-deploy-on-approval*
 *Completed: 2026-03-03*
