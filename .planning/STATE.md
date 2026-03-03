@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Outbound Pipeline
 status: unknown
-last_updated: "2026-03-03T10:49:00Z"
+last_updated: "2026-03-03T12:03:52.797Z"
 progress:
-  total_phases: 9
-  completed_phases: 7
-  total_plans: 32
-  completed_plans: 33
+  total_phases: 11
+  completed_phases: 8
+  total_plans: 40
+  completed_plans: 40
 ---
 
 # Project State
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-02-27)
 
 ## Current Position
 
-Phase: 14 of 14 (LinkedIn Cookie Chrome Extension — Plan 01 COMPLETE: extension auth library + 7 API endpoints)
-Plan: 1 of ? in current phase (14-01 done: extension-auth.ts HMAC-SHA256 Bearer tokens; 7 extension API routes: login, select-sender, status, senders, cookies, expiry)
-Status: Phase 14 — Plan 01 done. Extension API surface complete and type-safe.
-Last activity: 2026-03-03 — Executed Plan 01: Extension auth library (HMAC-SHA256 Bearer tokens scoped to workspace+sender); 7 extension API endpoints (login with two-token flow, sender selection, status polling, cookie save with AES-256-GCM encryption, session expiry reporting to Phase 13 health system).
+Phase: 14 of 14 (LinkedIn Cookie Chrome Extension — Plan 02 COMPLETE: Chrome extension popup UI with Manifest V3)
+Plan: 2 of ? in current phase (14-01 done: extension-auth.ts + 7 API endpoints; 14-02 done: popup.html/js/css + icons)
+Status: Phase 14 — Plan 02 done. Extension popup complete with login, sender picker, LinkedIn connect, status display.
+Last activity: 2026-03-03 — Executed Plan 02: Chrome extension Manifest V3 (manifest.json, 4 PNG icons), popup UI (login form, sender picker, status/connect view), vanilla JS popup logic (chrome.cookies.getAll, chrome.storage.local, all API flows), Outsignal-branded dark CSS with #F0FF7A accent.
 
 Progress: [████░░░░░░] 40% (v1.1 — Phase 8 complete)
 
@@ -178,6 +178,16 @@ v1.0 decisions archived in PROJECT.md Key Decisions table.
 - [14-01]: Cookie save sets healthStatus=healthy inline on reconnect — clears any prior session_expired flag automatically without a separate reactivation call
 - [14-01]: expiry endpoint uses prisma.$transaction — ensures sender status update and SenderHealthEvent creation are always atomic
 - [14-01]: li_at warning returned in response but cookies still saved — non-fatal, all captured cookies stored regardless
+- [Phase 14-linkedin-cookie-chrome-extension]: CHECK_INTERVAL_MINUTES constant (240) used in alarm creation — readable intent, easy to adjust
+
+**Phase 14-02 decisions (2026-03-03):**
+- [14-02]: Icons generated via pure Node.js zlib/Buffer PNG construction — no image library dependency; solid #F0FF7A squares are valid PNGs for Chrome extension loading
+- [14-02]: Three-view popup managed by classList hide/show — no framework overhead for a 3-state UI
+- [14-02]: Token validation on every popup open — DOMContentLoaded always calls GET /api/extension/status if token exists, ensuring stale tokens are caught immediately
+- [14-02]: 401 auto-logout — when status endpoint returns 401, storage is cleared and login view shown automatically
+- [Phase 14-linkedin-cookie-chrome-extension]: Extension expiry API call is non-fatal — badge and notification fire regardless of network failure
+- [Phase 10-auto-deploy-on-approval]: [10-03]: Deploy route uses next/server after() for fire-and-forget — response returns immediately, executeDeploy runs in background post-response
+- [Phase 10-auto-deploy-on-approval]: [10-03]: EMAIL_SENT sequence rule evaluation skips campaigns without LinkedIn channel — avoids unnecessary DB queries for email-only campaigns
 
 ### Blockers/Concerns
 
@@ -189,5 +199,5 @@ v1.0 decisions archived in PROJECT.md Key Decisions table.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 10-04-PLAN.md (notifyDeploy Slack+email notification wired into executeDeploy; /api/cron/session-refresh daily cron flagging stale LinkedIn sessions older than 6 days; vercel.json now has 3 cron entries).
+Stopped at: Completed 14-02-PLAN.md (Chrome extension popup UI: manifest.json MV3, 4 PNG icons in brand color, popup.html/js/css with login, sender picker, LinkedIn connect via chrome.cookies.getAll, status display).
 Resume file: None

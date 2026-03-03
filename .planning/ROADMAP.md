@@ -141,7 +141,7 @@ Plans:
 | 11. LinkedIn Voyager API Client | — | 3/3 | Code complete | 2026-03-02 |
 | 12. Dashboard & Admin UX | 8/8 | Complete    | 2026-03-02 | - |
 | 13. Smart Sender Health | 3/3 | Complete    | 2026-03-02 | - |
-| 14. LinkedIn Cookie Chrome Extension | 1/3 | In Progress|  | - |
+| 14. LinkedIn Cookie Chrome Extension | 3/3 | Complete   | 2026-03-03 | - |
 
 ### Phase 11: LinkedIn Voyager API Client
 **Goal**: Replace browser automation (LinkedInBrowser) with direct HTTP calls to LinkedIn's Voyager API (VoyagerClient) for all LinkedIn actions (connect, message, profile_view, check_connection), reducing detection risk and improving reliability. Keep agent-browser for initial cookie capture only.
@@ -206,7 +206,7 @@ Plans:
 **Goal:** Ship a lightweight Chrome extension that lets clients (and admins) connect their LinkedIn account to Outsignal with one click — no DevTools required. Extension reads `li_at` + `JSESSIONID` cookies from linkedin.com, POSTs them to the sender session API, and confirms success. Includes auto-detection of cookie expiry (periodic check) with a badge notification prompting re-auth. Pairs with Phase 12's LinkedIn sender management page.
 **Requirements**: TBD
 **Depends on:** Phase 12 (sender management UI exists for pairing)
-**Plans:** 1/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 14 to break down)
+- [x] TBD (run /gsd:plan-phase 14 to break down) (completed 2026-03-03)
