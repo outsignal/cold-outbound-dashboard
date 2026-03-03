@@ -461,6 +461,275 @@ ${params.suggestedResponse ? `              <!-- Suggested response section -->
   }
 }
 
+export async function notifyDeploy(params: {
+  workspaceSlug: string;
+  campaignName: string;
+  campaignId: string;
+  status: "complete" | "partial_failure" | "failed";
+  leadCount: number;
+  emailStepCount: number;
+  linkedinStepCount: number;
+  emailStatus: string | null;
+  linkedinStatus: string | null;
+  error: string | null;
+}): Promise<void> {
+  const workspace = await prisma.workspace.findUnique({
+    where: { slug: params.workspaceSlug },
+  });
+
+  if (!workspace) return;
+
+  const adminBaseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://admin.outsignal.ai";
+  const campaignUrl = `${adminBaseUrl}/workspace/${params.workspaceSlug}/campaigns/${params.campaignId}`;
+
+  const statusLabel =
+    params.status === "complete"
+      ? "Complete"
+      : params.status === "partial_failure"
+        ? "Partial Failure"
+        : "Failed";
+
+  const statusEmoji =
+    params.status === "complete"
+      ? ":white_check_mark:"
+      : params.status === "partial_failure"
+        ? ":warning:"
+        : ":x:";
+
+  const headerText = `[${workspace.name}] Campaign Deploy ${statusLabel}`;
+
+  // ---------- Slack ----------
+
+  const slackChannelId =
+    workspace.approvalsSlackChannelId ?? workspace.slackChannelId;
+
+  if (slackChannelId) {
+    if (!verifySlackChannel(slackChannelId, "client", "notifyDeploy")) return;
+    try {
+      const blocks: KnownBlock[] = [
+        {
+          type: "header",
+          text: { type: "plain_text", text: headerText },
+        },
+        {
+          type: "section",
+          text: { type: "mrkdwn", text: `*Campaign:* ${params.campaignName}` },
+        },
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: `*Status:* ${statusEmoji} ${statusLabel}`,
+          },
+        },
+        {
+          type: "section",
+          text: { type: "mrkdwn", text: `*Leads:* ${params.leadCount} pushed` },
+        },
+        ...(params.emailStatus && params.emailStatus !== "skipped"
+          ? [
+              {
+                type: "section" as const,
+                text: {
+                  type: "mrkdwn" as const,
+                  text: `*Email:* ${params.emailStepCount} steps \u2014 ${params.emailStatus}`,
+                },
+              },
+            ]
+          : []),
+        ...(params.linkedinStatus && params.linkedinStatus !== "skipped"
+          ? [
+              {
+                type: "section" as const,
+                text: {
+                  type: "mrkdwn" as const,
+                  text: `*LinkedIn:* ${params.linkedinStepCount} steps \u2014 ${params.linkedinStatus}`,
+                },
+              },
+            ]
+          : []),
+        ...(params.error
+          ? [
+              {
+                type: "section" as const,
+                text: {
+                  type: "mrkdwn" as const,
+                  text: `*Error:* ${params.error}`,
+                },
+              },
+            ]
+          : []),
+        {
+          type: "actions",
+          elements: [
+            {
+              type: "button",
+              text: { type: "plain_text", text: "View Campaign" },
+              url: campaignUrl,
+            },
+          ],
+        },
+      ];
+
+      await postMessage(slackChannelId, headerText, blocks);
+    } catch (err) {
+      console.error("Slack deploy notification failed:", err);
+    }
+  }
+
+  // ---------- Email ----------
+
+  if (workspace.notificationEmails) {
+    try {
+      const recipients: string[] = JSON.parse(workspace.notificationEmails);
+      const verified = verifyEmailRecipients(recipients, "client", "notifyDeploy");
+      if (verified.length > 0) {
+        const subject = `[${workspace.name}] Deploy ${statusLabel}: ${params.campaignName}`;
+
+        // Status pill colors
+        const pillColor =
+          params.status === "complete"
+            ? "#065f46"
+            : params.status === "partial_failure"
+              ? "#92400e"
+              : "#991b1b";
+        const pillBg =
+          params.status === "complete"
+            ? "#d1fae5"
+            : params.status === "partial_failure"
+              ? "#fffbeb"
+              : "#fef2f2";
+
+        const emailChannelRow =
+          params.emailStatus && params.emailStatus !== "skipped"
+            ? `<tr>
+                      <td style="padding:10px 18px 0 18px;">
+                        <p style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;color:#a1a1aa;margin:0 0 4px 0;text-transform:uppercase;">Email</p>
+                        <p style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#18181b;margin:0;">${params.emailStepCount} steps &mdash; ${params.emailStatus}</p>
+                      </td>
+                    </tr>`
+            : "";
+
+        const linkedinChannelRow =
+          params.linkedinStatus && params.linkedinStatus !== "skipped"
+            ? `<tr>
+                      <td style="padding:10px 18px 0 18px;">
+                        <p style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;color:#a1a1aa;margin:0 0 4px 0;text-transform:uppercase;">LinkedIn</p>
+                        <p style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#18181b;margin:0;">${params.linkedinStepCount} steps &mdash; ${params.linkedinStatus}</p>
+                      </td>
+                    </tr>`
+            : "";
+
+        const errorSection = params.error
+          ? `              <!-- Error section -->
+              <tr>
+                <td style="padding-bottom:24px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">
+                    <tr>
+                      <td style="border-top:1px solid #e4e4e7;padding-top:20px;">
+                        <p style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;color:#a1a1aa;margin:0 0 10px 0;text-transform:uppercase;">Error</p>
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                          <tr>
+                            <td style="background-color:#fffbeb;border-left:3px solid #f59e0b;padding:14px 18px;border-radius:0 6px 6px 0;">
+                              <p style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.6;white-space:pre-wrap;margin:0;color:#92400e;">${params.error}</p>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>`
+          : "";
+
+        await sendNotificationEmail({
+          to: verified,
+          subject,
+          html: `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f4f4f5;margin:0;padding:0;">
+  <tr>
+    <td align="center" style="padding:40px 16px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:100%;">
+        <!-- Header -->
+        <tr>
+          <td style="background-color:#18181b;padding:20px 32px;border-radius:8px 8px 0 0;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;letter-spacing:3px;color:#F0FF7A;">OUTSIGNAL</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <!-- Body -->
+        <tr>
+          <td style="background-color:#ffffff;padding:32px 32px 24px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#18181b;padding-bottom:8px;line-height:1.3;">${headerText}</td>
+              </tr>
+              <tr>
+                <td style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#71717a;padding-bottom:24px;line-height:1.5;">${params.campaignName}</td>
+              </tr>
+              <!-- Status pill -->
+              <tr>
+                <td style="padding-bottom:24px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:600;color:${pillColor};background-color:${pillBg};padding:6px 14px;border-radius:100px;">${statusLabel}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <!-- Stats card -->
+              <tr>
+                <td style="padding-bottom:24px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#fafafa;border-radius:8px;border:1px solid #e4e4e7;">
+                    <tr>
+                      <td style="padding:14px 18px 0 18px;">
+                        <p style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;color:#a1a1aa;margin:0 0 4px 0;text-transform:uppercase;">Leads</p>
+                        <p style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#18181b;margin:0;font-weight:600;">${params.leadCount} pushed</p>
+                      </td>
+                    </tr>
+                    ${emailChannelRow}
+                    ${linkedinChannelRow}
+                    <tr><td style="padding-bottom:14px;"></td></tr>
+                  </table>
+                </td>
+              </tr>
+${errorSection}
+              <!-- CTA button -->
+              <tr>
+                <td style="padding-top:8px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="background-color:#F0FF7A;border-radius:8px;">
+                        <a href="${campaignUrl}" target="_blank" style="display:inline-block;padding:14px 32px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;color:#18181b;text-decoration:none;">View Campaign</a>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+          <td style="background-color:#fafafa;padding:20px 32px;border-top:1px solid #e4e4e7;border-radius:0 0 8px 8px;">
+            <p style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#a1a1aa;margin:0;line-height:1.5;">Outsignal &mdash; Sent to ${workspace.name} notification recipients.<br/>You received this because you are subscribed to campaign updates.</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`,
+        });
+      }
+    } catch (err) {
+      console.error("Email deploy notification failed:", err);
+    }
+  }
+}
+
 export async function notifyInboxDisconnect(params: {
   workspaceSlug: string;
   workspaceName: string;

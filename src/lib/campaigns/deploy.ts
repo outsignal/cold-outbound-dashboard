@@ -16,6 +16,7 @@ import { EmailBisonClient } from "@/lib/emailbison/client";
 import { enqueueAction } from "@/lib/linkedin/queue";
 import { assignSenderForPerson } from "@/lib/linkedin/sender";
 import { getCampaign } from "@/lib/campaigns/operations";
+import { notifyDeploy } from "@/lib/notifications";
 import type { LinkedInActionType } from "@/lib/linkedin/types";
 
 // ---------------------------------------------------------------------------
@@ -439,6 +440,23 @@ export async function executeDeploy(
 
     // 6. Finalize
     await finalizeDeployStatus(deployId, channels);
+
+    // 7. Send deploy completion notification (non-blocking)
+    const finalDeploy = await prisma.campaignDeploy.findUnique({ where: { id: deployId } });
+    if (finalDeploy) {
+      await notifyDeploy({
+        workspaceSlug: campaign.workspaceSlug,
+        campaignName: campaign.name,
+        campaignId,
+        status: finalDeploy.status as "complete" | "partial_failure" | "failed",
+        leadCount: finalDeploy.leadCount,
+        emailStepCount: finalDeploy.emailStepCount,
+        linkedinStepCount: finalDeploy.linkedinStepCount,
+        emailStatus: finalDeploy.emailStatus,
+        linkedinStatus: finalDeploy.linkedinStatus,
+        error: finalDeploy.error,
+      }).catch((err) => console.error("Deploy notification failed:", err));
+    }
   } catch (err) {
     // Unexpected top-level failure
     const message = err instanceof Error ? err.message : String(err);
