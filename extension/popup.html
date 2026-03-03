@@ -7,28 +7,18 @@
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <!-- View 1: Login -->
+  <!-- View 1: Connect with invite token -->
   <div id="login-view" class="view">
     <div class="logo">Outsignal</div>
+    <p class="subtitle">Paste your invite token to connect:</p>
     <form id="login-form">
-      <input type="email" id="email" placeholder="Email" required autocomplete="email">
-      <input type="text" id="workspace" placeholder="Workspace slug (e.g. rise)" required autocomplete="off">
-      <input type="password" id="password" placeholder="Password" required autocomplete="current-password">
-      <button type="submit" id="login-btn" class="primary-btn">Log In</button>
+      <input type="text" id="invite-token" placeholder="Invite token" required autocomplete="off" spellcheck="false">
+      <button type="submit" id="login-btn" class="primary-btn">Connect</button>
     </form>
     <div id="login-error" class="error hidden"></div>
   </div>
 
-  <!-- View 2: Sender Selection (only shown if multiple senders) -->
-  <div id="sender-view" class="view hidden">
-    <div class="logo">Outsignal</div>
-    <p class="subtitle">Select LinkedIn sender:</p>
-    <select id="sender-select"></select>
-    <button id="select-sender-btn" class="primary-btn">Continue</button>
-    <div id="sender-error" class="error hidden"></div>
-  </div>
-
-  <!-- View 3: Connected / Status -->
+  <!-- View 2: Connected / Status -->
   <div id="status-view" class="view hidden">
     <div class="logo">Outsignal</div>
     <div id="status-indicator" class="status-circle status-gray">
@@ -37,7 +27,7 @@
     <div id="status-text" class="status-text">Checking...</div>
     <div id="status-meta" class="status-meta"></div>
     <button id="connect-btn" class="primary-btn">Connect LinkedIn</button>
-    <button id="logout-btn" class="text-btn">Log Out</button>
+    <button id="logout-btn" class="text-btn">Disconnect</button>
   </div>
 
   <script src="popup.js"></script>
