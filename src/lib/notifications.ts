@@ -534,91 +534,91 @@ export async function notifyDeploy(params: {
 
   const headerText = `[${workspace.name}] Campaign Deploy ${statusLabel}`;
 
-  // ---------- Slack ----------
+  // ---------- Slack (admin ops channel only) ----------
 
-  const slackChannelId =
-    workspace.approvalsSlackChannelId ?? workspace.slackChannelId;
+  const opsChannelId = process.env.OPS_SLACK_CHANNEL_ID;
 
-  if (slackChannelId) {
-    if (!verifySlackChannel(slackChannelId, "client", "notifyDeploy")) return;
-    try {
-      const blocks: KnownBlock[] = [
-        {
-          type: "header",
-          text: { type: "plain_text", text: headerText },
-        },
-        {
-          type: "section",
-          text: { type: "mrkdwn", text: `*Campaign:* ${params.campaignName}` },
-        },
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: `*Status:* ${statusEmoji} ${statusLabel}`,
+  if (opsChannelId) {
+    if (verifySlackChannel(opsChannelId, "admin", "notifyDeploy")) {
+      try {
+        const blocks: KnownBlock[] = [
+          {
+            type: "header",
+            text: { type: "plain_text", text: headerText },
           },
-        },
-        {
-          type: "section",
-          text: { type: "mrkdwn", text: `*Leads:* ${params.leadCount} pushed` },
-        },
-        ...(params.emailStatus && params.emailStatus !== "skipped"
-          ? [
-              {
-                type: "section" as const,
-                text: {
-                  type: "mrkdwn" as const,
-                  text: `*Email:* ${params.emailStepCount} steps \u2014 ${params.emailStatus}`,
-                },
-              },
-            ]
-          : []),
-        ...(params.linkedinStatus && params.linkedinStatus !== "skipped"
-          ? [
-              {
-                type: "section" as const,
-                text: {
-                  type: "mrkdwn" as const,
-                  text: `*LinkedIn:* ${params.linkedinStepCount} steps \u2014 ${params.linkedinStatus}`,
-                },
-              },
-            ]
-          : []),
-        ...(params.error
-          ? [
-              {
-                type: "section" as const,
-                text: {
-                  type: "mrkdwn" as const,
-                  text: `*Error:* ${params.error}`,
-                },
-              },
-            ]
-          : []),
-        {
-          type: "actions",
-          elements: [
-            {
-              type: "button",
-              text: { type: "plain_text", text: "View Campaign" },
-              url: campaignUrl,
+          {
+            type: "section",
+            text: { type: "mrkdwn", text: `*Campaign:* ${params.campaignName}` },
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Status:* ${statusEmoji} ${statusLabel}`,
             },
-          ],
-        },
-      ];
+          },
+          {
+            type: "section",
+            text: { type: "mrkdwn", text: `*Leads:* ${params.leadCount} pushed` },
+          },
+          ...(params.emailStatus && params.emailStatus !== "skipped"
+            ? [
+                {
+                  type: "section" as const,
+                  text: {
+                    type: "mrkdwn" as const,
+                    text: `*Email:* ${params.emailStepCount} steps \u2014 ${params.emailStatus}`,
+                  },
+                },
+              ]
+            : []),
+          ...(params.linkedinStatus && params.linkedinStatus !== "skipped"
+            ? [
+                {
+                  type: "section" as const,
+                  text: {
+                    type: "mrkdwn" as const,
+                    text: `*LinkedIn:* ${params.linkedinStepCount} steps \u2014 ${params.linkedinStatus}`,
+                  },
+                },
+              ]
+            : []),
+          ...(params.error
+            ? [
+                {
+                  type: "section" as const,
+                  text: {
+                    type: "mrkdwn" as const,
+                    text: `*Error:* ${params.error}`,
+                  },
+                },
+              ]
+            : []),
+          {
+            type: "actions",
+            elements: [
+              {
+                type: "button",
+                text: { type: "plain_text", text: "View Campaign" },
+                url: campaignUrl,
+              },
+            ],
+          },
+        ];
 
-      await postMessage(slackChannelId, headerText, blocks);
-    } catch (err) {
-      console.error("Slack deploy notification failed:", err);
+        await postMessage(opsChannelId, headerText, blocks);
+      } catch (err) {
+        console.error("Slack deploy notification failed:", err);
+      }
     }
   }
 
-  // ---------- Email ----------
+  // ---------- Email (admin only) ----------
 
-  if (workspace.notificationEmails) {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (adminEmail) {
     try {
-      const recipients: string[] = JSON.parse(workspace.notificationEmails);
-      const verified = verifyEmailRecipients(recipients, "client", "notifyDeploy");
+      const verified = verifyEmailRecipients([adminEmail], "admin", "notifyDeploy");
       if (verified.length > 0) {
         const subject = `[${workspace.name}] Deploy ${statusLabel}: ${params.campaignName}`;
 
@@ -750,7 +750,7 @@ ${errorSection}
         <!-- Footer -->
         <tr>
           <td style="background-color:#fafafa;padding:20px 32px;border-top:1px solid #e4e4e7;border-radius:0 0 8px 8px;">
-            <p style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#a1a1aa;margin:0;line-height:1.5;">Outsignal &mdash; Sent to ${workspace.name} notification recipients.<br/>You received this because you are subscribed to campaign updates.</p>
+            <p style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#a1a1aa;margin:0;line-height:1.5;">Outsignal &mdash; Admin deploy notification for ${workspace.name}.<br/>You received this because you are the system administrator.</p>
           </td>
         </tr>
       </table>
