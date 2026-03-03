@@ -62,7 +62,7 @@ Requirements for v1.1 Outbound Pipeline milestone. Each maps to roadmap phases.
 - [x] **SEQ-02**: CampaignSequenceRule maps email steps to LinkedIn actions with triggerEvent, triggerStepRef, actionType, messageTemplate, and delayMinutes
 - [x] **SEQ-03**: Connection accept detection polls periodically — when accepted, next LinkedIn sequence step auto-queues (e.g., follow-up message)
 - [x] **SEQ-04**: LinkedIn message templates can reference email step context — adapting content based on which email the lead received
-- [ ] **SEQ-05**: Sender session refresh runs on daily cron — proactively re-authenticates sessions older than 6 days to prevent expiry failures
+- [x] **SEQ-05**: Sender session refresh runs on daily cron — proactively re-authenticates sessions older than 6 days to prevent expiry failures
 
 ### LinkedIn Voyager API
 
@@ -76,7 +76,7 @@ Requirements for v1.1 Outbound Pipeline milestone. Each maps to roadmap phases.
 
 - [x] **NOTIF-01**: Admin receives Slack notification when client approves or rejects (leads or content)
 - [x] **NOTIF-02**: Admin receives email notification when client approves or rejects (leads or content)
-- [ ] **NOTIF-03**: Admin receives notification when deploy completes or fails
+- [x] **NOTIF-03**: Admin receives notification when deploy completes or fails
 
 ### Dashboard & Admin UX
 
@@ -193,12 +193,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEPLOY-05 | Phase 10 | Complete |
 | DEPLOY-06 | Phase 10 | Complete |
 | DEPLOY-07 | Phase 10 | Complete |
-| NOTIF-03 | Phase 10 | Pending |
+| NOTIF-03 | Phase 10 | Complete |
 | SEQ-01 | Phase 10 | Complete |
 | SEQ-02 | Phase 10 | Complete |
 | SEQ-03 | Phase 10 | Complete |
 | SEQ-04 | Phase 10 | Complete |
-| SEQ-05 | Phase 10 | Pending |
+| SEQ-05 | Phase 10 | Complete |
 
 | VOYAGER-01 | Phase 11 | Complete |
 | VOYAGER-02 | Phase 11 | Complete |

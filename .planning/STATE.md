@@ -146,6 +146,10 @@ v1.0 decisions archived in PROJECT.md Key Decisions table.
 - [10-02]: MAX_RETRY_ATTEMPTS constant removed — retry tracking uses DB query for sequenceStepRef='connection_retry', not a numeric counter
 - [10-02]: actionType cast to LinkedInActionType in processConnectionCheckResult — CampaignSequenceRule.actionType is string in Prisma, EnqueueActionParams requires the union type
 - [10-02]: getConnectionsToCheck excludes timed-out connections — those are handled by pollConnectionAccepts(), not the worker's live-check loop
+- [10-04]: notifyDeploy uses approvalsSlackChannelId ?? slackChannelId — deploy notifications are ops-level, same channel as approval events
+- [10-04]: Email/LinkedIn channel rows suppressed when status is null or 'skipped' — avoids confusing empty sections on single-channel campaigns
+- [10-04]: updatedAt used as session age proxy — Sender.updatedAt is @updatedAt so reflects last DB write; cookie save always updates the record
+- [10-04]: SenderHealthEvent created on proactive session flag — uniform audit trail regardless of trigger source (reactive health check vs proactive cron)
 
 **Phase 13 decisions (2026-03-02):**
 - [13-01]: Minimum 10-send volume gate before bounce rate flagging — avoids false positives from low-volume senders
@@ -185,5 +189,5 @@ v1.0 decisions archived in PROJECT.md Key Decisions table.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 14-01-PLAN.md (Extension auth library + 7 API endpoints: HMAC-SHA256 Bearer tokens, login with two-token flow, cookie save with AES-256-GCM encryption, session expiry reporting to Phase 13 health system).
+Stopped at: Completed 10-04-PLAN.md (notifyDeploy Slack+email notification wired into executeDeploy; /api/cron/session-refresh daily cron flagging stale LinkedIn sessions older than 6 days; vercel.json now has 3 cron entries).
 Resume file: None
