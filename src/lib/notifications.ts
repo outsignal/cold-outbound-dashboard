@@ -765,6 +765,183 @@ ${errorSection}
   }
 }
 
+export async function notifyCampaignLive(params: {
+  workspaceSlug: string;
+  campaignName: string;
+  campaignId: string;
+  status: "complete" | "partial_failure";
+}): Promise<void> {
+  const workspace = await prisma.workspace.findUnique({
+    where: { slug: params.workspaceSlug },
+  });
+
+  if (!workspace) return;
+
+  const portalBase =
+    process.env.NEXT_PUBLIC_PORTAL_URL ?? "https://portal.outsignal.ai";
+  const campaignUrl = `${portalBase}/portal/campaigns/${params.campaignId}`;
+
+  const message =
+    params.status === "complete"
+      ? `Your campaign ${params.campaignName} is now live`
+      : `Your campaign ${params.campaignName} is being launched \u2014 we're working on finalizing setup`;
+
+  const headerText = `[${workspace.name}] Campaign Live`;
+
+  // ---------- Slack blocks ----------
+
+  const slackBlocks: KnownBlock[] = [
+    {
+      type: "header",
+      text: { type: "plain_text", text: headerText },
+    },
+    {
+      type: "section",
+      text: { type: "mrkdwn", text: message },
+    },
+    {
+      type: "actions",
+      elements: [
+        {
+          type: "button",
+          text: { type: "plain_text", text: "View Campaign" },
+          url: campaignUrl,
+        },
+      ],
+    },
+  ];
+
+  // Slack — client channel
+  if (workspace.slackChannelId) {
+    if (verifySlackChannel(workspace.slackChannelId, "client", "notifyCampaignLive")) {
+      try {
+        await postMessage(workspace.slackChannelId, headerText, slackBlocks);
+      } catch (err) {
+        console.error("Slack client campaign-live notification failed:", err);
+      }
+    }
+  }
+
+  // Slack — admin ops channel
+  const opsChannelId = process.env.OPS_SLACK_CHANNEL_ID;
+  if (opsChannelId) {
+    if (verifySlackChannel(opsChannelId, "admin", "notifyCampaignLive")) {
+      try {
+        await postMessage(opsChannelId, headerText, slackBlocks);
+      } catch (err) {
+        console.error("Slack admin campaign-live notification failed:", err);
+      }
+    }
+  }
+
+  // ---------- Email ----------
+
+  const emailSubjectLine = `[${workspace.name}] ${message}`;
+  const statusPillColor = params.status === "complete" ? "#065f46" : "#92400e";
+  const statusPillBg = params.status === "complete" ? "#d1fae5" : "#fffbeb";
+  const statusLabel = params.status === "complete" ? "Live" : "Launching";
+
+  const emailHtml = `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f4f4f5;margin:0;padding:0;">
+  <tr>
+    <td align="center" style="padding:40px 16px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:100%;">
+        <!-- Header -->
+        <tr>
+          <td style="background-color:#18181b;padding:20px 32px;border-radius:8px 8px 0 0;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;letter-spacing:3px;color:#F0FF7A;">OUTSIGNAL</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <!-- Body -->
+        <tr>
+          <td style="background-color:#ffffff;padding:32px 32px 24px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#18181b;padding-bottom:8px;line-height:1.3;">${headerText}</td>
+              </tr>
+              <tr>
+                <td style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#71717a;padding-bottom:24px;line-height:1.5;">${params.campaignName}</td>
+              </tr>
+              <!-- Status pill -->
+              <tr>
+                <td style="padding-bottom:24px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:600;color:${statusPillColor};background-color:${statusPillBg};padding:6px 14px;border-radius:100px;">${statusLabel}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <!-- Message -->
+              <tr>
+                <td style="padding-bottom:24px;">
+                  <p style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#3f3f46;margin:0;">${message}</p>
+                </td>
+              </tr>
+              <!-- CTA button -->
+              <tr>
+                <td style="padding-top:8px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="background-color:#F0FF7A;border-radius:8px;">
+                        <a href="${campaignUrl}" target="_blank" style="display:inline-block;padding:14px 32px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;color:#18181b;text-decoration:none;">View Campaign</a>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+          <td style="background-color:#fafafa;padding:20px 32px;border-top:1px solid #e4e4e7;border-radius:0 0 8px 8px;">
+            <p style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#a1a1aa;margin:0;line-height:1.5;">Outsignal &mdash; Sent to ${workspace.name} notification recipients.<br/>You received this because you are subscribed to campaign updates.</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`;
+
+  // Email — client notification emails
+  if (workspace.notificationEmails) {
+    try {
+      const recipients: string[] = JSON.parse(workspace.notificationEmails);
+      const verified = verifyEmailRecipients(recipients, "client", "notifyCampaignLive");
+      if (verified.length > 0) {
+        await sendNotificationEmail({
+          to: verified,
+          subject: emailSubjectLine,
+          html: emailHtml,
+        });
+      }
+    } catch (err) {
+      console.error("Email client campaign-live notification failed:", err);
+    }
+  }
+
+  // Email — admin
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (adminEmail) {
+    try {
+      const verified = verifyEmailRecipients([adminEmail], "admin", "notifyCampaignLive");
+      if (verified.length > 0) {
+        await sendNotificationEmail({
+          to: verified,
+          subject: emailSubjectLine,
+          html: emailHtml,
+        });
+      }
+    } catch (err) {
+      console.error("Email admin campaign-live notification failed:", err);
+    }
+  }
+}
+
 export async function notifyInboxDisconnect(params: {
   workspaceSlug: string;
   workspaceName: string;

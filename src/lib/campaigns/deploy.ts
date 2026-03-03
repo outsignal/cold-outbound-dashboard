@@ -17,7 +17,7 @@ import { enqueueAction } from "@/lib/linkedin/queue";
 import { assignSenderForPerson } from "@/lib/linkedin/sender";
 import { createSequenceRulesForCampaign } from "@/lib/linkedin/sequencing";
 import { getCampaign } from "@/lib/campaigns/operations";
-import { notifyDeploy } from "@/lib/notifications";
+import { notifyDeploy, notifyCampaignLive } from "@/lib/notifications";
 import type { LinkedInActionType } from "@/lib/linkedin/types";
 
 // ---------------------------------------------------------------------------
@@ -466,6 +466,17 @@ export async function executeDeploy(
         linkedinStatus: finalDeploy.linkedinStatus,
         error: finalDeploy.error,
       }).catch((err) => console.error("Deploy notification failed:", err));
+
+      // Send client-facing campaign-live notification (not for "failed" — that's admin-only via notifyDeploy)
+      const deployStatus = finalDeploy.status as string;
+      if (deployStatus === "complete" || deployStatus === "partial_failure") {
+        await notifyCampaignLive({
+          workspaceSlug: campaign.workspaceSlug,
+          campaignName: campaign.name,
+          campaignId,
+          status: deployStatus as "complete" | "partial_failure",
+        }).catch((err) => console.error("Campaign-live notification failed:", err));
+      }
     }
   } catch (err) {
     // Unexpected top-level failure
