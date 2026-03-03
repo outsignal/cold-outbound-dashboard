@@ -1,0 +1,215 @@
+/* Outsignal LinkedIn Connector — Popup Styles */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 300px;
+  min-height: 200px;
+  padding: 20px;
+  background: #1a1a1a;
+  color: #ffffff;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* ---- Layout ---- */
+
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ---- Logo ---- */
+
+.logo {
+  color: #F0FF7A;
+  font-size: 20px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 16px;
+  letter-spacing: -0.3px;
+}
+
+/* ---- Subtitle ---- */
+
+.subtitle {
+  color: #aaaaaa;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+/* ---- Inputs ---- */
+
+input[type="email"],
+input[type="text"],
+input[type="password"],
+select {
+  width: 100%;
+  background: #2a2a2a;
+  border: 1px solid #444444;
+  color: #ffffff;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  margin-bottom: 10px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+input[type="email"]:focus,
+input[type="text"]:focus,
+input[type="password"]:focus,
+select:focus {
+  border-color: #F0FF7A;
+}
+
+input::placeholder {
+  color: #666666;
+}
+
+select {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%23aaa' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+}
+
+select option {
+  background: #2a2a2a;
+  color: #ffffff;
+}
+
+/* ---- Buttons ---- */
+
+.primary-btn {
+  width: 100%;
+  background: #F0FF7A;
+  color: #1a1a1a;
+  font-weight: 600;
+  font-size: 14px;
+  font-family: inherit;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: filter 0.15s ease, opacity 0.15s ease;
+  margin-top: 4px;
+}
+
+.primary-btn:hover:not(:disabled) {
+  filter: brightness(0.9);
+}
+
+.primary-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.text-btn {
+  background: none;
+  border: none;
+  color: #888888;
+  font-size: 13px;
+  font-family: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 6px 0;
+  margin-top: 8px;
+  width: 100%;
+  text-align: center;
+}
+
+.text-btn:hover {
+  color: #aaaaaa;
+}
+
+/* ---- Error messages ---- */
+
+.error {
+  color: #ff4444;
+  font-size: 12px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* ---- Status view ---- */
+
+.status-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 8px auto 12px auto;
+  font-size: 24px;
+  color: #ffffff;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.status-green {
+  background: #22c55e;
+}
+
+.status-red {
+  background: #ef4444;
+}
+
+.status-gray {
+  background: #555555;
+}
+
+.status-text {
+  font-size: 15px;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.status-meta {
+  font-size: 12px;
+  color: #888888;
+  text-align: center;
+  margin-bottom: 14px;
+  min-height: 16px;
+}
+
+/* ---- Toast notifications ---- */
+
+.toast {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 10px;
+  text-align: center;
+  font-size: 13px;
+  border-radius: 6px 6px 0 0;
+  transition: opacity 0.3s ease;
+  z-index: 9999;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.toast-success {
+  background: #22c55e;
+}
+
+.toast-error {
+  background: #ef4444;
+}
