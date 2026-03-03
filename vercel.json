@@ -7,10 +7,6 @@
     {
       "path": "/api/inbox-health/check",
       "schedule": "0 6 * * *"
-    },
-    {
-      "path": "/api/cron/session-refresh",
-      "schedule": "0 6 * * *"
     }
   ]
 }

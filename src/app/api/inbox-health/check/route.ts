@@ -4,6 +4,7 @@ import { checkAllWorkspaces } from "@/lib/inbox-health/monitor";
 import { notifyInboxDisconnect, notifySenderHealth, sendSenderHealthDigest } from "@/lib/notifications";
 import { notify } from "@/lib/notify";
 import { runSenderHealthCheck } from "@/lib/linkedin/health-check";
+import { refreshStaleSessions } from "@/lib/linkedin/session-refresh";
 
 export async function GET(request: Request) {
   if (!validateCronSecret(request)) {
@@ -142,6 +143,12 @@ export async function GET(request: Request) {
       `[${timestamp}] Sender health check complete: ${healthResults.length} result(s) (${criticalCount} critical, ${warningCount} warnings)`,
     );
 
+    // --- Session Refresh ---
+    const sessionRefreshResult = await refreshStaleSessions();
+    if (sessionRefreshResult.count > 0) {
+      console.log(`[${timestamp}] Session refresh: flagged ${sessionRefreshResult.count} stale sessions`);
+    }
+
     return NextResponse.json({
       checked: changes.length,
       workspacesWithChanges: changes.map((c) => ({
@@ -153,6 +160,7 @@ export async function GET(request: Request) {
       healthChecked: healthResults.length,
       healthCritical: criticalCount,
       healthWarnings: warningCount,
+      sessionRefreshCount: sessionRefreshResult.count,
     });
   } catch (error) {
     console.error("[inbox-health/check] Error:", error);
