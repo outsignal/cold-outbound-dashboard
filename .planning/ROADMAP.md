@@ -137,7 +137,7 @@ Plans:
 | 7.1 Leads Agent Integration Fixes | v1.1 | 3/3 | Complete | 2026-02-27 |
 | 8. Campaign Entity + Writer Integration | 6/6 | Complete   | 2026-03-01 | - |
 | 9. Client Portal Campaign Approval | 5/5 | Complete   | 2026-03-01 | - |
-| 10. Auto-Deploy on Approval | 1/5 | In Progress|  | - |
+| 10. Auto-Deploy on Approval | 2/5 | In Progress|  | - |
 | 11. LinkedIn Voyager API Client | — | 3/3 | Code complete | 2026-03-02 |
 | 12. Dashboard & Admin UX | 8/8 | Complete    | 2026-03-02 | - |
 | 13. Smart Sender Health | 3/3 | Complete    | 2026-03-02 | - |
@@ -178,7 +178,7 @@ Plans:
   8. Sender management page uses card grid with modal add/edit, pause/delete from card
   9. Sidebar navigation includes all new pages in logical groups
   10. Proposals support edit/delete via modal, document upload auto-parses content
-**Plans:** 1/5 plans executed
+**Plans:** 2/5 plans executed
 
 Plans:
 - [ ] 12-01-PLAN.md — Dashboard home KPIs, activity charts, alerts, client filter

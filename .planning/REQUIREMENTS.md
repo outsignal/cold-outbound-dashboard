@@ -58,10 +58,10 @@ Requirements for v1.1 Outbound Pipeline milestone. Each maps to roadmap phases.
 
 ### Email ↔ LinkedIn Sequencing
 
-- [ ] **SEQ-01**: EMAIL_SENT webhook triggers LinkedIn actions via CampaignSequenceRule — configurable delay between email send and LinkedIn action (e.g., "24h after Email 1, send connection request")
-- [ ] **SEQ-02**: CampaignSequenceRule maps email steps to LinkedIn actions with triggerEvent, triggerStepRef, actionType, messageTemplate, and delayMinutes
-- [ ] **SEQ-03**: Connection accept detection polls periodically — when accepted, next LinkedIn sequence step auto-queues (e.g., follow-up message)
-- [ ] **SEQ-04**: LinkedIn message templates can reference email step context — adapting content based on which email the lead received
+- [x] **SEQ-01**: EMAIL_SENT webhook triggers LinkedIn actions via CampaignSequenceRule — configurable delay between email send and LinkedIn action (e.g., "24h after Email 1, send connection request")
+- [x] **SEQ-02**: CampaignSequenceRule maps email steps to LinkedIn actions with triggerEvent, triggerStepRef, actionType, messageTemplate, and delayMinutes
+- [x] **SEQ-03**: Connection accept detection polls periodically — when accepted, next LinkedIn sequence step auto-queues (e.g., follow-up message)
+- [x] **SEQ-04**: LinkedIn message templates can reference email step context — adapting content based on which email the lead received
 - [ ] **SEQ-05**: Sender session refresh runs on daily cron — proactively re-authenticates sessions older than 6 days to prevent expiry failures
 
 ### LinkedIn Voyager API
@@ -194,10 +194,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEPLOY-06 | Phase 10 | Complete |
 | DEPLOY-07 | Phase 10 | Complete |
 | NOTIF-03 | Phase 10 | Pending |
-| SEQ-01 | Phase 10 | Pending |
-| SEQ-02 | Phase 10 | Pending |
-| SEQ-03 | Phase 10 | Pending |
-| SEQ-04 | Phase 10 | Pending |
+| SEQ-01 | Phase 10 | Complete |
+| SEQ-02 | Phase 10 | Complete |
+| SEQ-03 | Phase 10 | Complete |
+| SEQ-04 | Phase 10 | Complete |
 | SEQ-05 | Phase 10 | Pending |
 
 | VOYAGER-01 | Phase 11 | Complete |

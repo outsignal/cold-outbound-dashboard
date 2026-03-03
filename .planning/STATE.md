@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-02-27)
 
 ## Current Position
 
-Phase: 10 of 14 (Auto-Deploy on Approval — Plan 01 COMPLETE: CampaignDeploy model, deploy operations layer)
-Plan: 1 of 5 in current phase (10-01 done: CampaignDeploy Prisma model, EmailBisonClient.createSequenceStep, executeDeploy/retryDeployChannel/getDeployHistory)
-Status: Phase 10 — 1/5 plans done. Deploy foundation ready (DEPLOY-03, DEPLOY-04, DEPLOY-05, DEPLOY-06, DEPLOY-07 complete).
-Last activity: 2026-03-03 — Executed Plan 01: CampaignDeploy table created in Neon DB; deploy.ts with retry/dedup/per-channel error isolation; EmailBisonClient extended with createSequenceStep.
+Phase: 10 of 14 (Auto-Deploy on Approval — Plan 02 COMPLETE: LinkedIn sequencing engine + connection poller)
+Plan: 2 of 5 in current phase (10-02 done: sequencing.ts with Handlebars template engine + evaluateSequenceRules + createSequenceRulesForCampaign; connection-poller.ts with pollConnectionAccepts + processConnectionCheckResult + getConnectionsToCheck)
+Status: Phase 10 — 2/5 plans done. Sequencing engine ready (SEQ-01, SEQ-02, SEQ-03, SEQ-04 complete).
+Last activity: 2026-03-03 — Executed Plan 02: LinkedIn sequencing engine (Handlebars template compilation, rule evaluation, deploy-time rule creation); connection accept poller (14-day timeout, 48h cooldown, single retry, failed connection cleanup).
 
 Progress: [████░░░░░░] 40% (v1.1 — Phase 8 complete)
 
@@ -140,6 +140,12 @@ v1.0 decisions archived in PROJECT.md Key Decisions table.
 - [10-01]: Lead push serial with 100ms throttle — prevents EmailBison rate-limiting on large lists
 - [10-01]: finalizeDeployStatus derives complete/partial_failure/failed from per-channel outcomes after both channels complete
 - [10-01]: prisma db push workflow (no migrate dev) — consistent with project's push-based schema approach
+- [10-02]: compileTemplate returns raw template on error (graceful fallback, console.warn)
+- [10-02]: evaluateSequenceRules is side-effect free — returns descriptors, caller enqueues
+- [10-02]: createSequenceRulesForCampaign is idempotent — deletes existing rules first (supports re-deploy)
+- [10-02]: MAX_RETRY_ATTEMPTS constant removed — retry tracking uses DB query for sequenceStepRef='connection_retry', not a numeric counter
+- [10-02]: actionType cast to LinkedInActionType in processConnectionCheckResult — CampaignSequenceRule.actionType is string in Prisma, EnqueueActionParams requires the union type
+- [10-02]: getConnectionsToCheck excludes timed-out connections — those are handled by pollConnectionAccepts(), not the worker's live-check loop
 
 **Phase 13 decisions (2026-03-02):**
 - [13-01]: Minimum 10-send volume gate before bounce rate flagging — avoids false positives from low-volume senders
@@ -170,5 +176,5 @@ v1.0 decisions archived in PROJECT.md Key Decisions table.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 10-01-PLAN.md (deploy foundation: CampaignDeploy model, EmailBisonClient.createSequenceStep, executeDeploy/retryDeployChannel/getDeployHistory in deploy.ts).
+Stopped at: Completed 10-02-PLAN.md (LinkedIn sequencing engine: sequencing.ts Handlebars template engine + rule evaluator; connection-poller.ts with accept detection, 14-day timeout, retry, and failure handling).
 Resume file: None
