@@ -510,6 +510,9 @@ model Sender {
   totpSecret       String? // AES-256-GCM encrypted
   loginMethod      String  @default("none") // "credentials" | "infinite" | "extension" | "none"
 
+  // Extension invite token (used for cookie-seeding auth)
+  inviteToken    String? @unique
+
   // Session management (encrypted cookies)
   sessionData    String? // AES-256-GCM encrypted JSON
   sessionStatus  String  @default("not_setup") // not_setup | active | expired
