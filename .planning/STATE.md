@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Outbound Pipeline
 status: unknown
-last_updated: "2026-03-02T22:33:09.909Z"
+last_updated: "2026-03-03T10:49:00Z"
 progress:
   total_phases: 9
   completed_phases: 7
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-02-27)
 
 ## Current Position
 
-Phase: 10 of 14 (Auto-Deploy on Approval — Plan 02 COMPLETE: LinkedIn sequencing engine + connection poller)
-Plan: 2 of 5 in current phase (10-02 done: sequencing.ts with Handlebars template engine + evaluateSequenceRules + createSequenceRulesForCampaign; connection-poller.ts with pollConnectionAccepts + processConnectionCheckResult + getConnectionsToCheck)
-Status: Phase 10 — 2/5 plans done. Sequencing engine ready (SEQ-01, SEQ-02, SEQ-03, SEQ-04 complete).
-Last activity: 2026-03-03 — Executed Plan 02: LinkedIn sequencing engine (Handlebars template compilation, rule evaluation, deploy-time rule creation); connection accept poller (14-day timeout, 48h cooldown, single retry, failed connection cleanup).
+Phase: 14 of 14 (LinkedIn Cookie Chrome Extension — Plan 01 COMPLETE: extension auth library + 7 API endpoints)
+Plan: 1 of ? in current phase (14-01 done: extension-auth.ts HMAC-SHA256 Bearer tokens; 7 extension API routes: login, select-sender, status, senders, cookies, expiry)
+Status: Phase 14 — Plan 01 done. Extension API surface complete and type-safe.
+Last activity: 2026-03-03 — Executed Plan 01: Extension auth library (HMAC-SHA256 Bearer tokens scoped to workspace+sender); 7 extension API endpoints (login with two-token flow, sender selection, status polling, cookie save with AES-256-GCM encryption, session expiry reporting to Phase 13 health system).
 
 Progress: [████░░░░░░] 40% (v1.1 — Phase 8 complete)
 
@@ -166,6 +166,15 @@ v1.0 decisions archived in PROJECT.md Key Decisions table.
 - [13-02]: sendSenderHealthDigest() groups by workspaceSlug — one Slack message per workspace regardless of how many senders have warnings
 - [13-02]: verifySlackChannel guard uses return (exit function) in notifySenderHealth and continue (skip workspace) in sendSenderHealthDigest loop
 
+**Phase 14-01 decisions (2026-03-03):**
+- [14-01]: Extension login uses admin password — extension users are trusted admins/operators; no separate extension credential needed at this stage
+- [14-01]: Two-token flow (workspace then sender): workspace-scoped token (senderId='') from login, then sender-scoped token from select-sender — single-sender workspaces auto-skip select-sender step
+- [14-01]: senderId="" sentinel for workspace-scoped tokens rather than a separate token type — simpler, avoids a second session interface
+- [14-01]: CORS headers on all extension endpoints with Access-Control-Allow-Origin: * — Chrome extension service workers bypass CORS but popup fetch may need it
+- [14-01]: Cookie save sets healthStatus=healthy inline on reconnect — clears any prior session_expired flag automatically without a separate reactivation call
+- [14-01]: expiry endpoint uses prisma.$transaction — ensures sender status update and SenderHealthEvent creation are always atomic
+- [14-01]: li_at warning returned in response but cookies still saved — non-fatal, all captured cookies stored regardless
+
 ### Blockers/Concerns
 
 - EmailBison campaign-lead assignment API — RESOLVED (07-04): No assignment endpoint exists; UI-only. Phase 10 must accept manual campaign assignment or find alternative. User has contacted EmailBison support.
@@ -176,5 +185,5 @@ v1.0 decisions archived in PROJECT.md Key Decisions table.
 ## Session Continuity
 
 Last session: 2026-03-03
-Stopped at: Completed 10-02-PLAN.md (LinkedIn sequencing engine: sequencing.ts Handlebars template engine + rule evaluator; connection-poller.ts with accept detection, 14-day timeout, retry, and failure handling).
+Stopped at: Completed 14-01-PLAN.md (Extension auth library + 7 API endpoints: HMAC-SHA256 Bearer tokens, login with two-token flow, cookie save with AES-256-GCM encryption, session expiry reporting to Phase 13 health system).
 Resume file: None
