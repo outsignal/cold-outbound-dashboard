@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-02-27)
 
 ## Current Position
 
-Phase: 13 of 13 (Smart Sender Health — Plan 03 COMPLETE: Sender health UI panel, sparkline, reactivate button, dashboard KPI)
-Plan: 3 of 3 in current phase (13-03 done: reactivate + health-history API, SenderHealthPanel sparkline, SenderCard expand/reactivate, dashboard KPI card)
-Status: Phase 13 — 3/3 plans done. All sender health requirements complete (HEALTH-09, HEALTH-10, HEALTH-11).
-Last activity: 2026-03-02 — Executed Plan 03: POST /reactivate and GET /health-history endpoints added; SenderHealthPanel with recharts 30-day sparkline; SenderCard health expand toggle and Reactivate button; dashboard "Sender Health" KPI links to /senders.
+Phase: 10 of 14 (Auto-Deploy on Approval — Plan 01 COMPLETE: CampaignDeploy model, deploy operations layer)
+Plan: 1 of 5 in current phase (10-01 done: CampaignDeploy Prisma model, EmailBisonClient.createSequenceStep, executeDeploy/retryDeployChannel/getDeployHistory)
+Status: Phase 10 — 1/5 plans done. Deploy foundation ready (DEPLOY-03, DEPLOY-04, DEPLOY-05, DEPLOY-06, DEPLOY-07 complete).
+Last activity: 2026-03-03 — Executed Plan 01: CampaignDeploy table created in Neon DB; deploy.ts with retry/dedup/per-channel error isolation; EmailBisonClient extended with createSequenceStep.
 
 Progress: [████░░░░░░] 40% (v1.1 — Phase 8 complete)
 
@@ -133,6 +133,14 @@ v1.0 decisions archived in PROJECT.md Key Decisions table.
 - [Phase 12-01]: Alerts positioned above KPIs — critical items need immediate visibility; LEAD_INTERESTED counted as reply in time-series
 - [Phase 12]: Kept Linkedin icon (deprecated hint not error) — no non-deprecated replacement in lucide-react v0.575.0
 
+**Phase 10 decisions (2026-03-03):**
+- [10-01]: deployEmailChannel stores emailBisonCampaignId on both CampaignDeploy and Campaign — enables webhook matching in Plan 03
+- [10-01]: LinkedIn-only first step enqueued at deploy; email_sent-triggered steps deferred to webhook handler (Plan 03)
+- [10-01]: Outsignal-side lead dedup via WebhookEvent EMAIL_SENT check; EmailBison's own dedup is fallback
+- [10-01]: Lead push serial with 100ms throttle — prevents EmailBison rate-limiting on large lists
+- [10-01]: finalizeDeployStatus derives complete/partial_failure/failed from per-channel outcomes after both channels complete
+- [10-01]: prisma db push workflow (no migrate dev) — consistent with project's push-based schema approach
+
 **Phase 13 decisions (2026-03-02):**
 - [13-01]: Minimum 10-send volume gate before bounce rate flagging — avoids false positives from low-volume senders
 - [13-01]: Soft flag (bounce_rate) uses healthFlaggedAt for 48h cooldown auto-recovery; hard flags (captcha/restriction/session_expired) require manual admin reactivation regardless of time
@@ -161,6 +169,6 @@ v1.0 decisions archived in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-03-02
-Stopped at: Completed 13-03-PLAN.md (sender health UI complete: POST /reactivate + GET /health-history APIs; SenderHealthPanel recharts sparkline; SenderCard expand/reactivate; dashboard Sender Health KPI → /senders).
+Last session: 2026-03-03
+Stopped at: Completed 10-01-PLAN.md (deploy foundation: CampaignDeploy model, EmailBisonClient.createSequenceStep, executeDeploy/retryDeployChannel/getDeployHistory in deploy.ts).
 Resume file: None

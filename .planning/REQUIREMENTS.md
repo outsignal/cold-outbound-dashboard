@@ -50,11 +50,11 @@ Requirements for v1.1 Outbound Pipeline milestone. Each maps to roadmap phases.
 
 - [x] **DEPLOY-01**: EmailBison campaign API capabilities discovered via spike (create, assign, sequence steps)
 - [ ] **DEPLOY-02**: On dual approval (leads + content both approved), auto-deploy triggers without admin intervention
-- [ ] **DEPLOY-03**: System creates EmailBison campaign with sequence steps from approved email content
-- [ ] **DEPLOY-04**: System pushes verified leads to EmailBison workspace (manual campaign assignment in EB UI until API endpoint available)
-- [ ] **DEPLOY-05**: System queues LinkedIn messages via LinkedIn sequencer worker on Railway
-- [ ] **DEPLOY-06**: Deploy is fire-and-forget with CampaignDeploy record tracking status (pending → running → complete / failed)
-- [ ] **DEPLOY-07**: Deploy handles email-only, LinkedIn-only, or both channels depending on Campaign.channels
+- [x] **DEPLOY-03**: System creates EmailBison campaign with sequence steps from approved email content
+- [x] **DEPLOY-04**: System pushes verified leads to EmailBison workspace (manual campaign assignment in EB UI until API endpoint available)
+- [x] **DEPLOY-05**: System queues LinkedIn messages via LinkedIn sequencer worker on Railway
+- [x] **DEPLOY-06**: Deploy is fire-and-forget with CampaignDeploy record tracking status (pending → running → complete / failed)
+- [x] **DEPLOY-07**: Deploy handles email-only, LinkedIn-only, or both channels depending on Campaign.channels
 
 ### Email ↔ LinkedIn Sequencing
 
@@ -188,11 +188,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | NOTIF-01 | Phase 9 | Complete |
 | NOTIF-02 | Phase 9 | Complete |
 | DEPLOY-02 | Phase 10 | Pending |
-| DEPLOY-03 | Phase 10 | Pending |
-| DEPLOY-04 | Phase 10 | Pending |
-| DEPLOY-05 | Phase 10 | Pending |
-| DEPLOY-06 | Phase 10 | Pending |
-| DEPLOY-07 | Phase 10 | Pending |
+| DEPLOY-03 | Phase 10 | Complete |
+| DEPLOY-04 | Phase 10 | Complete |
+| DEPLOY-05 | Phase 10 | Complete |
+| DEPLOY-06 | Phase 10 | Complete |
+| DEPLOY-07 | Phase 10 | Complete |
 | NOTIF-03 | Phase 10 | Pending |
 | SEQ-01 | Phase 10 | Pending |
 | SEQ-02 | Phase 10 | Pending |
