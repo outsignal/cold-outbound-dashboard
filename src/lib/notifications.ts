@@ -1411,7 +1411,13 @@ export async function sendSenderHealthDigest(params: {
     detail: string;
   }>;
 }): Promise<void> {
-  // Group warnings by workspaceSlug
+  if (params.warnings.length === 0) return;
+
+  const adminBaseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://admin.outsignal.ai";
+  const sendersUrl = `${adminBaseUrl}/senders`;
+
+  // Group warnings by workspace for display, but send a single digest to admin
   const byWorkspace = new Map<string, typeof params.warnings>();
   for (const w of params.warnings) {
     const group = byWorkspace.get(w.workspaceSlug) ?? [];
@@ -1419,46 +1425,135 @@ export async function sendSenderHealthDigest(params: {
     byWorkspace.set(w.workspaceSlug, group);
   }
 
-  for (const [workspaceSlug, warnings] of byWorkspace.entries()) {
+  // Build warning lines grouped by workspace
+  const warningLines: string[] = [];
+  for (const [slug, warnings] of byWorkspace.entries()) {
+    warningLines.push(`*${slug}:*`);
+    for (const w of warnings) {
+      warningLines.push(`\u2022 ${w.senderName}: ${w.detail}`);
+    }
+  }
+
+  // ---------- Slack (admin ops channel only) ----------
+
+  const opsChannelId = process.env.OPS_SLACK_CHANNEL_ID;
+  if (opsChannelId) {
+    if (verifySlackChannel(opsChannelId, "admin", "sendSenderHealthDigest")) {
+      try {
+        const blocks: KnownBlock[] = [
+          {
+            type: "header",
+            text: { type: "plain_text", text: "Daily Sender Health Digest" },
+          },
+          {
+            type: "section",
+            text: { type: "mrkdwn", text: warningLines.join("\n") },
+          },
+          {
+            type: "actions",
+            elements: [
+              {
+                type: "button",
+                text: { type: "plain_text", text: "View Senders" },
+                url: sendersUrl,
+              },
+            ],
+          },
+        ];
+
+        await postMessage(opsChannelId, "Daily Sender Health Digest", blocks);
+      } catch (err) {
+        console.error("[sendSenderHealthDigest] Slack failed:", err);
+      }
+    }
+  }
+
+  // ---------- Email (admin only) ----------
+
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (adminEmail) {
     try {
-      const workspace = await prisma.workspace.findUnique({
-        where: { slug: workspaceSlug },
-      });
-      if (!workspace?.slackChannelId) continue;
-      if (!verifySlackChannel(workspace.slackChannelId, "client", "sendSenderHealthDigest")) continue;
+      const verified = verifyEmailRecipients([adminEmail], "admin", "sendSenderHealthDigest");
+      if (verified.length > 0) {
+        // Build warning rows for email
+        const warningRowsHtml = params.warnings
+          .map(
+            (w) =>
+              `<tr>
+                <td style="padding:8px 0;border-bottom:1px solid #f4f4f5;">
+                  <span style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:600;color:#18181b;">${w.senderName}</span>
+                  <span style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#a1a1aa;"> &mdash; ${w.workspaceSlug}</span>
+                  <br/>
+                  <span style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#3f3f46;">${w.detail}</span>
+                </td>
+              </tr>`,
+          )
+          .join("");
 
-      const adminBaseUrl =
-        process.env.NEXT_PUBLIC_APP_URL ?? "https://admin.outsignal.ai";
-      const sendersUrl = `${adminBaseUrl}/senders`;
-
-      const warningLines = warnings
-        .map((w) => `\u2022 *${w.senderName}*: ${w.detail}`)
-        .join("\n");
-
-      const blocks: KnownBlock[] = [
-        {
-          type: "header",
-          text: { type: "plain_text", text: "Daily Sender Health Digest" },
-        },
-        {
-          type: "section",
-          text: { type: "mrkdwn", text: warningLines },
-        },
-        {
-          type: "actions",
-          elements: [
-            {
-              type: "button",
-              text: { type: "plain_text", text: "View Senders" },
-              url: sendersUrl,
-            },
-          ],
-        },
-      ];
-
-      await postMessage(workspace.slackChannelId, "Daily Sender Health Digest", blocks);
+        await sendNotificationEmail({
+          to: verified,
+          subject: `[Outsignal] Daily Sender Health Digest \u2014 ${params.warnings.length} warning${params.warnings.length !== 1 ? "s" : ""}`,
+          html: `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f4f4f5;margin:0;padding:0;">
+  <tr>
+    <td align="center" style="padding:40px 16px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:100%;">
+        <!-- Header -->
+        <tr>
+          <td style="background-color:#18181b;padding:20px 32px;border-radius:8px 8px 0 0;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;letter-spacing:3px;color:#F0FF7A;">OUTSIGNAL</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <!-- Body -->
+        <tr>
+          <td style="background-color:#ffffff;padding:32px 32px 24px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#18181b;padding-bottom:8px;line-height:1.3;">Daily Sender Health Digest</td>
+              </tr>
+              <tr>
+                <td style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#71717a;padding-bottom:24px;line-height:1.5;">${params.warnings.length} warning${params.warnings.length !== 1 ? "s" : ""} across ${byWorkspace.size} workspace${byWorkspace.size !== 1 ? "s" : ""}</td>
+              </tr>
+              <!-- Warnings list -->
+              <tr>
+                <td style="padding-bottom:24px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                    ${warningRowsHtml}
+                  </table>
+                </td>
+              </tr>
+              <!-- CTA button -->
+              <tr>
+                <td style="padding-top:8px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="background-color:#F0FF7A;border-radius:8px;">
+                        <a href="${sendersUrl}" target="_blank" style="display:inline-block;padding:14px 32px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;color:#18181b;text-decoration:none;">View Senders</a>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+          <td style="background-color:#fafafa;padding:20px 32px;border-top:1px solid #e4e4e7;border-radius:0 0 8px 8px;">
+            <p style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#a1a1aa;margin:0;line-height:1.5;">Outsignal &mdash; Admin sender health digest.<br/>You received this because you are the system administrator.</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`,
+        });
+      }
     } catch (err) {
-      console.error(`[sendSenderHealthDigest] Failed for workspace ${workspaceSlug}:`, err);
+      console.error("[sendSenderHealthDigest] Email failed:", err);
     }
   }
 }
