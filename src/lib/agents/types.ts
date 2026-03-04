@@ -77,6 +77,23 @@ export interface LeadsOutput {
 
 // --- Writer Agent ---
 
+export interface SignalContext {
+  signalType: "job_change" | "funding" | "hiring_spike" | "tech_adoption" | "news" | "social_mention";
+  companyDomain: string;
+  companyName?: string;
+  isHighIntent: boolean; // true when 2+ stacked signals detected
+}
+
+export interface CreativeIdeaDraft {
+  position: number;         // 1, 2, or 3
+  title: string;            // Short idea title (admin sees this when picking)
+  groundedIn: string;       // Exact offering name from coreOffers/differentiators/caseStudies/KB
+  subjectLine: string;
+  subjectVariantB?: string;
+  body: string;
+  notes: string;
+}
+
 export interface WriterInput {
   workspaceSlug: string;
   task: string;
@@ -85,6 +102,10 @@ export interface WriterInput {
   campaignId?: string; // Link to Campaign entity for context
   feedback?: string;
   stepNumber?: number; // For targeted step regeneration
+  // Phase 20: Copy strategy selection
+  copyStrategy?: "creative-ideas" | "pvp" | "one-liner" | "custom";
+  customStrategyPrompt?: string; // Freeform admin instructions, only for copyStrategy="custom"
+  signalContext?: SignalContext;  // Internal only — never shown to recipient
 }
 
 export interface EmailStep {
@@ -110,6 +131,9 @@ export interface WriterOutput {
   emailSteps?: EmailStep[];
   linkedinSteps?: LinkedInStep[];
   reviewNotes: string;
+  creativeIdeas?: CreativeIdeaDraft[]; // Populated when strategy=creative-ideas
+  strategy?: string;                   // Which strategy was used (e.g. "creative-ideas", "pvp")
+  references?: string[];               // KB doc titles cited during generation
 }
 
 // --- Campaign Agent ---

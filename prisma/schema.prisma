@@ -524,6 +524,10 @@ model Campaign {
   emailSequence    String?
   linkedinSequence String?
 
+  // Copy strategy used for this campaign's sequences (Phase 20)
+  // Values: "creative-ideas" | "pvp" | "one-liner" | "custom" | null (legacy)
+  copyStrategy String?
+
   // Lead approval (CAMP-04)
   leadsApproved   Boolean   @default(false)
   leadsFeedback   String?
