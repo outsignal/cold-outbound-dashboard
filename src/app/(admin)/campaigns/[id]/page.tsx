@@ -10,8 +10,10 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { getCampaign } from "@/lib/campaigns/operations";
+import { prisma } from "@/lib/db";
 import { DeployButton } from "./DeployButton";
 import { DeployHistory } from "./DeployHistory";
+import { SignalStatusButton } from "./SignalStatusButton";
 
 interface CampaignDetailPageProps {
   params: Promise<{ id: string }>;
@@ -28,7 +30,18 @@ const STATUS_COLORS: Record<string, string> = {
   active: "bg-emerald-900/60 text-emerald-300",
   paused: "bg-yellow-900/60 text-yellow-300",
   completed: "bg-zinc-600 text-zinc-300",
+  archived: "bg-zinc-800 text-zinc-400",
 };
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatDate(date: Date): string {
+  return date.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 export default async function CampaignDetailPage({
   params,
@@ -48,6 +61,14 @@ export default async function CampaignDetailPage({
 
   const leadCount = campaign.targetListPeopleCount ?? 0;
 
+  // Signal campaign: count leads added via signal matching
+  const signalLeadCount =
+    campaign.type === "signal"
+      ? await prisma.signalCampaignLead.count({
+          where: { campaignId: campaign.id, outcome: "added" },
+        })
+      : 0;
+
   return (
     <div>
       <Breadcrumb
@@ -66,17 +87,26 @@ export default async function CampaignDetailPage({
             >
               {campaign.status.replace(/_/g, " ")}
             </Badge>
-            <DeployButton
-              campaignId={campaign.id}
-              campaignName={campaign.name}
-              status={campaign.status}
-              leadsApproved={campaign.leadsApproved}
-              contentApproved={campaign.contentApproved}
-              channels={campaign.channels}
-              leadCount={leadCount}
-              emailStepCount={emailStepCount}
-              linkedinStepCount={linkedinStepCount}
-            />
+            {campaign.type === "signal" ? (
+              (campaign.status === "active" || campaign.status === "paused") && (
+                <SignalStatusButton
+                  campaignId={campaign.id}
+                  currentStatus={campaign.status}
+                />
+              )
+            ) : (
+              <DeployButton
+                campaignId={campaign.id}
+                campaignName={campaign.name}
+                status={campaign.status}
+                leadsApproved={campaign.leadsApproved}
+                contentApproved={campaign.contentApproved}
+                channels={campaign.channels}
+                leadCount={leadCount}
+                emailStepCount={emailStepCount}
+                linkedinStepCount={linkedinStepCount}
+              />
+            )}
           </div>
         }
       />
@@ -200,18 +230,64 @@ export default async function CampaignDetailPage({
           </Card>
         )}
 
-        {/* ─── Deploy history ────────────────────────────────────────────────── */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Deploy History</CardTitle>
-            <CardDescription>
-              All deployments for this campaign
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="px-0">
-            <DeployHistory campaignId={campaign.id} />
-          </CardContent>
-        </Card>
+        {/* ─── Signal campaign stats ─────────────────────────────────────────── */}
+        {campaign.type === "signal" && (
+          <Card className="border-zinc-800 bg-zinc-900">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-zinc-400">Signal Stats</CardTitle>
+              <CardDescription>
+                Signal matching configuration and live metrics
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+                <div>
+                  <p className="text-xs text-zinc-500">Signal Types</p>
+                  <p className="text-sm text-zinc-200">
+                    {campaign.signalTypes && campaign.signalTypes.length > 0
+                      ? campaign.signalTypes.join(", ")
+                      : "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Daily Lead Cap</p>
+                  <p className="text-sm text-zinc-200">{campaign.dailyLeadCap}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">ICP Threshold</p>
+                  <p className="text-sm text-zinc-200">{campaign.icpScoreThreshold}/100</p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Last Processed</p>
+                  <p className="text-sm text-zinc-200">
+                    {campaign.lastSignalProcessedAt
+                      ? formatDate(new Date(campaign.lastSignalProcessedAt))
+                      : "Never"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-zinc-500">Leads Added</p>
+                  <p className="text-sm text-zinc-200">{signalLeadCount.toLocaleString()}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ─── Deploy history (static campaigns only) ────────────────────────── */}
+        {campaign.type !== "signal" && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Deploy History</CardTitle>
+              <CardDescription>
+                All deployments for this campaign
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="px-0">
+              <DeployHistory campaignId={campaign.id} />
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );

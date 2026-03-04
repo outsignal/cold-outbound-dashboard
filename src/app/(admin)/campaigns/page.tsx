@@ -26,6 +26,7 @@ const STATUS_COLORS: Record<string, string> = {
   active: "bg-emerald-900/60 text-emerald-300",
   paused: "bg-yellow-900/60 text-yellow-300",
   completed: "bg-zinc-600 text-zinc-300",
+  archived: "bg-zinc-800 text-zinc-400",
 };
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -89,6 +90,7 @@ export default async function CampaignsPage() {
                   <TableHead>Name</TableHead>
                   <TableHead>Workspace</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead>Channels</TableHead>
                   <TableHead>Target List</TableHead>
                   <TableHead>Created</TableHead>
@@ -110,6 +112,11 @@ export default async function CampaignsPage() {
                           >
                             {campaign.name}
                           </Link>
+                          {campaign.type === "signal" && campaign.dailyLeadCap && (
+                            <p className="text-xs text-muted-foreground/60 mt-0.5">
+                              Cap: {campaign.dailyLeadCap}/day
+                            </p>
+                          )}
                         </TableCell>
                         <TableCell>
                           <Link
@@ -125,6 +132,17 @@ export default async function CampaignsPage() {
                           >
                             {campaign.status.replace(/_/g, " ")}
                           </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {campaign.type === "signal" ? (
+                            <Badge className="bg-[#F0FF7A]/20 text-[#F0FF7A] text-xs">
+                              Signal
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-zinc-700 text-zinc-300 text-xs">
+                              Static
+                            </Badge>
+                          )}
                         </TableCell>
                         <TableCell>
                           <div className="flex gap-1">
@@ -163,7 +181,7 @@ export default async function CampaignsPage() {
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={7}
                       className="py-12 text-center text-muted-foreground"
                     >
                       <div className="flex flex-col items-center gap-2">
