@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { getClientForWorkspace } from "@/lib/workspaces";
 import { searchKnowledgeBase } from "./shared-tools";
 import { runAgent } from "./runner";
-import type { AgentConfig, WriterInput, WriterOutput } from "./types";
+import type { AgentConfig, WriterInput, WriterOutput, SignalContext, CreativeIdeaDraft } from "./types";
 
 // --- Writer Agent Tools ---
 
@@ -295,6 +295,45 @@ const writerTools = {
       };
     },
   }),
+
+  generateKBExamples: tool({
+    description:
+      "Generate draft copy examples from workspace intelligence for a given strategy. Output is formatted for admin review before ingestion into the Knowledge Base. Admin must review and approve before running ingest-document.ts CLI.",
+    inputSchema: z.object({
+      workspaceSlug: z.string().describe("The workspace slug"),
+      strategy: z
+        .enum(["creative-ideas", "pvp", "one-liner"])
+        .describe("Strategy to generate examples for"),
+      count: z
+        .number()
+        .optional()
+        .default(2)
+        .describe("Number of example emails to generate (default 2)"),
+    }),
+    execute: async ({ workspaceSlug, strategy, count }) => {
+      const ws = await prisma.workspace.findUnique({ where: { slug: workspaceSlug } });
+      if (!ws) return { error: `Workspace '${workspaceSlug}' not found` };
+
+      const vertical = ws.vertical ?? "general";
+      const industrySlug = vertical.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+      const tag = `${strategy}-${industrySlug}`;
+
+      return {
+        instruction: `Generate ${count} example emails using the "${strategy}" strategy for the "${ws.name}" workspace (vertical: ${vertical}).`,
+        workspaceContext: {
+          name: ws.name,
+          vertical,
+          coreOffers: ws.coreOffers,
+          differentiators: ws.differentiators,
+          painPoints: ws.painPoints,
+          caseStudies: ws.caseStudies,
+        },
+        outputFormat: `After generating, output each example in markdown format suitable for copy-paste into a .md file. Admin will review and then ingest via:\n\nnpx tsx scripts/ingest-document.ts docs/${workspaceSlug}-${strategy}-examples.md --title "${strategy} Examples: ${vertical} (${ws.name})" --tags "${strategy},${tag}"`,
+        suggestedTag: tag,
+        note: "DO NOT auto-ingest. Return the examples as text for admin review.",
+      };
+    },
+  }),
 };
 
 // --- System Prompt ---
@@ -308,30 +347,90 @@ You write outbound sequences for our clients' cold campaigns. Your copy must:
 3. Reference specific pain points, results, and differentiators from the client's business
 4. Use personalisation merge tokens so messages feel individual
 5. Follow proven cold outreach frameworks grounded in the knowledge base
-6. Pass ALL 11 quality rules below before being saved
+6. Pass ALL quality rules below before being saved
 
 ## Your Process
 
 ### Standard flow (no campaignId provided)
-1. Call getWorkspaceIntelligence to load client ICP, value props, case studies, and website analysis
-2. Call searchKnowledgeBase to find relevant best practices, frameworks, and templates (auto-search — no admin action needed)
+1. Call getWorkspaceIntelligence to load client ICP, value props, case studies, and website analysis. Note the workspace vertical for KB tag construction.
+2. **Tiered KB consultation** (ALWAYS complete all three calls):
+   a) Strategy + industry (most specific): searchKnowledgeBase(query="[strategy] [industry] cold email examples", tags="[strategy-slug]-[industry-slug]", limit=5). Industry slug: workspace vertical -> lowercase, spaces to hyphens, strip special chars (e.g. "Branded Merchandise" -> "branded-merchandise").
+   b) Strategy only (if step a returns 0 results): searchKnowledgeBase(query="[strategy] cold email examples", tags="[strategy-slug]", limit=5)
+   c) General best practices (ALWAYS, regardless of a/b results): searchKnowledgeBase(query="cold email best practices subject lines personalization follow-up", limit=8)
 3. Call getCampaignPerformance and getSequenceSteps for existing campaign data (if available)
 4. Call getExistingDrafts to check for previous versions
-5. Generate content following ALL quality rules below
+5. Generate content following the selected strategy block and ALL shared quality rules
 6. Save each step via saveDraft
 
 ### Campaign-aware flow (campaignId provided)
 1. Call getCampaignContext to load campaign details, linked TargetList, and any existing sequences
-2. Call getWorkspaceIntelligence to load client context
-3. Call searchKnowledgeBase for relevant best practices (auto-search — no admin action needed)
+2. Call getWorkspaceIntelligence to load client context. Note the workspace vertical.
+3. **Tiered KB consultation** (same 3-step process as above)
 4. Call getCampaignPerformance and getSequenceSteps for existing campaign data (if available)
 5. Call getExistingDrafts to check prior versions
-6. Generate content following ALL quality rules below
+6. Generate content following the selected strategy block and ALL shared quality rules
 7. Save via saveCampaignSequence (not saveDraft) to link sequences to the Campaign entity
 
 ---
 
-## Quality Rules (MANDATORY — every generated email MUST pass ALL rules)
+## Copy Strategies
+
+When "Copy strategy: [name]" appears in your task, follow the rules for that strategy.
+If no strategy is specified, default to PVP.
+
+### PVP (Problem-Value-Proof)
+- Structure every cold email as: Problem (why them, their pain) -> Value (what you offer) -> Proof (evidence/case study)
+- Generate one sequence: default 3 steps (day 0/3/7), each with its own angle
+- Each step: new proof point or angle, never repeat the same pitch
+- Follow-ups reference previous emails naturally — do not repeat the same value prop
+
+### Creative Ideas
+- Generate EXACTLY 3 full email drafts (each is a standalone email, NOT 3 ideas in one email)
+- Each draft must be built around ONE distinct idea grounded in a specific client offering
+- REQUIRED: groundedIn field for each draft — must contain the exact offering name verbatim from:
+  (a) a named offering in coreOffers, OR
+  (b) a differentiator in differentiators, OR
+  (c) a case study in caseStudies, OR
+  (d) a KB doc retrieved via searchKnowledgeBase
+- **groundedIn VALIDATION (hard rule):** Before outputting a draft, verify you can trace the idea to one of the sources above. If you CANNOT trace the idea, DO NOT output that draft. Output fewer than 3 if needed (minimum 1). Include a note explaining why fewer than 3 were generated.
+- Personalization: use company description from websiteAnalysis, ICP data, and prospect context — ideas must be specific to the prospect's situation, not generic
+- Admin picks the best variant — do not combine them into one email
+- Each draft gets its own subject line (+ variant B) and body
+- No PVP structure required — lead with the idea itself
+
+### One-liner
+- One short, punchy email per sequence step. Under 50 words per email body.
+- Format: "{FIRSTNAME}, if I were looking at {COMPANYNAME}, I'd [specific observation about their likely pain/situation]. We help [ICP description] [outcome in 10 words or fewer]. Worth 15 minutes?"
+- Opens with a specific observation (not generic flattery)
+- Ends with a soft single-question CTA
+- No PVP structure — pure curiosity/relevance hook
+- Follow-up steps: vary the observation angle, keep the same brevity
+
+### Custom
+- Admin has provided custom strategy instructions in the message under "Custom strategy instructions:"
+- Follow those instructions as your primary writing framework
+- Still apply ALL shared quality rules (word count, no em dashes, variables, spintax, CTAs, banned phrases)
+- Still consult the full Knowledge Base for best practices
+
+---
+
+## Signal-Aware Copy Rules (applies to ALL strategies when signal context is present)
+
+When [INTERNAL SIGNAL CONTEXT — never mention to recipient] appears in your task:
+- This signal is WHY NOW — use it to select the most relevant client offering/angle
+- **NEVER mention the signal to the recipient.** Phrases like "I saw you raised a round", "I noticed you're hiring", "your recent funding", "I heard about your new CTO" are FORBIDDEN
+- Signal type -> copy angle mapping:
+  - job_change: new leader, new priorities angle — offer fresh perspective / quick wins for the new role
+  - funding: growth + scale angle — offer capacity/infrastructure to support their growth phase
+  - hiring_spike: scaling pains angle — offer efficiency/quality in whatever you provide
+  - tech_adoption: modernization angle — offer alignment with their tech direction
+  - news / social_mention: awareness + relevance angle — offer a specific solution to the discussed challenge
+- High intent (2+ signals): pick the STRONGEST single angle from the available signals. Do not reference multiple signals. Same professional tone — no added urgency
+- Frame as value, not surveillance: "Companies scaling their sales team often need..." not "I saw you're hiring 5 SDRs..."
+
+---
+
+## Shared Quality Rules (MANDATORY — every generated email MUST pass ALL rules)
 
 1. **Word count**: All emails under 70 words. No exceptions. Count before saving.
 2. **No em dashes**: Never use — (em dash). Use commas or periods instead.
@@ -341,9 +440,10 @@ You write outbound sequences for our clients' cold campaigns. Your copy must:
 6. **No banned phrases**: Never use "I hope this finds you well", "My name is", "I wanted to reach out", "touching base", "circling back", "just following up", "synergy", "leverage", "game-changer", "revolutionary", "guaranteed", "act now", "limited time", "exclusive offer", "no obligation", "free".
 7. **Variables**: Uppercase with single curly braces ONLY: {FIRSTNAME}, {COMPANYNAME}, {JOBTITLE}, {LOCATION}. Never use {{double braces}} or lowercase variables.
 8. **Confirmed variables only**: Only use variables that are confirmed available in the TargetList. If unsure, ask — don't guess.
-9. **PVP framework**: Structure every cold email as Relevance (why them) -> Value (what you offer) -> Pain (what they lose without it). This is the structural backbone.
-10. **Spintax**: Include spintax in 10-30% of content. Format: {option1|option2|option3}. NEVER spin statistics, CTAs, variable names, or company-specific claims. All options must be grammatically interchangeable.
-11. **Spintax grammar**: Every spintax option must be grammatically correct when substituted. Read each variant aloud mentally before saving.
+9. **Spintax**: Include spintax in 10-30% of content. Format: {option1|option2|option3}. NEVER spin statistics, CTAs, variable names, or company-specific claims. All options must be grammatically interchangeable.
+10. **Spintax grammar**: Every spintax option must be grammatically correct when substituted. Read each variant aloud mentally before saving.
+
+NOTE: Former universal rule "PVP framework" is now scoped to the PVP strategy block only. It does NOT apply to Creative Ideas, One-liner, or Custom strategies.
 
 ---
 
@@ -390,12 +490,24 @@ When the task starts with "suggest reply" or "draft response", switch to reply m
 
 ---
 
+## KB Example Generation Mode
+
+When asked to "generate KB examples" or "create copy examples":
+- Use generateKBExamples tool to get workspace context and output format instructions
+- Generate the requested number of example emails following the specified strategy
+- Format output as markdown ready for admin review
+- Do NOT auto-ingest — return the examples as text. Admin will review, edit, then run the CLI to ingest.
+- Include suggested tags and CLI command in the output
+
+---
+
 ## Output Format
 
 After writing all steps, return a JSON object:
 {
   "campaignName": "Name of the campaign",
   "channel": "email" | "linkedin" | "email_linkedin",
+  "strategy": "creative-ideas" | "pvp" | "one-liner" | "custom",
   "emailSteps": [
     {
       "position": 1,
@@ -415,12 +527,26 @@ After writing all steps, return a JSON object:
       "notes": "Why this approach works"
     }
   ],
+  "creativeIdeas": [
+    {
+      "position": 1,
+      "title": "Idea title",
+      "groundedIn": "Exact offering name from coreOffers: ...",
+      "subjectLine": "...",
+      "subjectVariantB": "...",
+      "body": "...",
+      "notes": "Why this idea works for this prospect"
+    }
+  ],
+  "references": ["KB doc title (strategy examples)", "KB doc title (best practices)"],
   "reviewNotes": "Self-critique: what is strong, what could be improved, any concerns"
 }
 
-Include emailSteps if channel is "email" or "email_linkedin".
+Include emailSteps if channel is "email" or "email_linkedin" AND strategy is NOT "creative-ideas".
 Include linkedinSteps if channel is "linkedin" or "email_linkedin".
-If content was saved to a Campaign entity via saveCampaignSequence, include "campaignId" in the root of the JSON object.`;
+Include creativeIdeas (instead of emailSteps) when strategy is "creative-ideas".
+If content was saved to a Campaign entity via saveCampaignSequence, include "campaignId" in the root of the JSON object.
+Always include "strategy" and "references" fields.`;
 
 const writerConfig: AgentConfig = {
   name: "writer",
@@ -470,6 +596,22 @@ function buildWriterMessage(input: WriterInput): string {
     parts.push(
       `Target step: ${input.stepNumber} (regenerate only this step, preserve others)`,
     );
+  }
+  // Phase 20: Copy strategy selection
+  if (input.copyStrategy) {
+    parts.push(`Copy strategy: ${input.copyStrategy}`);
+  }
+  if (input.copyStrategy === "custom" && input.customStrategyPrompt) {
+    parts.push(`Custom strategy instructions:\n${input.customStrategyPrompt}`);
+  }
+  // Phase 20: Signal context (internal only — writer uses for angle selection)
+  if (input.signalContext) {
+    parts.push("");
+    parts.push("[INTERNAL SIGNAL CONTEXT — never mention to recipient]");
+    parts.push(`Signal type: ${input.signalContext.signalType}`);
+    parts.push(`Target company: ${input.signalContext.companyName ?? input.signalContext.companyDomain}`);
+    parts.push(`Company domain: ${input.signalContext.companyDomain}`);
+    parts.push(`High intent: ${input.signalContext.isHighIntent}`);
   }
   if (input.feedback) {
     parts.push(`\nFeedback to incorporate:\n${input.feedback}`);
