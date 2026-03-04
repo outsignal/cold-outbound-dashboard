@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle2, MessageSquare, ChevronDown, Mail, Linkedin } from "lucide-react";
+import { CheckCircle2, MessageSquare, ChevronDown, Mail, Linkedin, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { resolveSpintax, substituteTokens } from "@/lib/content-preview";
 
@@ -112,6 +112,7 @@ export function CampaignApprovalContent({
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const canAct = isPending && !contentApproved;
 
@@ -123,28 +124,42 @@ export function CampaignApprovalContent({
 
   async function handleApprove() {
     setLoading(true);
-    await fetch(`/api/portal/campaigns/${campaignId}/approve-content`, {
-      method: "POST",
-    });
-    setLoading(false);
-    router.refresh();
+    setError(null);
+    try {
+      const res = await fetch(`/api/portal/campaigns/${campaignId}/approve-content`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Failed to approve content");
+      router.refresh();
+    } catch {
+      setError("Something went wrong approving the content. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleRequestChanges() {
     if (!feedback.trim()) return;
     setLoading(true);
-    await fetch(
-      `/api/portal/campaigns/${campaignId}/request-changes-content`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ feedback: feedback.trim() }),
-      },
-    );
-    setLoading(false);
-    setShowFeedback(false);
-    setFeedback("");
-    router.refresh();
+    setError(null);
+    try {
+      const res = await fetch(
+        `/api/portal/campaigns/${campaignId}/request-changes-content`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ feedback: feedback.trim() }),
+        },
+      );
+      if (!res.ok) throw new Error("Failed to submit feedback");
+      setShowFeedback(false);
+      setFeedback("");
+      router.refresh();
+    } catch {
+      setError("Something went wrong submitting your feedback. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   const typeLabels: Record<string, string> = {
@@ -271,12 +286,18 @@ export function CampaignApprovalContent({
         {/* Approval buttons */}
         {canAct && (hasEmail || hasLinkedIn) && (
           <div className="mt-6 space-y-3">
+            {error && (
+              <p className="text-sm text-red-600">{error}</p>
+            )}
             <div className="flex items-center gap-3">
               <Button
                 onClick={handleApprove}
                 disabled={loading}
                 variant="brand"
               >
+                {loading && !showFeedback && (
+                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                )}
                 Approve Content
               </Button>
               <Button
@@ -300,9 +321,12 @@ export function CampaignApprovalContent({
                 <Button
                   onClick={handleRequestChanges}
                   disabled={loading || !feedback.trim()}
-                  variant="destructive"
+                  variant="brand"
                   size="sm"
                 >
+                  {loading && showFeedback && (
+                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                  )}
                   Submit Feedback
                 </Button>
               </div>

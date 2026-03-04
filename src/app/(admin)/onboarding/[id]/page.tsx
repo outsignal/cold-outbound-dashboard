@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { Header } from "@/components/layout/header";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CopyLinkButton } from "@/components/proposals/copy-link-button";
@@ -35,6 +36,12 @@ export default async function OnboardingInviteDetailPage({
 
   return (
     <div>
+      <Breadcrumb
+        items={[
+          { label: "Onboarding", href: "/onboarding" },
+          { label: invite.clientName },
+        ]}
+      />
       <Header
         title={invite.clientName}
         description="Onboarding invite"

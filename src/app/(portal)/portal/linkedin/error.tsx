@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-export default function PortalError({
+export default function LinkedInError({
   reset,
 }: {
   error: Error & { digest?: string };
@@ -18,8 +18,8 @@ export default function PortalError({
             Something went wrong loading this page
           </h2>
           <p className="text-sm text-muted-foreground">
-            An unexpected error occurred. Please try again or return to the
-            dashboard.
+            We couldn&apos;t load the LinkedIn page. Please try again or go back
+            to the dashboard.
           </p>
           <div className="flex items-center justify-center gap-3">
             <Button onClick={reset} variant="brand">

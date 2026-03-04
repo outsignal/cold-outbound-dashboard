@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { CheckCircle2, MessageSquare, ExternalLink } from "lucide-react";
+import { CheckCircle2, MessageSquare, ExternalLink, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface LeadSample {
@@ -48,30 +48,45 @@ export function CampaignApprovalLeads({
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const canAct = isPending && !leadsApproved;
 
   async function handleApprove() {
     setLoading(true);
-    await fetch(`/api/portal/campaigns/${campaignId}/approve-leads`, {
-      method: "POST",
-    });
-    setLoading(false);
-    router.refresh();
+    setError(null);
+    try {
+      const res = await fetch(`/api/portal/campaigns/${campaignId}/approve-leads`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Failed to approve leads");
+      router.refresh();
+    } catch {
+      setError("Something went wrong approving the leads. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleRequestChanges() {
     if (!feedback.trim()) return;
     setLoading(true);
-    await fetch(`/api/portal/campaigns/${campaignId}/request-changes-leads`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ feedback: feedback.trim() }),
-    });
-    setLoading(false);
-    setShowFeedback(false);
-    setFeedback("");
-    router.refresh();
+    setError(null);
+    try {
+      const res = await fetch(`/api/portal/campaigns/${campaignId}/request-changes-leads`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ feedback: feedback.trim() }),
+      });
+      if (!res.ok) throw new Error("Failed to submit feedback");
+      setShowFeedback(false);
+      setFeedback("");
+      router.refresh();
+    } catch {
+      setError("Something went wrong submitting your feedback. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -168,12 +183,18 @@ export function CampaignApprovalLeads({
         {/* Approval buttons — only show when campaign is pending and leads not yet approved */}
         {canAct && leads.length > 0 && (
           <div className="mt-6 space-y-3">
+            {error && (
+              <p className="text-sm text-red-600">{error}</p>
+            )}
             <div className="flex items-center gap-3">
               <Button
                 onClick={handleApprove}
                 disabled={loading}
                 variant="brand"
               >
+                {loading && !showFeedback && (
+                  <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                )}
                 Approve Leads
               </Button>
               <Button
@@ -197,9 +218,12 @@ export function CampaignApprovalLeads({
                 <Button
                   onClick={handleRequestChanges}
                   disabled={loading || !feedback.trim()}
-                  variant="destructive"
+                  variant="brand"
                   size="sm"
                 >
+                  {loading && showFeedback && (
+                    <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                  )}
                   Submit Feedback
                 </Button>
               </div>

@@ -100,7 +100,7 @@ export function PersonHeader({
       {/* Name row */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground tracking-tight">
+          <h1 className="text-xl font-heading font-semibold text-foreground tracking-tight">
             {fullName ?? (
               <span className="text-muted-foreground font-normal italic">
                 No name

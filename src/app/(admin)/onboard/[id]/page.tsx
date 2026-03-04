@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { Header } from "@/components/layout/header";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PACKAGE_LABELS, formatPence } from "@/lib/proposal-templates";
@@ -43,6 +44,12 @@ export default async function ProposalDetailPage({
 
   return (
     <div>
+      <Breadcrumb
+        items={[
+          { label: "Proposals", href: "/onboard" },
+          { label: proposal.clientName },
+        ]}
+      />
       <Header
         title={proposal.clientName}
         description={PACKAGE_LABELS[proposal.packageType] || proposal.packageType}

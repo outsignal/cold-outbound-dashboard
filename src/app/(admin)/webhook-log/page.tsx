@@ -5,6 +5,8 @@ import { useQueryStates, parseAsString, parseAsBoolean, parseAsInteger } from "n
 import { useDebouncedCallback } from "use-debounce";
 import { Search, Webhook } from "lucide-react";
 import { Header } from "@/components/layout/header";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   WebhookLogTable,
   type WebhookEvent,
@@ -182,12 +184,12 @@ export default function WebhookLogPage() {
           {/* Search box */}
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-            <input
+            <Input
               type="text"
               placeholder="Search by email address…"
               defaultValue={params.search}
               onChange={(e) => debouncedSetSearch(e.target.value)}
-              className="w-full border border-border bg-background text-sm text-foreground placeholder-muted-foreground rounded-md pl-8 pr-4 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand"
+              className="pl-8"
             />
           </div>
 
@@ -247,7 +249,9 @@ export default function WebhookLogPage() {
 
           {/* Clear all filters */}
           {hasFilters ? (
-            <button
+            <Button
+              variant="link"
+              size="xs"
               onClick={() =>
                 void setParams({
                   search: "",
@@ -258,10 +262,10 @@ export default function WebhookLogPage() {
                   page: 1,
                 })
               }
-              className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 ml-2"
+              className="text-muted-foreground hover:text-foreground ml-2"
             >
               Clear all
-            </button>
+            </Button>
           ) : null}
         </div>
 
@@ -271,12 +275,13 @@ export default function WebhookLogPage() {
             <p className="text-red-800 text-sm">
               Failed to load events: {error}
             </p>
-            <button
+            <Button
+              variant="destructive"
+              size="sm"
               onClick={() => void fetchData()}
-              className="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded"
             >
               Retry
-            </button>
+            </Button>
           </div>
         )}
 
@@ -300,20 +305,22 @@ export default function WebhookLogPage() {
               {data.total.toLocaleString()} total
             </p>
             <div className="flex items-center gap-2">
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => void setParams({ page: params.page - 1 })}
                 disabled={params.page <= 1}
-                className="px-3 py-1.5 text-xs rounded border border-border bg-secondary text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Previous
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => void setParams({ page: params.page + 1 })}
                 disabled={params.page >= totalPages}
-                className="px-3 py-1.5 text-xs rounded border border-border bg-secondary text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Next
-              </button>
+              </Button>
             </div>
           </div>
         )}

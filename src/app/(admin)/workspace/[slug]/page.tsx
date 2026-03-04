@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Header } from "@/components/layout/header";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -78,19 +80,24 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
 
   return (
     <div>
+      <Breadcrumb
+        items={[
+          { label: "Workspaces", href: "/" },
+          { label: workspace.name },
+        ]}
+      />
       <Header
         title={workspace.name}
         description={
           workspace.vertical ? `Vertical: ${workspace.vertical}` : undefined
         }
         actions={
-          <Link
-            href={`/workspace/${slug}/settings`}
-            className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Settings className="h-4 w-4" />
-            Settings
-          </Link>
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/workspace/${slug}/settings`}>
+              <Settings className="h-4 w-4 mr-1.5" />
+              Settings
+            </Link>
+          </Button>
         }
       />
       <div className="p-8 space-y-6">
@@ -303,6 +310,12 @@ function PendingWorkspaceView({
 
   return (
     <div>
+      <Breadcrumb
+        items={[
+          { label: "Workspaces", href: "/" },
+          { label: details.name },
+        ]}
+      />
       <Header
         title={details.name}
         description={

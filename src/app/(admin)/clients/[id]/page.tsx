@@ -16,6 +16,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { Header } from "@/components/layout/header";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -204,6 +205,12 @@ export default function ClientDetailPage() {
 
   return (
     <div>
+      <Breadcrumb
+        items={[
+          { label: "Clients", href: "/clients" },
+          { label: client.name },
+        ]}
+      />
       {/* Header */}
       <Header
         title={client.name}
@@ -214,13 +221,6 @@ export default function ClientDetailPage() {
         }
         actions={
           <>
-            <Link
-              href="/clients"
-              className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Clients
-            </Link>
             <Button variant="outline" size="sm" asChild>
               <Link href={`/clients/${clientId}/edit`}>
                 <Pencil className="h-4 w-4 mr-1.5" />
@@ -392,10 +392,11 @@ export default function ClientDetailPage() {
             {/* Notes (expandable) */}
             {client.notes && (
               <div className="mt-4 pt-4 border-t border-border/50">
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="xs"
                   onClick={() => setNotesExpanded(!notesExpanded)}
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium uppercase tracking-wider hover:text-foreground transition-colors"
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium uppercase tracking-wider hover:text-foreground px-0"
                 >
                   Notes
                   {notesExpanded ? (
@@ -403,7 +404,7 @@ export default function ClientDetailPage() {
                   ) : (
                     <ChevronDown className="h-3 w-3" />
                   )}
-                </button>
+                </Button>
                 {notesExpanded && (
                   <p className="mt-2 text-sm text-foreground/80 whitespace-pre-wrap">
                     {client.notes}

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { Header } from "@/components/layout/header";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -49,6 +50,12 @@ export default async function CampaignDetailPage({
 
   return (
     <div>
+      <Breadcrumb
+        items={[
+          { label: "Campaigns", href: "/campaigns" },
+          { label: campaign.name },
+        ]}
+      />
       <Header
         title={campaign.name}
         description={campaign.workspaceSlug}

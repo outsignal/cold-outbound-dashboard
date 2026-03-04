@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
 import { prisma } from "@/lib/db";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import { PersonHeader } from "@/components/people/person-header";
 import { PersonTimeline, type TimelineEvent } from "@/components/people/person-timeline";
 import {
@@ -167,18 +166,17 @@ export default async function PersonDetailPage({
     }
   } catch {}
 
+  const fullName = [person.firstName, person.lastName].filter(Boolean).join(" ") || null;
+
   return (
     <div className="flex flex-col h-full">
       {/* Breadcrumb */}
-      <div className="border-b border-border px-6 py-3">
-        <Link
-          href="/people"
-          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ChevronLeft className="w-3 h-3" />
-          Back to People
-        </Link>
-      </div>
+      <Breadcrumb
+        items={[
+          { label: "People", href: "/people" },
+          { label: fullName ?? person.email },
+        ]}
+      />
 
       {/* Header */}
       <PersonHeader
@@ -213,7 +211,7 @@ export default async function PersonDetailPage({
           <TabsContent value="overview">
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium">Activity Timeline</CardTitle>
+                <CardTitle>Activity Timeline</CardTitle>
               </CardHeader>
               <CardContent>
                 <PersonTimeline events={allEvents} />
@@ -300,7 +298,7 @@ export default async function PersonDetailPage({
             <div className="space-y-4">
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium">Enrichment Fields</CardTitle>
+                  <CardTitle>Enrichment Fields</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {Object.keys(enrichmentFields).length === 0 ? (
@@ -322,7 +320,7 @@ export default async function PersonDetailPage({
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium">Enrichment History</CardTitle>
+                  <CardTitle>Enrichment History</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {enrichmentLogs.length === 0 ? (

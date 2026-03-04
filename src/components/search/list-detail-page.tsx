@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Breadcrumb } from "@/components/ui/breadcrumb";
 import {
   Table,
   TableBody,
@@ -248,21 +249,23 @@ export function ListDetailPage({ listId }: Props) {
   const totalPages = Math.ceil(total / pageSize);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
+      {/* Breadcrumb */}
+      <Breadcrumb
+        items={[
+          { label: "Lists", href: "/lists" },
+          { label: list?.name ?? "Loading..." },
+        ]}
+      />
+
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between px-4 sm:px-8">
         <div className="space-y-1">
-          <Link
-            href="/lists"
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            &larr; Back to Lists
-          </Link>
           {loading && !list ? (
-            <Skeleton className="h-8 w-48 bg-muted mt-2" />
+            <Skeleton className="h-8 w-48 bg-muted" />
           ) : (
-            <div className="flex items-center gap-3 mt-2">
-              <h1 className="text-2xl font-bold text-foreground">{list?.name}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-xl font-heading font-semibold tracking-tight text-foreground">{list?.name}</h1>
               <Badge
                 variant="outline"
                 className="border-border text-foreground"
@@ -305,10 +308,13 @@ export function ListDetailPage({ listId }: Props) {
         </div>
       </div>
 
+      {/* Content area */}
+      <div className="px-4 sm:px-8 pb-6 space-y-6">
+
       {/* Enrichment summary bars */}
       {(summary || (loading && !data)) && (
         <div className="border border-border rounded-lg p-4 space-y-2.5 bg-card">
-          <h2 className="text-sm font-semibold text-foreground mb-3">
+          <h2 className="text-lg font-semibold text-foreground mb-3">
             Enrichment Coverage
           </h2>
           {loading && !data ? (
@@ -504,6 +510,8 @@ export function ListDetailPage({ listId }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      </div>{/* end content area */}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { PortalSidebar } from "@/components/portal/portal-sidebar";
+import { PortalMobileMenu } from "@/components/portal/portal-mobile-menu";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 interface PortalAppShellProps {
@@ -16,7 +17,13 @@ export async function PortalAppShell({ workspaceSlug, children }: PortalAppShell
   return (
     <TooltipProvider delayDuration={0}>
       <div className="flex h-screen overflow-hidden">
-        <PortalSidebar
+        <div className="hidden md:flex">
+          <PortalSidebar
+            workspaceSlug={workspaceSlug}
+            workspaceName={workspace?.name ?? workspaceSlug}
+          />
+        </div>
+        <PortalMobileMenu
           workspaceSlug={workspaceSlug}
           workspaceName={workspace?.name ?? workspaceSlug}
         />

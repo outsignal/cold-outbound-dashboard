@@ -192,7 +192,7 @@ export function OnboardPageClient({
 
       {/* Proposals table */}
       <section className="space-y-2">
-        <h2 className="text-base font-semibold">Proposals</h2>
+        <h2 className="text-lg font-semibold">Proposals</h2>
         <Card>
           <CardContent className="p-0">
             <Table>
@@ -277,7 +277,7 @@ export function OnboardPageClient({
 
       {/* Onboarding invites table */}
       <section className="space-y-2">
-        <h2 className="text-base font-semibold">Onboarding Invites</h2>
+        <h2 className="text-lg font-semibold">Onboarding Invites</h2>
         <Card>
           <CardContent className="p-0">
             <Table>
