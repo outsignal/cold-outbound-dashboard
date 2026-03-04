@@ -1338,31 +1338,14 @@ export class LinkedInBrowser {
    * Called automatically after a successful login. Returns null if extraction fails.
    */
   async extractVoyagerCookies(): Promise<{ liAt: string; jsessionId: string } | null> {
-    try {
-      // Use regex matching so the JS contains no inner quotes at all —
-      // avoiding the shell-escaping issues that arise when parseCommand()
-      // tokenises the eval string and misinterprets backslash-quoted chars.
-      // Note: li_at is HttpOnly, so document.cookie will never contain it;
-      // this path returns null for li_at and we fall through to the CDP
-      // fallback below, which reads HttpOnly cookies via the browser API.
-      const js =
-        "JSON.stringify({" +
-        "li_at:(document.cookie.match(/li_at=([^;]+)/)||[])[1]||null," +
-        "JSESSIONID:(document.cookie.match(/JSESSIONID=([^;]+)/)||[])[1]||null" +
-        "})";
-      const result = this.exec(`eval "${js}"`);
+    // Wait for LinkedIn to finalize cookie-setting after login redirect
+    await new Promise((r) => setTimeout(r, 3000));
+    const currentUrl = this.exec("get url");
+    this.log(`Extracting Voyager cookies from: ${currentUrl}`);
 
-      const parsed = JSON.parse(result.trim());
-      if (!parsed.li_at || !parsed.JSESSIONID) {
-        // li_at is HttpOnly — use agent-browser's cookie store as fallback
-        return this.extractCookiesViaCDP();
-      }
-      return { liAt: parsed.li_at, jsessionId: parsed.JSESSIONID };
-    } catch (err) {
-      console.error('[LinkedInBrowser] Cookie extraction via eval failed, trying CDP fallback:', err);
-      // If the eval itself throws (e.g. command error), still try the CDP path
-      return this.extractCookiesViaCDP();
-    }
+    // Skip the eval path entirely — li_at is always HttpOnly,
+    // so document.cookie will never have it. Go straight to CDP.
+    return this.extractCookiesViaCDP();
   }
 
   /**
@@ -1372,7 +1355,13 @@ export class LinkedInBrowser {
   private extractCookiesViaCDP(): { liAt: string; jsessionId: string } | null {
     try {
       const result = this.exec("cookies get --json");
+      this.log(`cookies get --json returned ${result.length} chars`);
       const cookies: Array<{ name: string; value: string; domain: string }> = JSON.parse(result.trim());
+      this.log(`Parsed ${cookies.length} cookies total`);
+
+      // Log LinkedIn-specific cookies for debugging
+      const linkedinCookies = cookies.filter((c) => c.domain.includes("linkedin"));
+      this.log(`Found ${linkedinCookies.length} LinkedIn cookies: ${linkedinCookies.map((c) => c.name).join(", ")}`);
 
       // Find li_at and JSESSIONID cookies for LinkedIn domain
       const liAtCookie = cookies.find(
@@ -1382,9 +1371,13 @@ export class LinkedInBrowser {
         (c) => c.name === "JSESSIONID" && c.domain.includes("linkedin.com")
       );
 
-      if (!liAtCookie || !jsessionCookie) return null;
+      if (!liAtCookie || !jsessionCookie) {
+        this.log(`Missing cookies — li_at: ${!!liAtCookie}, JSESSIONID: ${!!jsessionCookie}`);
+        return null;
+      }
       return { liAt: liAtCookie.value, jsessionId: jsessionCookie.value };
-    } catch {
+    } catch (err) {
+      this.log(`extractCookiesViaCDP error: ${err}`);
       return null;
     }
   }
