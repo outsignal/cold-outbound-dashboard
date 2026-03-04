@@ -1356,7 +1356,10 @@ export class LinkedInBrowser {
     try {
       const result = this.exec("cookies get --json");
       this.log(`cookies get --json returned ${result.length} chars`);
-      const cookies: Array<{ name: string; value: string; domain: string }> = JSON.parse(result.trim());
+      const raw = JSON.parse(result.trim());
+      // agent-browser wraps output: { success, data: { cookies: [...] } }
+      const cookies: Array<{ name: string; value: string; domain: string }> =
+        Array.isArray(raw) ? raw : raw?.data?.cookies ?? raw?.cookies ?? [];
       this.log(`Parsed ${cookies.length} cookies total`);
 
       // Log LinkedIn-specific cookies for debugging
