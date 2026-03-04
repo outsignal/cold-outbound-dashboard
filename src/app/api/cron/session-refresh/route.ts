@@ -1,3 +1,7 @@
+// Deprecated: session-refresh logic has been merged into /api/inbox-health/check.
+// This standalone route is kept temporarily for backward compatibility and can be deleted
+// once the Vercel cron schedule is confirmed removed.
+
 import { NextResponse } from "next/server";
 import { refreshStaleSessions } from "@/lib/linkedin/session-refresh";
 

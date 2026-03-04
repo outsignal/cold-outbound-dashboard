@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PIPELINE_STATUSES } from "@/lib/clients/task-templates";
+import { ControlledConfirmDialog } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -101,6 +102,26 @@ function getStatusConfig(status: string) {
   };
 }
 
+/** Map pipeline status values to Tailwind classes for badge + dot styling */
+const STATUS_BADGE_CLASSES: Record<string, { badge: string; dot: string }> = {
+  new_lead:     { badge: "bg-slate-100 text-slate-600",    dot: "bg-slate-400" },
+  contacted:    { badge: "bg-indigo-50 text-indigo-600",   dot: "bg-indigo-500" },
+  qualified:    { badge: "bg-indigo-50 text-indigo-600",   dot: "bg-indigo-500" },
+  demo:         { badge: "bg-violet-50 text-violet-600",   dot: "bg-violet-500" },
+  proposal:     { badge: "bg-amber-50 text-amber-600",     dot: "bg-amber-500" },
+  negotiation:  { badge: "bg-orange-50 text-orange-600",   dot: "bg-orange-500" },
+  closed_won:   { badge: "bg-green-50 text-green-700",     dot: "bg-green-500" },
+  closed_lost:  { badge: "bg-red-50 text-red-700",         dot: "bg-red-500" },
+  unqualified:  { badge: "bg-slate-50 text-slate-500",     dot: "bg-slate-400" },
+  churned:      { badge: "bg-rose-50 text-rose-700",       dot: "bg-rose-500" },
+};
+
+const FALLBACK_BADGE_CLASSES = { badge: "bg-slate-100 text-slate-600", dot: "bg-slate-400" };
+
+function getStatusClasses(status: string) {
+  return STATUS_BADGE_CLASSES[status] ?? FALLBACK_BADGE_CLASSES;
+}
+
 // ─── Status Badge ─────────────────────────────────────────────────────────────
 
 function StatusBadge({
@@ -111,16 +132,16 @@ function StatusBadge({
   onStatusChange: (newStatus: string) => void;
 }) {
   const config = getStatusConfig(status);
+  const classes = getStatusClasses(status);
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
-          className="px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-opacity hover:opacity-80 focus:outline-none"
-          style={{
-            backgroundColor: `${config.color}20`,
-            color: config.color,
-          }}
+          className={cn(
+            "px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-opacity hover:opacity-80 focus:outline-none",
+            classes.badge,
+          )}
         >
           {config.label}
         </button>
@@ -133,8 +154,7 @@ function StatusBadge({
             className="flex items-center gap-2"
           >
             <span
-              className="h-2 w-2 rounded-full shrink-0"
-              style={{ backgroundColor: s.color }}
+              className={cn("h-2 w-2 rounded-full shrink-0", getStatusClasses(s.value).dot)}
             />
             {s.label}
           </DropdownMenuItem>
@@ -303,8 +323,7 @@ function KanbanColumn({
       {/* Column header */}
       <div className="mb-3 flex items-center gap-2">
         <span
-          className="h-2.5 w-2.5 rounded-full shrink-0"
-          style={{ backgroundColor: status.color }}
+          className={cn("h-2.5 w-2.5 rounded-full shrink-0", getStatusClasses(status.value).dot)}
         />
         <h3 className="text-sm font-semibold tracking-tight truncate">
           {status.label}
@@ -354,6 +373,11 @@ export default function PipelinePage() {
   const [editingProspect, setEditingProspect] = useState<Prospect | null>(null);
   const [editFormData, setEditFormData] = useState<ProspectFormData>({ ...EMPTY_FORM });
   const [editSubmitting, setEditSubmitting] = useState(false);
+
+  // Confirmation dialog state
+  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
+  const [convertConfirm, setConvertConfirm] = useState<{ id: string; name: string } | null>(null);
+  const [closedWonConfirm, setClosedWonConfirm] = useState<{ id: string; name: string } | null>(null);
 
   const fetchProspects = useCallback(async () => {
     setLoading(true);
@@ -418,12 +442,7 @@ export default function PipelinePage() {
 
       if (newStatus === "closed_won") {
         const prospect = prospects.find((p) => p.id === id);
-        const shouldConvert = confirm(
-          `"${prospect?.name}" has been marked as Closed Won. Would you like to convert them to a full client now?`
-        );
-        if (shouldConvert) {
-          router.push(`/clients/${id}`);
-        }
+        setClosedWonConfirm({ id, name: prospect?.name ?? "This prospect" });
       }
     } catch {
       // Revert on error
@@ -431,11 +450,12 @@ export default function PipelinePage() {
     }
   }
 
-  async function handleDelete(id: string, name: string) {
-    if (!confirm(`Are you sure you want to delete "${name}"? This cannot be undone.`)) {
-      return;
-    }
+  function handleDelete(id: string, name: string) {
+    setDeleteConfirm({ id, name });
+  }
 
+  async function executeDelete(id: string) {
+    setDeleteConfirm(null);
     setProspects((prev) => prev.filter((p) => p.id !== id));
 
     try {
@@ -469,15 +489,13 @@ export default function PipelinePage() {
     }
   }
 
-  async function handleConvertToClient(id: string) {
+  function handleConvertToClient(id: string) {
     const prospect = prospects.find((p) => p.id === id);
-    if (
-      !confirm(
-        `Convert "${prospect?.name}" to a client? This will set them to Closed Won and create onboarding tasks.`,
-      )
-    ) {
-      return;
-    }
+    setConvertConfirm({ id, name: prospect?.name ?? "This prospect" });
+  }
+
+  async function executeConvert(id: string) {
+    setConvertConfirm(null);
 
     // Set status to closed_won (backend auto-populates tasks)
     setProspects((prev) =>
@@ -664,7 +682,7 @@ export default function PipelinePage() {
         {/* Search + count */}
         <div className="flex items-center gap-3 mb-6">
           <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
             <Input
               placeholder="Search prospects..."
               value={search}
@@ -683,7 +701,7 @@ export default function PipelinePage() {
         {/* Kanban board */}
         {!loading && prospects.length === 0 && !search ? (
           <div className="flex flex-col items-center justify-center py-20">
-            <Building2 className="h-12 w-12 text-muted-foreground/50 mb-4" />
+            <Building2 className="h-12 w-12 text-muted-foreground/50 mb-4" aria-hidden="true" />
             <h3 className="text-lg font-medium text-foreground mb-1">
               No pipeline deals
             </h3>
@@ -706,8 +724,7 @@ export default function PipelinePage() {
                 >
                   <div className="mb-3 flex items-center gap-2">
                     <span
-                      className="h-2.5 w-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: status.color }}
+                      className={cn("h-2.5 w-2.5 rounded-full shrink-0", getStatusClasses(status.value).dot)}
                     />
                     <div className="h-4 bg-muted rounded animate-pulse w-24" />
                   </div>
@@ -722,7 +739,7 @@ export default function PipelinePage() {
           </>
         ) : filtered.length === 0 && search ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-            <Building2 className="h-8 w-8 text-muted-foreground/40 mb-2" />
+            <Building2 className="h-8 w-8 text-muted-foreground/40 mb-2" aria-hidden="true" />
             <p className="text-sm">No prospects match your search.</p>
           </div>
         ) : (
@@ -767,8 +784,7 @@ export default function PipelinePage() {
                         className="shrink-0"
                       >
                         <span
-                          className="h-2 w-2 rounded-full shrink-0 mr-1.5"
-                          style={{ backgroundColor: status.color }}
+                          className={cn("h-2 w-2 rounded-full shrink-0 mr-1.5", getStatusClasses(status.value).dot)}
                         />
                         {status.label}
                         {count > 0 && (
@@ -800,6 +816,40 @@ export default function PipelinePage() {
           </>
         )}
       </div>
+
+      {/* ─── Confirmation Dialogs ─────────────────────────────────────────── */}
+      <ControlledConfirmDialog
+        open={deleteConfirm !== null}
+        onOpenChange={(open) => { if (!open) setDeleteConfirm(null); }}
+        title="Delete Prospect"
+        description={`Are you sure you want to delete "${deleteConfirm?.name}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={() => deleteConfirm && executeDelete(deleteConfirm.id)}
+      />
+
+      <ControlledConfirmDialog
+        open={convertConfirm !== null}
+        onOpenChange={(open) => { if (!open) setConvertConfirm(null); }}
+        title="Convert to Client"
+        description={`Convert "${convertConfirm?.name}" to a client? This will set them to Closed Won and create onboarding tasks.`}
+        confirmLabel="Convert"
+        onConfirm={() => convertConfirm && executeConvert(convertConfirm.id)}
+      />
+
+      <ControlledConfirmDialog
+        open={closedWonConfirm !== null}
+        onOpenChange={(open) => { if (!open) setClosedWonConfirm(null); }}
+        title="Convert to Full Client?"
+        description={`"${closedWonConfirm?.name}" has been marked as Closed Won. Would you like to convert them to a full client now?`}
+        confirmLabel="View Client"
+        onConfirm={() => {
+          if (closedWonConfirm) {
+            router.push(`/clients/${closedWonConfirm.id}`);
+          }
+          setClosedWonConfirm(null);
+        }}
+      />
 
       {/* ─── Edit Prospect Dialog ──────────────────────────────────────────── */}
       <Dialog

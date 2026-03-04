@@ -27,6 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { ControlledConfirmDialog } from "@/components/ui/confirm-dialog";
 import {
   STAGES,
   PIPELINE_STATUSES,
@@ -94,6 +95,7 @@ export default function ClientDetailPage() {
   const [notesExpanded, setNotesExpanded] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // ─── Fetch client ───────────────────────────────────────────────────
 
@@ -123,11 +125,12 @@ export default function ClientDetailPage() {
 
   // ─── Delete handler ─────────────────────────────────────────────────
 
-  async function handleDelete() {
-    if (!confirm("Are you sure you want to delete this client? This cannot be undone.")) {
-      return;
-    }
+  function handleDelete() {
+    setDeleteDialogOpen(true);
+  }
 
+  async function executeDelete() {
+    setDeleteDialogOpen(false);
     setDeleting(true);
 
     try {
@@ -463,6 +466,16 @@ export default function ClientDetailPage() {
           </Card>
         )}
       </div>
+
+      <ControlledConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Client"
+        description="Are you sure you want to delete this client? This cannot be undone."
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={executeDelete}
+      />
     </div>
   );
 }

@@ -167,7 +167,7 @@ export default async function CampaignsPage() {
                       className="py-12 text-center text-muted-foreground"
                     >
                       <div className="flex flex-col items-center gap-2">
-                        <Megaphone className="h-8 w-8 text-muted-foreground/40" />
+                        <Megaphone className="h-8 w-8 text-muted-foreground/40" aria-hidden="true" />
                         <p className="text-sm">
                           No campaigns yet. Create one from a workspace page.
                         </p>

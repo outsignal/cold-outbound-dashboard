@@ -26,6 +26,7 @@ import {
   type ParsedDocumentFields,
 } from "@/components/proposals/document-upload";
 import { Pencil, Trash2 } from "lucide-react";
+import { ControlledConfirmDialog } from "@/components/ui/confirm-dialog";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -107,6 +108,10 @@ export function OnboardPageClient({
     null,
   );
 
+  // Delete confirmation state
+  const [proposalToDelete, setProposalToDelete] = useState<ProposalRow | null>(null);
+  const [inviteToDelete, setInviteToDelete] = useState<OnboardingInviteRow | null>(null);
+
   // ---- Proposal actions ----
 
   function openEditProposal(p: ProposalRow) {
@@ -125,14 +130,12 @@ export function OnboardPageClient({
     setProposalModalOpen(true);
   }
 
-  async function handleDeleteProposal(p: ProposalRow) {
-    if (
-      !confirm(
-        `Delete proposal for ${p.clientName}? This cannot be undone.`,
-      )
-    )
-      return;
+  function handleDeleteProposal(p: ProposalRow) {
+    setProposalToDelete(p);
+  }
 
+  async function executeDeleteProposal(p: ProposalRow) {
+    setProposalToDelete(null);
     try {
       const res = await fetch(`/api/proposals/${p.id}`, { method: "DELETE" });
       if (!res.ok) {
@@ -153,14 +156,12 @@ export function OnboardPageClient({
     setInviteModalOpen(true);
   }
 
-  async function handleDeleteInvite(inv: OnboardingInviteRow) {
-    if (
-      !confirm(
-        `Delete onboarding invite for ${inv.clientName}? This cannot be undone.`,
-      )
-    )
-      return;
+  function handleDeleteInvite(inv: OnboardingInviteRow) {
+    setInviteToDelete(inv);
+  }
 
+  async function executeDeleteInvite(inv: OnboardingInviteRow) {
+    setInviteToDelete(null);
     try {
       const res = await fetch(`/api/onboarding-invites/${inv.id}`, {
         method: "DELETE",
@@ -379,6 +380,27 @@ export function OnboardPageClient({
           } as OnboardingInviteData}
         />
       )}
+
+      {/* Delete confirmation dialogs */}
+      <ControlledConfirmDialog
+        open={proposalToDelete !== null}
+        onOpenChange={(open) => { if (!open) setProposalToDelete(null); }}
+        title="Delete Proposal"
+        description={`Delete proposal for ${proposalToDelete?.clientName}? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={() => proposalToDelete && executeDeleteProposal(proposalToDelete)}
+      />
+
+      <ControlledConfirmDialog
+        open={inviteToDelete !== null}
+        onOpenChange={(open) => { if (!open) setInviteToDelete(null); }}
+        title="Delete Onboarding Invite"
+        description={`Delete onboarding invite for ${inviteToDelete?.clientName}? This cannot be undone.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={() => inviteToDelete && executeDeleteInvite(inviteToDelete)}
+      />
     </>
   );
 }

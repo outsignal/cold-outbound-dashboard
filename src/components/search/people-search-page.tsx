@@ -331,7 +331,7 @@ export function PeopleSearchPage() {
         <div className="flex-1 min-w-0 space-y-4">
           {/* Search input */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" aria-hidden="true" />
             <input
               type="text"
               placeholder="Search name, email, company, title…"
@@ -456,7 +456,7 @@ export function PeopleSearchPage() {
                       className="text-center py-16"
                     >
                       <div className="flex flex-col items-center gap-2">
-                        <Users className="h-12 w-12 text-muted-foreground/50" />
+                        <Users className="h-12 w-12 text-muted-foreground/50" aria-hidden="true" />
                         <p className="text-lg font-medium text-foreground">
                           No people found
                         </p>

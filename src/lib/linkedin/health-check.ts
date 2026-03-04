@@ -297,26 +297,34 @@ async function reassignActions(
     return { reassignedCount: 0 };
   }
 
-  // Pick least-loaded sender by pending action count
-  const sendersWithLoad = await Promise.all(
-    healthySenders.map(async (s) => {
-      const pendingCount = await prisma.linkedInAction.count({
-        where: { senderId: s.id, status: "pending" },
-      });
+  // Batch-fetch pending action counts and today's usage for all healthy senders
+  const healthySenderIds = healthySenders.map((s) => s.id);
 
-      // Also check remaining daily budget
-      const todayUsage = await prisma.linkedInDailyUsage.findUnique({
-        where: { senderId_date: { senderId: s.id, date: today } },
-        select: { connectionsSent: true, messagesSent: true },
-      });
-      const connectionsUsed = todayUsage?.connectionsSent ?? 0;
-      const messagesUsed = todayUsage?.messagesSent ?? 0;
-      const remainingBudget =
-        (s.dailyConnectionLimit - connectionsUsed) + (s.dailyMessageLimit - messagesUsed);
-
-      return { sender: s, pendingCount, remainingBudget };
+  const [pendingCounts, todayUsages] = await Promise.all([
+    prisma.linkedInAction.groupBy({
+      by: ["senderId"],
+      where: { senderId: { in: healthySenderIds }, status: "pending" },
+      _count: { _all: true },
     }),
-  );
+    prisma.linkedInDailyUsage.findMany({
+      where: { senderId: { in: healthySenderIds }, date: today },
+      select: { senderId: true, connectionsSent: true, messagesSent: true },
+    }),
+  ]);
+
+  const pendingCountMap = new Map(pendingCounts.map((p) => [p.senderId, p._count._all]));
+  const usageTodayMap = new Map(todayUsages.map((u) => [u.senderId, u]));
+
+  const sendersWithLoad = healthySenders.map((s) => {
+    const pendingCount = pendingCountMap.get(s.id) ?? 0;
+    const todayUsage = usageTodayMap.get(s.id);
+    const connectionsUsed = todayUsage?.connectionsSent ?? 0;
+    const messagesUsed = todayUsage?.messagesSent ?? 0;
+    const remainingBudget =
+      (s.dailyConnectionLimit - connectionsUsed) + (s.dailyMessageLimit - messagesUsed);
+
+    return { sender: s, pendingCount, remainingBudget };
+  });
 
   // Sort by least pending + most remaining budget (combined score)
   sendersWithLoad.sort((a, b) => {

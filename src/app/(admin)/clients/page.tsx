@@ -326,7 +326,7 @@ function AddClientDialog({ onCreated }: { onCreated: () => void }) {
                     setForm((prev) => ({ ...prev, campaignType: val }))
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger aria-label="Campaign type">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -349,7 +349,7 @@ function AddClientDialog({ onCreated }: { onCreated: () => void }) {
                     }))
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger aria-label="Link workspace">
                     <SelectValue placeholder="None" />
                   </SelectTrigger>
                   <SelectContent>
@@ -506,7 +506,7 @@ export default function ClientsPage() {
                       className="py-12 text-center text-muted-foreground"
                     >
                       <div className="flex flex-col items-center gap-2">
-                        <Users className="h-8 w-8 text-muted-foreground/40" />
+                        <Users className="h-8 w-8 text-muted-foreground/40" aria-hidden="true" />
                         <p className="text-sm">
                           No active clients yet. Convert a prospect from the
                           pipeline or add one directly.

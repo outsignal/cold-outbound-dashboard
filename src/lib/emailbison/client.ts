@@ -39,33 +39,62 @@ export class EmailBisonClient {
     this.token = token;
   }
 
+  private static readonly RETRYABLE_STATUSES = new Set([429, 500, 502, 503, 504]);
+  private static readonly MAX_RETRIES = 3;
+  private static readonly BASE_DELAY_MS = 1000;
+
   private async request<T>(
     endpoint: string,
     options?: RequestInit & { revalidate?: number },
   ): Promise<T> {
     const { revalidate = 300, ...fetchOptions } = options ?? {};
 
-    const res = await fetch(`${this.baseUrl}${endpoint}`, {
-      ...fetchOptions,
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        ...fetchOptions?.headers,
-      },
-      next: { revalidate },
-    });
+    let lastError: Error | null = null;
 
-    if (res.status === 429) {
-      const retryAfter = res.headers.get("retry-after");
-      throw new RateLimitError(Number(retryAfter) || 60);
+    for (let attempt = 1; attempt <= EmailBisonClient.MAX_RETRIES; attempt++) {
+      const res = await fetch(`${this.baseUrl}${endpoint}`, {
+        ...fetchOptions,
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          ...fetchOptions?.headers,
+        },
+        next: { revalidate },
+      });
+
+      // Success — return immediately
+      if (res.ok) {
+        return res.json();
+      }
+
+      // Non-retryable status — fail fast
+      if (!EmailBisonClient.RETRYABLE_STATUSES.has(res.status)) {
+        const body = (await res.text()).slice(0, 500);
+        throw new EmailBisonApiError(res.status, body);
+      }
+
+      // Retryable status — log and retry (unless final attempt)
+      const body = (await res.text()).slice(0, 500);
+
+      if (res.status === 429) {
+        const retryAfter = res.headers.get("retry-after");
+        lastError = new RateLimitError(Number(retryAfter) || 60);
+      } else {
+        lastError = new EmailBisonApiError(res.status, body);
+      }
+
+      if (attempt < EmailBisonClient.MAX_RETRIES) {
+        const delayMs = EmailBisonClient.BASE_DELAY_MS * Math.pow(2, attempt - 1); // 1s, 2s, 4s
+        console.warn(
+          `[EmailBison] Request to ${endpoint} failed with ${res.status} (attempt ${attempt}/${EmailBisonClient.MAX_RETRIES}). Retrying in ${delayMs}ms...`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
     }
 
-    if (!res.ok) {
-      throw new EmailBisonApiError(res.status, await res.text());
-    }
-
-    return res.json();
+    // All retries exhausted — throw the last error
+    throw lastError!;
   }
 
   private async getAllPages<T>(endpoint: string): Promise<T[]> {

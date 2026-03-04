@@ -10,6 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/layout/header";
 import { AgentRunTable, AgentRun } from "@/components/operations/agent-run-table";
 
@@ -147,7 +148,7 @@ export default function AgentRunsPage() {
             value={agentFilter}
             onValueChange={(v) => setAgentFilter(v)}
           >
-            <SelectTrigger className="h-8 text-xs w-[140px]">
+            <SelectTrigger className="h-8 text-xs w-[140px]" aria-label="Filter by agent">
               <SelectValue placeholder="All Agents" />
             </SelectTrigger>
             <SelectContent>
@@ -166,7 +167,7 @@ export default function AgentRunsPage() {
             value={statusFilter}
             onValueChange={(v) => setStatusFilter(v)}
           >
-            <SelectTrigger className="h-8 text-xs w-[140px]">
+            <SelectTrigger className="h-8 text-xs w-[140px]" aria-label="Filter by status">
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
             <SelectContent>
@@ -186,7 +187,7 @@ export default function AgentRunsPage() {
               value={workspaceFilter}
               onValueChange={(v) => setWorkspaceFilter(v)}
             >
-              <SelectTrigger className="h-8 text-xs w-[180px]">
+              <SelectTrigger className="h-8 text-xs w-[180px]" aria-label="Filter by workspace">
                 <SelectValue placeholder="All Workspaces" />
               </SelectTrigger>
               <SelectContent>
@@ -209,9 +210,9 @@ export default function AgentRunsPage() {
               </span>
             )}
             {data?.runs.some((r) => r.status === "running") && (
-              <span className="text-[10px] text-yellow-600 bg-yellow-50 border border-yellow-200 px-2 py-0.5 rounded-full">
+              <Badge variant="warning" size="xs">
                 Auto-refreshing every 30s
-              </span>
+              </Badge>
             )}
           </div>
         </div>

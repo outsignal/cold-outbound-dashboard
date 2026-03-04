@@ -108,11 +108,11 @@ function relativeTime(dateStr: string): string {
 function SeverityIcon({ severity }: { severity: string }) {
   switch (severity) {
     case "warning":
-      return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+      return <AlertTriangle className="h-4 w-4 text-amber-500" aria-label="Warning" role="img" />;
     case "error":
-      return <AlertCircle className="h-4 w-4 text-red-500" />;
+      return <AlertCircle className="h-4 w-4 text-red-500" aria-label="Error" role="img" />;
     default:
-      return <Info className="h-4 w-4 text-blue-400" />;
+      return <Info className="h-4 w-4 text-blue-400" aria-label="Info" role="img" />;
   }
 }
 
@@ -256,7 +256,7 @@ export default function NotificationsPage() {
               setPage(1);
             }}
           >
-            <SelectTrigger size="sm">
+            <SelectTrigger size="sm" aria-label="Filter by type">
               <SelectValue placeholder="All types" />
             </SelectTrigger>
             <SelectContent>
@@ -276,7 +276,7 @@ export default function NotificationsPage() {
               setPage(1);
             }}
           >
-            <SelectTrigger size="sm">
+            <SelectTrigger size="sm" aria-label="Filter by severity">
               <SelectValue placeholder="All severities" />
             </SelectTrigger>
             <SelectContent>
@@ -297,7 +297,7 @@ export default function NotificationsPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger size="sm">
+              <SelectTrigger size="sm" aria-label="Filter by workspace">
                 <SelectValue placeholder="All workspaces" />
               </SelectTrigger>
               <SelectContent>
@@ -403,7 +403,7 @@ export default function NotificationsPage() {
                       className="py-12 text-center text-muted-foreground"
                     >
                       <div className="flex flex-col items-center gap-2">
-                        <Bell className="h-8 w-8 text-muted-foreground/40" />
+                        <Bell className="h-8 w-8 text-muted-foreground/40" aria-hidden="true" />
                         <p className="text-sm">No notifications yet.</p>
                       </div>
                     </TableCell>

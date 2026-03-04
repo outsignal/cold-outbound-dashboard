@@ -71,5 +71,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Completed 16-01-PLAN.md (rawResponse column, stageDiscoveredPeople, Apollo adapter, Prospeo Search adapter)
-Resume file: .planning/phases/16-discovery-sources/16-02-PLAN.md (next plan)
+Stopped at: Completed 16-02-PLAN.md (AI Ark Search adapter, Serper web/maps/social adapter, Firecrawl Directory extraction adapter)
+Resume file: .planning/phases/16-discovery-sources/16-03-PLAN.md (next plan)
