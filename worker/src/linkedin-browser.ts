@@ -101,14 +101,29 @@ export class LinkedInBrowser {
    * causing blocks or different page layouts.
    */
   private killDaemon(): void {
+    // First close attempt
     try {
       execFileSync("agent-browser", ["--session", this.session, "close"], {
         encoding: "utf-8",
         timeout: 5000,
       });
-      this.log("Killed stale agent-browser daemon");
+      this.log("Killed stale agent-browser daemon (attempt 1)");
     } catch {
       // daemon may not be running, that's ok
+    }
+
+    // Give the process a moment to exit, then try once more in case it was
+    // still shutting down when the first close returned.
+    execFileSync("node", ["-e", "setTimeout(()=>{},800)"], { timeout: 2000 });
+
+    try {
+      execFileSync("agent-browser", ["--session", this.session, "close"], {
+        encoding: "utf-8",
+        timeout: 3000,
+      });
+      this.log("Killed stale agent-browser daemon (attempt 2)");
+    } catch {
+      // daemon is gone — that's what we want
     }
   }
 
@@ -116,12 +131,18 @@ export class LinkedInBrowser {
    * Execute an agent-browser CLI command synchronously.
    * Returns stdout as a string.
    */
+  /** Realistic Chrome UA to avoid HeadlessChrome detection by LinkedIn. */
+  private static readonly USER_AGENT =
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
   private exec(command: string, timeoutMs = LinkedInBrowser.CMD_TIMEOUT): string {
     const args = ["--session", this.session];
 
     if (this.proxyUrl) {
       args.push("--proxy", this.proxyUrl);
     }
+
+    args.push("--user-agent", LinkedInBrowser.USER_AGENT);
 
     // Split command string into individual args
     const cmdParts = this.parseCommand(command);
@@ -1310,21 +1331,29 @@ export class LinkedInBrowser {
    */
   async extractVoyagerCookies(): Promise<{ liAt: string; jsessionId: string } | null> {
     try {
-      // Navigate to LinkedIn to ensure we're on the right domain
-      // (cookies are domain-scoped)
-      const result = this.exec(
-        'eval "(() => { const c = {}; document.cookie.split(\\";\\").forEach(p => { const [k,...v] = p.trim().split(\\"=\\"); c[k] = v.join(\\"=\\"); }); return JSON.stringify({ li_at: c.li_at || null, JSESSIONID: c.JSESSIONID || null }); })()"'
-      );
+      // Use regex matching so the JS contains no inner quotes at all —
+      // avoiding the shell-escaping issues that arise when parseCommand()
+      // tokenises the eval string and misinterprets backslash-quoted chars.
+      // Note: li_at is HttpOnly, so document.cookie will never contain it;
+      // this path returns null for li_at and we fall through to the CDP
+      // fallback below, which reads HttpOnly cookies via the browser API.
+      const js =
+        "JSON.stringify({" +
+        "li_at:(document.cookie.match(/li_at=([^;]+)/)||[])[1]||null," +
+        "JSESSIONID:(document.cookie.match(/JSESSIONID=([^;]+)/)||[])[1]||null" +
+        "})";
+      const result = this.exec(`eval "${js}"`);
 
       const parsed = JSON.parse(result.trim());
       if (!parsed.li_at || !parsed.JSESSIONID) {
-        // li_at may be HttpOnly — try CDP Network.getAllCookies as fallback
+        // li_at is HttpOnly — use agent-browser's cookie store as fallback
         return this.extractCookiesViaCDP();
       }
       return { liAt: parsed.li_at, jsessionId: parsed.JSESSIONID };
     } catch (err) {
-      console.error('[LinkedInBrowser] Cookie extraction failed:', err);
-      return null;
+      console.error('[LinkedInBrowser] Cookie extraction via eval failed, trying CDP fallback:', err);
+      // If the eval itself throws (e.g. command error), still try the CDP path
+      return this.extractCookiesViaCDP();
     }
   }
 
@@ -1447,6 +1476,11 @@ export class LinkedInBrowser {
       // destroy the session we need to reuse.
       if (!options?.daemonAlreadyRunning) {
         this.killDaemon();
+        // Wait for the daemon process to fully exit before we issue the next
+        // command. Without this delay, agent-browser may still be alive when
+        // we call navigateTo(), causing it to log "daemon already running"
+        // and silently ignore the --proxy flag.
+        await this.sleep(2000);
       }
 
       // Navigate to login page
