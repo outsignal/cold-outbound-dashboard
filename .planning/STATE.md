@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Lead Discovery & Intelligence
 status: unknown
-last_updated: "2026-03-04T23:12:28.435Z"
+last_updated: "2026-03-04T23:13:19Z"
 progress:
   total_phases: 19
   completed_phases: 16
@@ -113,6 +113,10 @@ Progress: [######░░░░] ~7% (v2.0)
 - [22-01 schema]: Invoice snapshots sender + client details at creation time for immutability — changes to workspace billing fields don't retroactively alter issued invoices
 - [22-01 operations]: viewToken uses crypto.randomUUID() for portal access — no auth required, token-based
 - [22-01 operations]: advanceRenewalDate is month-end safe (Jan 31 -> Feb 28/29) — uses setDate(0) rollback pattern
+- [22-02 api-routes]: renderToBuffer expects ReactElement<DocumentProps> — wrapper component cast as 'as any' to bypass incompatible props type mismatch (runtime correct)
+- [22-02 api-routes]: Buffer from renderToBuffer converted to Uint8Array for Response BodyInit compatibility
+- [22-02 api-routes]: Send endpoint returns 400 when billingClientEmail not configured — explicit error over silent skip
+- [22-02 api-routes]: PDF and send routes both support ?token= query param for portal access without auth
 - [22-03 generator]: generateDueInvoices uses 7-day look-ahead window; idempotency guard on workspaceSlug + renewalDate with status in [draft, sent]
 - [22-03 generator]: alertUnpaidBeforeRenewal targets OPS_SLACK_CHANNEL_ID via notify() — billing urgency is admin-internal, not client-facing
 - [22-03 overdue]: reminderSentAt guard ensures overdue reminder email sent exactly once per invoice regardless of cron frequency
