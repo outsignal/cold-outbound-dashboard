@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 ## Current Position
 
 Phase: 18 of 21 (Signal Monitoring Infrastructure) -- IN PROGRESS
-Plan: 02 of 04 complete
+Plan: 03 of 04 complete
 Status: Phase 18 in progress
-Last activity: 2026-03-04 -- 18-02 complete (worker-signals scaffold, PredictLeads HTTP client with retry/auth, Zod v3 schemas for all signal types)
+Last activity: 2026-03-04 -- 18-03 complete (PredictLeads signal adapters: job openings, financing, news, tech adoption; signals.ts write/stacking/TTL logic)
 
 Progress: [######░░░░] ~7% (v2.0)
 
@@ -76,6 +76,11 @@ Progress: [######░░░░] ~7% (v2.0)
 - [18-02 worker-signals]: Dockerfile copies prisma/ from repo root for prisma generate — monorepo pattern, Railway build context must be repo root
 - [18-02 worker-signals]: railway.toml uses cronSchedule not restartPolicyType — cron services exit after run
 - [18-02 worker-signals]: predictLeadsGet() retries on 429 and AbortError only — other 4xx/5xx thrown immediately as non-retryable
+- [18-03 signal-adapters]: SignalInput defined in shared src/types.ts — avoids circular deps, single source of truth for all adapters
+- [18-03 signal-adapters]: 404 from PredictLeads returns costUsd=0 — no budget charge for unknown domains
+- [18-03 signal-adapters]: fetchJobOpenings returns totalJobCount for hiring spike detection (>10 threshold) — no extra API call needed
+- [18-03 signal-adapters]: checkAndFlagHighIntent sets isHighIntent=false when distinctTypes < 2 — actively clears stale flags as signals expire
+- [18-03 signal-adapters]: upsert extends expiresAt on re-detection — active signals get fresh 90-day TTL each cycle
 
 ### Blockers/Concerns
 
@@ -90,5 +95,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Completed 18-02-PLAN.md (Phase 18 Plan 02 -- worker-signals scaffold + PredictLeads client)
-Resume file: .planning/phases/18-signal-monitoring-infrastructure/18-03-PLAN.md
+Stopped at: Completed 18-03-PLAN.md (Phase 18 Plan 03 -- PredictLeads signal adapters + signals.ts DB write/stacking/TTL)
+Resume file: .planning/phases/18-signal-monitoring-infrastructure/18-04-PLAN.md

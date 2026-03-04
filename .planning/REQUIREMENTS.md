@@ -25,16 +25,16 @@ Requirements for Lead Discovery & Intelligence milestone. Each maps to roadmap p
 
 ### Signal Monitoring
 
-- [ ] **SIG-01**: PredictLeads integration detects job changes at ICP-matching companies
-- [ ] **SIG-02**: PredictLeads integration detects funding rounds (seed, Series A-D, acquisition) at ICP-matching companies
-- [ ] **SIG-03**: PredictLeads integration detects hiring spikes (unusual job posting volume)
-- [ ] **SIG-04**: PredictLeads integration detects technology adoption changes
-- [ ] **SIG-05**: PredictLeads integration detects company news events (product launches, partnerships, C-level changes)
+- [x] **SIG-01**: PredictLeads integration detects job changes at ICP-matching companies
+- [x] **SIG-02**: PredictLeads integration detects funding rounds (seed, Series A-D, acquisition) at ICP-matching companies
+- [x] **SIG-03**: PredictLeads integration detects hiring spikes (unusual job posting volume)
+- [x] **SIG-04**: PredictLeads integration detects technology adoption changes
+- [x] **SIG-05**: PredictLeads integration detects company news events (product launches, partnerships, C-level changes)
 - [ ] **SIG-06**: Serper.dev social listening detects competitor mentions and frustration signals on Reddit/Twitter
 - [x] **SIG-07**: Signal monitoring runs as Railway background worker (cron every 4-6 hours) — not Vercel
 - [x] **SIG-08**: SignalEvent model stores every detected signal with type, company, workspace, timestamp, metadata for long-term intelligence
 - [x] **SIG-09**: Signal-level budget governor prevents cost explosion from burst events (configurable daily cap per workspace)
-- [ ] **SIG-10**: Multi-signal stacking detection (2+ signals on same company = high intent flag)
+- [x] **SIG-10**: Multi-signal stacking detection (2+ signals on same company = high intent flag)
 
 ### Pipeline
 
@@ -145,16 +145,16 @@ Deferred to next milestone. Tracked but not in current roadmap.
 | DISC-11 | Phase 17 | Complete |
 | DISC-12 | Phase 17 | Complete |
 | DISC-13 | Phase 17 | Complete |
-| SIG-01 | Phase 18 | Pending |
-| SIG-02 | Phase 18 | Pending |
-| SIG-03 | Phase 18 | Pending |
-| SIG-04 | Phase 18 | Pending |
-| SIG-05 | Phase 18 | Pending |
+| SIG-01 | Phase 18 | Complete |
+| SIG-02 | Phase 18 | Complete |
+| SIG-03 | Phase 18 | Complete |
+| SIG-04 | Phase 18 | Complete |
+| SIG-05 | Phase 18 | Complete |
 | SIG-06 | Phase 18 | Pending |
 | SIG-07 | Phase 18 | Complete |
 | SIG-08 | Phase 18 | Complete |
 | SIG-09 | Phase 18 | Complete |
-| SIG-10 | Phase 18 | Pending |
+| SIG-10 | Phase 18 | Complete |
 | PIPE-01 | Phase 19 | Pending |
 | PIPE-02 | Phase 19 | Pending |
 | PIPE-03 | Phase 19 | Pending |
