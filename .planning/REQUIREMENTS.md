@@ -11,9 +11,9 @@ Requirements for Lead Discovery & Intelligence milestone. Each maps to roadmap p
 
 - [x] **DISC-01**: Leads Agent can search Apollo.io People API (275M contacts, free) by title, seniority, industry, location, company size and return paginated results
 - [x] **DISC-02**: Leads Agent can search Prospeo Search Person API with 20+ filters (title, seniority, department, location, company industry, headcount, funding stage)
-- [ ] **DISC-03**: Leads Agent can search AI Ark People Search API by role, seniority, department, location, keywords
-- [ ] **DISC-04**: Leads Agent can search Serper.dev for Google web results, Maps results, and social mentions (Reddit/Twitter) via natural language queries
-- [ ] **DISC-05**: Leads Agent can scrape custom directories via Firecrawl /extract endpoint with structured JSON schema (association member lists, government databases, etc.)
+- [x] **DISC-03**: Leads Agent can search AI Ark People Search API by role, seniority, department, location, keywords
+- [x] **DISC-04**: Leads Agent can search Serper.dev for Google web results, Maps results, and social mentions (Reddit/Twitter) via natural language queries
+- [x] **DISC-05**: Leads Agent can scrape custom directories via Firecrawl /extract endpoint with structured JSON schema (association member lists, government databases, etc.)
 - [x] **DISC-06**: Discovery results are written to a DiscoveredPerson staging table (not directly to Person) for dedup before promotion
 - [ ] **DISC-07**: Agent deduplicates discovered leads against local Person DB (by LinkedIn URL, email, or name+company match) before enrichment
 - [ ] **DISC-08**: Agent automatically selects best discovery sources based on ICP type (enterprise B2B → Apollo/Prospeo, niche → Serper/Firecrawl directories, local/SMB → Serper Maps)
@@ -137,9 +137,9 @@ Deferred to next milestone. Tracked but not in current roadmap.
 | CFG-06 | Phase 15 | Complete |
 | DISC-01 | Phase 16 | Complete |
 | DISC-02 | Phase 16 | Complete |
-| DISC-03 | Phase 16 | Pending |
-| DISC-04 | Phase 16 | Pending |
-| DISC-05 | Phase 16 | Pending |
+| DISC-03 | Phase 16 | Complete |
+| DISC-04 | Phase 16 | Complete |
+| DISC-05 | Phase 16 | Complete |
 | DISC-07 | Phase 17 | Pending |
 | DISC-08 | Phase 17 | Pending |
 | DISC-11 | Phase 17 | Pending |

@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 ## Current Position
 
 Phase: 16 of 21 (Discovery Sources)
-Plan: 02 complete, 03 pending
+Plan: 03 complete — phase 16 COMPLETE
 Status: In progress
-Last activity: 2026-03-04 — 16-02 complete (AI Ark Search adapter, Serper web/maps/social adapter, Firecrawl Directory extraction adapter)
+Last activity: 2026-03-04 — 16-03 complete (5 discovery adapters wired into Leads Agent as callable tools, system prompt updated)
 
 Progress: [░░░░░░░░░░] ~3% (v2.0)
 
@@ -57,6 +57,9 @@ Progress: [░░░░░░░░░░] ~3% (v2.0)
 - [Phase 16-discovery-sources]: Serper adapter exports const object (not class), does NOT implement DiscoveryAdapter — query-based search, not filter-based
 - [Phase 16-discovery-sources]: Social search results (searchSocial) returned raw — NOT staged to DiscoveredPerson; signal data reserved for Phase 18 SignalEvent creation
 - [Phase 16-discovery-sources]: Maps results are company-level records with null person fields — staged with discoverySource: serper-maps in Plan 03
+- [16-03 leads-agent]: searchGoogle web mode returns informational results only — NOT staged (no person data); agent uses URLs to feed extractDirectory
+- [16-03 leads-agent]: Apollo tool omits incrementDailySpend — search is free, costUsd=0 from adapter
+- [16-03 leads-agent]: Prospeo extras built inline in tool execute — fundingStages/departments mapped to company_funding/person_department before passing to adapter.search() extras param
 
 ### Blockers/Concerns
 
@@ -71,5 +74,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Completed 16-02-PLAN.md (AI Ark Search adapter, Serper web/maps/social adapter, Firecrawl Directory extraction adapter)
-Resume file: .planning/phases/16-discovery-sources/16-03-PLAN.md (next plan)
+Stopped at: Completed 16-03-PLAN.md (5 discovery adapters wired into Leads Agent, system prompt updated, Phase 16 complete)
+Resume file: .planning/phases/ (Phase 17 planning next)
