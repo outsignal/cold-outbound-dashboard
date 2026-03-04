@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Megaphone,
   LinkedinIcon,
+  Receipt,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
@@ -36,6 +37,7 @@ const navItems: NavItem[] = [
   { href: "/portal", label: "Dashboard", icon: LayoutDashboard },
   { href: "/portal/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/portal/linkedin", label: "LinkedIn", icon: LinkedinIcon },
+  { href: "/portal/billing", label: "Billing", icon: Receipt },
 ];
 
 export function PortalSidebar({ workspaceName }: PortalSidebarProps) {
