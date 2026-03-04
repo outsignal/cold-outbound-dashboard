@@ -2,6 +2,9 @@ import { notFound } from "next/navigation";
 import { Header } from "@/components/layout/header";
 import { getWorkspaceBySlug, getWorkspaceDetails } from "@/lib/workspaces";
 import { WorkspaceSettingsForm } from "@/components/workspace/workspace-settings-form";
+import { PackageQuotasForm } from "@/components/workspace/package-quotas-form";
+import { prisma } from "@/lib/db";
+import { parseModules, getWorkspaceQuotaUsage } from "@/lib/workspaces/quota";
 
 interface SettingsPageProps {
   params: Promise<{ slug: string }>;
@@ -15,7 +18,12 @@ export default async function WorkspaceSettingsPage({
   const config = await getWorkspaceBySlug(slug);
   if (!config) notFound();
 
-  const details = await getWorkspaceDetails(slug);
+  // Fetch workspace details and package data in parallel
+  const [details, dbWorkspace, usage] = await Promise.all([
+    getWorkspaceDetails(slug),
+    prisma.workspace.findUnique({ where: { slug } }),
+    getWorkspaceQuotaUsage(slug).catch(() => null),
+  ]);
 
   // Merge: DB fields take priority, fall back to env config
   const workspace = {
@@ -54,14 +62,28 @@ export default async function WorkspaceSettingsPage({
     clientEmails: details?.clientEmails ?? null,
   };
 
+  // Build package data for the PackageQuotasForm (only if DB record exists)
+  const packageData = dbWorkspace && usage
+    ? {
+        slug,
+        enabledModules: parseModules(dbWorkspace.enabledModules ?? '["email"]'),
+        monthlyLeadQuota: dbWorkspace.monthlyLeadQuota ?? 2000,
+        monthlyLeadQuotaStatic: dbWorkspace.monthlyLeadQuotaStatic ?? 2000,
+        monthlyLeadQuotaSignal: dbWorkspace.monthlyLeadQuotaSignal ?? 0,
+        monthlyCampaignAllowance: dbWorkspace.monthlyCampaignAllowance ?? 2,
+        usage,
+      }
+    : null;
+
   return (
     <div>
       <Header
         title={`${workspace.name} — Settings`}
         description="Manage workspace configuration, ICP, and campaign brief"
       />
-      <div className="p-8 max-w-4xl">
+      <div className="p-8 max-w-4xl space-y-6">
         <WorkspaceSettingsForm workspace={workspace} />
+        {packageData && <PackageQuotasForm data={packageData} />}
       </div>
     </div>
   );
