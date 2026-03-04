@@ -74,6 +74,12 @@ model Workspace {
   monthlyCampaignAllowance Int      @default(2)              // Soft limit — agent warns but allows override
   billingCycleAnchor       DateTime?                         // Rolling 30-day window start; null = use createdAt
 
+  // --- Signal Monitoring (v2.0 Phase 18) ---
+  signalDailyCapUsd      Float    @default(5.0)   // Per-workspace daily signal spend cap in USD
+  signalEnabledTypes     String   @default("[]")  // JSON array: ["job_change","funding","hiring_spike","tech_adoption","news","social_mention"]
+  signalCompetitors      String   @default("[]")  // JSON array of competitor brand names for Serper social listening
+  signalWatchlistDomains String   @default("[]")  // JSON array of specific ABM domains to monitor
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -413,6 +419,54 @@ model DailyCostTotal {
   totalUsd  Float    @default(0)
   breakdown String?  // JSON — per-provider breakdown { prospeo: 1.23, leadmagic: 0.45 }
   updatedAt DateTime @updatedAt
+}
+
+// --- Signal Monitoring (v2.0 Phase 18) ---
+
+model SignalEvent {
+  id            String   @id @default(cuid())
+  signalType    String   // "job_change" | "funding" | "hiring_spike" | "tech_adoption" | "news" | "social_mention"
+  source        String   // "predictleads" | "serper"
+  externalId    String?  // Provider's signal ID (for dedup via upsert)
+  companyDomain String   // Soft link — no FK (consistent with Person.companyDomain)
+  companyName   String?  // Denormalized for display
+  workspaceSlug String
+  title         String?  // Human-readable signal summary
+  summary       String?  // Extended description
+  confidence    Float?   // 0-1 confidence from provider
+  sourceUrl     String?  // Original article/post URL
+  rawResponse   String   // JSON — full API response for audit (SIG-08)
+  metadata      String?  // JSON — structured extra data (funding amount, tech name, etc.)
+  isHighIntent  Boolean  @default(false) // True when 2+ distinct types on company within 30 days
+  status        String   @default("active") // "active" | "expired"
+  detectedAt    DateTime @default(now())
+  expiresAt     DateTime // Set to detectedAt + 90 days on create
+
+  @@unique([source, externalId]) // Prevent duplicate signals from same provider
+  @@index([companyDomain, workspaceSlug, status])
+  @@index([workspaceSlug, detectedAt])
+  @@index([detectedAt])
+  @@index([expiresAt, status]) // For TTL cleanup query
+}
+
+model SignalDailyCost {
+  id            String   @id @default(cuid())
+  workspaceSlug String
+  date          String   // "YYYY-MM-DD" UTC
+  totalUsd      Float    @default(0)
+  breakdown     String?  // JSON — per-signal-type cost breakdown
+  updatedAt     DateTime @updatedAt
+
+  @@unique([workspaceSlug, date])
+  @@index([workspaceSlug, date])
+}
+
+model SeenSignalUrl {
+  id      String   @id @default(cuid())
+  url     String   @unique // Full URL of seen social post
+  seenAt  DateTime @default(now())
+
+  @@index([seenAt]) // For periodic cleanup of old entries
 }
 
 model TargetList {
