@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Lead Discovery & Intelligence
 status: unknown
-last_updated: "2026-03-04T14:01:15.570Z"
+last_updated: "2026-03-04T20:16:00.000Z"
 progress:
   total_phases: 14
   completed_phases: 12
   total_plans: 49
-  completed_plans: 50
+  completed_plans: 51
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Core value:** Own the lead data pipeline end-to-end so we never pay for the same lead twice and can cancel the $300+/month Clay subscription.
-**Current focus:** v2.0 Phase 17 — Leads Agent Discovery Upgrade
+**Current focus:** v2.0 Phase 18 — Signal Monitoring Infrastructure
 
 ## Current Position
 
-Phase: 17 of 21 (Leads Agent Discovery Upgrade) -- COMPLETE
-Plan: 02 of 02 complete
-Status: Phase 17 complete
-Last activity: 2026-03-04 -- 17-02 complete (buildDiscoveryPlan + deduplicateAndPromote tools, system prompt rewrite, maxSteps 15)
+Phase: 18 of 21 (Signal Monitoring Infrastructure) -- IN PROGRESS
+Plan: 02 of 04 complete
+Status: Phase 18 in progress
+Last activity: 2026-03-04 -- 18-02 complete (worker-signals scaffold, PredictLeads HTTP client with retry/auth, Zod v3 schemas for all signal types)
 
-Progress: [######░░░░] ~6% (v2.0)
+Progress: [######░░░░] ~7% (v2.0)
 
 ## Accumulated Context
 
@@ -68,6 +68,10 @@ Progress: [######░░░░] ~6% (v2.0)
 - [17-02 agent-tools]: Quota exceeded = soft warning only, agent does not block execution (user decision)
 - [17-02 agent-tools]: maxSteps 15 provides headroom for plan + 5 search calls + dedup + adjustments
 - [17-02 agent-tools]: z.record(z.string(), z.unknown()) for source filters -- Zod v3 requires explicit key type
+- [18-01 schema]: SignalEvent uses @@unique([source, externalId]) — allows NULL externalId for providers without stable IDs
+- [18-01 schema]: SignalDailyCost is per-workspace (not global) — each workspace tracks independent signal spend against its own cap
+- [18-01 schema]: SeenSignalUrl has no workspace scoping — social post URLs deduplicated globally across all workspaces
+- [18-01 signals-api]: No auth guard on /api/workspaces/[slug]/signals — consistent with all other workspace routes (15-04 decision)
 
 ### Blockers/Concerns
 
@@ -82,5 +86,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Completed 17-02-PLAN.md (Phase 17 complete -- agent tools + system prompt + maxSteps)
-Resume file: .planning/phases/ (Phase 18 next)
+Stopped at: Completed 18-01-PLAN.md (Phase 18 Plan 01 -- signal schema + config API)
+Resume file: .planning/phases/18-signal-monitoring-infrastructure/18-02-PLAN.md

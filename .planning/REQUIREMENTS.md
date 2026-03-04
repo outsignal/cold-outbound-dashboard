@@ -32,8 +32,8 @@ Requirements for Lead Discovery & Intelligence milestone. Each maps to roadmap p
 - [ ] **SIG-05**: PredictLeads integration detects company news events (product launches, partnerships, C-level changes)
 - [ ] **SIG-06**: Serper.dev social listening detects competitor mentions and frustration signals on Reddit/Twitter
 - [ ] **SIG-07**: Signal monitoring runs as Railway background worker (cron every 4-6 hours) — not Vercel
-- [ ] **SIG-08**: SignalEvent model stores every detected signal with type, company, workspace, timestamp, metadata for long-term intelligence
-- [ ] **SIG-09**: Signal-level budget governor prevents cost explosion from burst events (configurable daily cap per workspace)
+- [x] **SIG-08**: SignalEvent model stores every detected signal with type, company, workspace, timestamp, metadata for long-term intelligence
+- [x] **SIG-09**: Signal-level budget governor prevents cost explosion from burst events (configurable daily cap per workspace)
 - [ ] **SIG-10**: Multi-signal stacking detection (2+ signals on same company = high intent flag)
 
 ### Pipeline
@@ -152,8 +152,8 @@ Deferred to next milestone. Tracked but not in current roadmap.
 | SIG-05 | Phase 18 | Pending |
 | SIG-06 | Phase 18 | Pending |
 | SIG-07 | Phase 18 | Pending |
-| SIG-08 | Phase 18 | Pending |
-| SIG-09 | Phase 18 | Pending |
+| SIG-08 | Phase 18 | Complete |
+| SIG-09 | Phase 18 | Complete |
 | SIG-10 | Phase 18 | Pending |
 | PIPE-01 | Phase 19 | Pending |
 | PIPE-02 | Phase 19 | Pending |
