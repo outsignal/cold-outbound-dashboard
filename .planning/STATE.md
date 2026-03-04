@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Lead Discovery & Intelligence
 status: unknown
-last_updated: "2026-03-04T22:25:00.000Z"
+last_updated: "2026-03-04T22:29:49.932Z"
 progress:
-  total_phases: 15
-  completed_phases: 13
-  total_plans: 53
-  completed_plans: 56
+  total_phases: 18
+  completed_phases: 15
+  total_plans: 59
+  completed_plans: 60
 ---
 
 # Project State
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Core value:** Own the lead data pipeline end-to-end so we never pay for the same lead twice and can cancel the $300+/month Clay subscription.
-**Current focus:** v2.0 Phase 20 — Copy Strategy Framework (parallel with Phase 19)
+**Current focus:** v2.0 Phase 19 — Evergreen Signal Campaign Auto-Pipeline (plan 04 of 04 complete)
 
 ## Current Position
 
-Phase: 20 of 21 (Copy Strategy Framework) -- IN PROGRESS (all plans complete)
-Plan: 02 of 02 complete
-Status: Phase 20 plan 02 complete — Orchestrator wiring (delegateToWriter strategy params + system prompt sections) + saveCampaignSequences copyStrategy persistence
-Last activity: 2026-03-04 -- 20-02 complete (delegateToWriter extended with copyStrategy/customStrategyPrompt/signalContext, orchestrator system prompt Copy Strategy + Multi-Strategy + Signal-Triggered sections, CampaignDetail.copyStrategy, saveCampaignSequences persists strategy)
+Phase: 19 of 21 (Evergreen Signal Campaign Auto-Pipeline) -- IN PROGRESS
+Plan: 04 of 04 complete
+Status: Phase 19 plan 04 complete — Worker pipeline trigger + signal campaign dashboard controls (Type badges, Signal Stats card, pause/resume button)
+Last activity: 2026-03-04 -- 19-04 complete (triggerSignalPipeline in worker-signals, PATCH /api/campaigns/[id]/signal-status, SignalStatusButton, Type column in campaigns list, Signal Stats card on detail page)
 
 Progress: [######░░░░] ~7% (v2.0)
 
@@ -100,7 +100,12 @@ Progress: [######░░░░] ~7% (v2.0)
 - [20-01 writer-agent]: generateKBExamples tool returns text for admin review only — does NOT auto-ingest; admin runs ingest-document.ts CLI after review
 - [20-02 orchestrator]: delegateToWriter return includes strategy, creativeIdeas count, references — richer orchestrator feedback to admin after copy generation
 - [20-02 orchestrator]: saveCampaignSequences accepts copyStrategy as string (not enum) in data param — constraint lives at tool schema layer, operation layer stays flexible
+- [19-04 worker-trigger]: triggerSignalPipeline is best-effort — AbortSignal.timeout(55_000) + try/catch logs errors without crashing the worker
+- [19-04 signal-status-api]: No auth guard on /api/campaigns/[id]/signal-status — consistent with all other admin API routes (15-04 decision)
+- [19-04 admin-ui]: Deploy History section hidden for signal campaigns (not applicable to signal flow); DeployButton only renders for static campaigns
+- [19-04 admin-ui]: signalLeadCount queries prisma.signalCampaignLead with outcome=added — only counts successfully added leads
 - [20-02 orchestrator]: Backtick inside system prompt template literal causes TS parse error — use plain text "copyStrategy parameter" not markdown inline code in template literals
+- [Phase 19]: processSignalCampaigns updates lastSignalProcessedAt even with 0 signals — prevents re-processing old signals on every run
 
 ### Blockers/Concerns
 
@@ -115,5 +120,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Completed 20-02-PLAN.md (Phase 20 Plan 02 -- Orchestrator wiring: delegateToWriter strategy params, system prompt Copy Strategy/Multi-Strategy/Signal-Triggered sections, saveCampaignSequences copyStrategy persistence, CampaignDetail.copyStrategy field)
+Stopped at: Completed 19-04-PLAN.md (Phase 19 Plan 04 -- Worker pipeline trigger + signal campaign dashboard controls: triggerSignalPipeline in worker-signals, PATCH signal-status API, SignalStatusButton, Type column, Signal Stats card)
 Resume file: .planning/phases/19-evergreen-signal-campaign-auto-pipeline/19-03-PLAN.md (Phase 19 continues; Phase 20 fully complete)
