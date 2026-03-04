@@ -660,7 +660,7 @@ export default function PipelinePage() {
         }
       />
 
-      <div className="p-8">
+      <div className="p-6 space-y-6">
         {/* Search + count */}
         <div className="flex items-center gap-3 mb-6">
           <div className="relative">

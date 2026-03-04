@@ -147,7 +147,7 @@ export default function LinkedInQueuePage() {
         description="Monitor LinkedIn action execution queue"
       />
 
-      <div className="flex-1 px-8 py-6 space-y-4">
+      <div className="flex-1 p-6 space-y-6">
         {/* Status count cards */}
         <div className="grid grid-cols-4 gap-4">
           <MetricCard

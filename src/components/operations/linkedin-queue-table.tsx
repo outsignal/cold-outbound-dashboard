@@ -108,7 +108,7 @@ function StatusBadge({ status }: { status: string }) {
   switch (status) {
     case "pending":
       return (
-        <Badge variant="outline" className="text-muted-foreground border-border text-[10px]">
+        <Badge variant="outline" size="xs" className="text-muted-foreground border-border">
           pending
         </Badge>
       );
@@ -116,29 +116,29 @@ function StatusBadge({ status }: { status: string }) {
       return (
         <span className="inline-flex items-center gap-1">
           <span className="h-1.5 w-1.5 rounded-full bg-yellow-500 animate-pulse" />
-          <Badge variant="warning" className="text-[10px]">running</Badge>
+          <Badge variant="warning" size="xs">running</Badge>
         </span>
       );
     case "complete":
-      return <Badge variant="success" className="text-[10px]">complete</Badge>;
+      return <Badge variant="success" size="xs">complete</Badge>;
     case "failed":
       return (
-        <Badge variant="destructive" className="text-[10px]">failed</Badge>
+        <Badge variant="destructive" size="xs">failed</Badge>
       );
     case "cancelled":
       return (
-        <Badge variant="outline" className="text-muted-foreground/60 border-border/60 text-[10px]">
+        <Badge variant="outline" size="xs" className="text-muted-foreground/60 border-border/60">
           cancelled
         </Badge>
       );
     case "expired":
       return (
-        <Badge variant="outline" className="text-muted-foreground/60 border-border/60 text-[10px]">
+        <Badge variant="outline" size="xs" className="text-muted-foreground/60 border-border/60">
           expired
         </Badge>
       );
     default:
-      return <Badge variant="secondary" className="text-[10px]">{status}</Badge>;
+      return <Badge variant="secondary" size="xs">{status}</Badge>;
   }
 }
 
@@ -148,31 +148,31 @@ function ActionTypeBadge({ actionType }: { actionType: string }) {
   switch (actionType) {
     case "connect":
       return (
-        <Badge className="bg-blue-500/10 text-blue-600 border-blue-200 text-[10px]">
+        <Badge size="xs" className="bg-blue-500/10 text-blue-600 border-blue-200">
           connect
         </Badge>
       );
     case "message":
       return (
-        <Badge className="bg-purple-500/10 text-purple-600 border-purple-200 text-[10px]">
+        <Badge size="xs" className="bg-purple-500/10 text-purple-600 border-purple-200">
           message
         </Badge>
       );
     case "profile_view":
       return (
-        <Badge variant="outline" className="text-muted-foreground border-border text-[10px]">
+        <Badge variant="outline" size="xs" className="text-muted-foreground border-border">
           profile_view
         </Badge>
       );
     case "check_connection":
       return (
-        <Badge variant="outline" className="text-muted-foreground border-border text-[10px]">
+        <Badge variant="outline" size="xs" className="text-muted-foreground border-border">
           check_conn
         </Badge>
       );
     default:
       return (
-        <Badge variant="secondary" className="text-[10px]">{actionType}</Badge>
+        <Badge variant="secondary" size="xs">{actionType}</Badge>
       );
   }
 }

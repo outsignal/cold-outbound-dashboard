@@ -28,7 +28,7 @@ export default async function ProposalsPage() {
           </Link>
         }
       />
-      <div className="p-8 space-y-6">
+      <div className="p-6 space-y-6">
         <OnboardPageClient
           proposals={proposals.map((p) => ({
             id: p.id,

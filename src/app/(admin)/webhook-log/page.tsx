@@ -176,7 +176,7 @@ export default function WebhookLogPage() {
         description="EmailBison webhook events — search, filter, and inspect payloads"
       />
 
-      <div className="flex-1 overflow-auto p-6 space-y-4">
+      <div className="flex-1 overflow-auto p-6 space-y-6">
         {/* Search + workspace filter row */}
         <div className="flex items-center gap-3">
           {/* Search box */}

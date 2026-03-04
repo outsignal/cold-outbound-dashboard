@@ -140,7 +140,7 @@ export default function AgentRunsPage() {
         description="Monitor all agent executions across workspaces"
       />
 
-      <div className="flex-1 px-8 py-6 space-y-4">
+      <div className="flex-1 p-6 space-y-6">
         {/* Filter row */}
         <div className="flex items-center gap-3 flex-wrap">
           <Select

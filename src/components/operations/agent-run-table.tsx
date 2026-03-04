@@ -48,8 +48,9 @@ function AgentBadge({ agent }: { agent: string }) {
   return (
     <Badge
       variant="outline"
+      size="xs"
       className={cn(
-        "text-[10px] font-medium px-1.5 py-0.5",
+        "font-medium",
         agentBadgeClass[agent] ?? "bg-muted text-muted-foreground border-border"
       )}
     >
@@ -63,7 +64,8 @@ function StatusBadge({ status }: { status: string }) {
     return (
       <Badge
         variant="outline"
-        className="text-[10px] font-medium px-1.5 py-0.5 bg-yellow-50 text-yellow-700 border-yellow-200"
+        size="xs"
+        className="font-medium bg-yellow-50 text-yellow-700 border-yellow-200"
       >
         <span className="relative flex h-1.5 w-1.5 mr-1">
           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75" />
@@ -77,7 +79,8 @@ function StatusBadge({ status }: { status: string }) {
     return (
       <Badge
         variant="outline"
-        className="text-[10px] font-medium px-1.5 py-0.5 bg-green-50 text-green-700 border-green-200"
+        size="xs"
+        className="font-medium bg-green-50 text-green-700 border-green-200"
       >
         complete
       </Badge>
@@ -87,14 +90,15 @@ function StatusBadge({ status }: { status: string }) {
     return (
       <Badge
         variant="outline"
-        className="text-[10px] font-medium px-1.5 py-0.5 bg-red-50 text-red-700 border-red-200"
+        size="xs"
+        className="font-medium bg-red-50 text-red-700 border-red-200"
       >
         failed
       </Badge>
     );
   }
   return (
-    <Badge variant="outline" className="text-[10px] font-medium px-1.5 py-0.5">
+    <Badge variant="outline" size="xs" className="font-medium">
       {status}
     </Badge>
   );

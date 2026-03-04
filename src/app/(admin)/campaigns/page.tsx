@@ -72,7 +72,7 @@ export default async function CampaignsPage() {
         description="All campaigns across workspaces"
       />
 
-      <div className="p-8">
+      <div className="p-6 space-y-6">
         {/* Summary */}
         <div className="mb-6">
           <span className="text-xs text-muted-foreground">
@@ -132,7 +132,8 @@ export default async function CampaignsPage() {
                               <Badge
                                 key={ch}
                                 variant="secondary"
-                                className="text-[10px] capitalize"
+                                size="xs"
+                                className="capitalize"
                               >
                                 {ch}
                               </Badge>

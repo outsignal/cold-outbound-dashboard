@@ -110,7 +110,7 @@ export default function SendersPage() {
         }
       />
 
-      <div className="p-6 space-y-4">
+      <div className="p-6 space-y-6">
         {/* Workspace filter */}
         {workspaces.length > 1 && (
           <div className="flex items-center gap-2">

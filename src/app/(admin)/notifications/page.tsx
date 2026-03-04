@@ -246,7 +246,7 @@ export default function NotificationsPage() {
         }
       />
 
-      <div className="p-8">
+      <div className="p-6 space-y-6">
         {/* Filters */}
         <div className="flex items-center gap-3 mb-6">
           <Select

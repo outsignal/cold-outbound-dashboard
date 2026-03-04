@@ -214,7 +214,7 @@ export function ClientTaskCard({
               )}
 
               {isBlocked && (
-                <Badge variant="warning" className="text-[10px] px-1.5 py-0">
+                <Badge variant="warning" size="xs" className="py-0">
                   <AlertTriangle className="h-3 w-3 mr-0.5" />
                   Blocked
                 </Badge>

@@ -54,7 +54,7 @@ export default async function SettingsPage() {
         title="Settings"
         description="Manage workspace connections and configuration"
       />
-      <div className="p-8 space-y-6">
+      <div className="p-6 space-y-6">
         <Card>
           <CardHeader>
             <CardTitle className="font-heading">Workspaces</CardTitle>

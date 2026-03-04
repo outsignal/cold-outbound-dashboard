@@ -170,7 +170,7 @@ export default async function PersonDetailPage({
   return (
     <div className="flex flex-col h-full">
       {/* Breadcrumb */}
-      <div className="border-b border-border px-8 py-3">
+      <div className="border-b border-border px-6 py-3">
         <Link
           href="/people"
           className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
@@ -199,7 +199,7 @@ export default async function PersonDetailPage({
       />
 
       {/* Tabs */}
-      <div className="flex-1 px-8 py-6">
+      <div className="flex-1 p-6">
         <Tabs defaultValue="overview" className="space-y-4">
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -244,7 +244,7 @@ export default async function PersonDetailPage({
                             {new Date(ev.timestamp).toLocaleDateString("en-GB", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="text-[10px]">{ev.type.replace("email_", "")}</Badge>
+                            <Badge variant="outline" size="xs">{ev.type.replace("email_", "")}</Badge>
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground max-w-[300px] truncate">{ev.detail ?? "—"}</TableCell>
                           <TableCell className="text-[10px] text-muted-foreground font-mono">{ev.workspace ?? "—"}</TableCell>
@@ -280,7 +280,7 @@ export default async function PersonDetailPage({
                             {new Date(ev.timestamp).toLocaleDateString("en-GB", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                           </TableCell>
                           <TableCell>
-                            <Badge className="bg-blue-500/10 text-blue-600 border-blue-200 text-[10px]">
+                            <Badge size="xs" className="bg-blue-500/10 text-blue-600 border-blue-200">
                               {(ev.metadata?.actionType as string) ?? ev.type.replace("linkedin_", "")}
                             </Badge>
                           </TableCell>
@@ -357,7 +357,7 @@ export default async function PersonDetailPage({
                               <TableCell>
                                 <Badge
                                   variant={log.status === "error" ? "destructive" : "outline"}
-                                  className="text-[10px]"
+                                  size="xs"
                                 >
                                   {log.status}
                                 </Badge>
@@ -399,7 +399,7 @@ export default async function PersonDetailPage({
                             {pw.icpScore !== null ? pw.icpScore : "—"}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="text-[10px]">
+                            <Badge variant="outline" size="xs">
                               {pw.status ?? "new"}
                             </Badge>
                           </TableCell>

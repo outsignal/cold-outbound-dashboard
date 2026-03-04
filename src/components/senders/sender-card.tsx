@@ -145,10 +145,10 @@ export function SenderCard({ sender, workspaces }: SenderCardProps) {
               </p>
             </div>
             <div className="flex flex-col items-end gap-1 shrink-0">
-              <Badge variant={STATUS_VARIANT[sender.status] ?? "secondary"} className="text-[10px]">
+              <Badge variant={STATUS_VARIANT[sender.status] ?? "secondary"} size="xs">
                 {sender.status}
               </Badge>
-              <Badge variant={HEALTH_VARIANT[sender.healthStatus] ?? "secondary"} className="text-[10px]">
+              <Badge variant={HEALTH_VARIANT[sender.healthStatus] ?? "secondary"} size="xs">
                 {sender.healthStatus.replace("_", " ")}
               </Badge>
             </div>

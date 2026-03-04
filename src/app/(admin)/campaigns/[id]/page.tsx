@@ -67,7 +67,7 @@ export default async function CampaignDetailPage({
         }
       />
 
-      <div className="p-8 space-y-8">
+      <div className="p-6 space-y-6">
         {/* ─── Campaign overview ─────────────────────────────────────────────── */}
         <section>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

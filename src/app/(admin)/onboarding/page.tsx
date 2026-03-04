@@ -41,7 +41,7 @@ export default async function OnboardingInvitesPage() {
           </Link>
         }
       />
-      <div className="p-8">
+      <div className="p-6 space-y-6">
         <Card>
           <CardContent className="p-0">
             <Table>

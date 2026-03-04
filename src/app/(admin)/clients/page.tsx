@@ -433,7 +433,7 @@ export default function ClientsPage() {
         actions={<AddClientDialog onCreated={fetchClients} />}
       />
 
-      <div className="p-8">
+      <div className="p-6 space-y-6">
         {/* Summary */}
         {data && !loading && (
           <div className="mb-6">

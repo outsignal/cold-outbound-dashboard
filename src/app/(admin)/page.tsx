@@ -128,7 +128,7 @@ export default function DashboardPage() {
         actions={<ClientFilter workspaces={workspaces} />}
       />
 
-      <div className="p-6 space-y-5">
+      <div className="p-6 space-y-6">
         {/* Alerts — shown above KPIs so critical items are immediately visible */}
         {!loading && alerts.length > 0 && (
           <AlertsSection alerts={alerts} />

@@ -101,7 +101,8 @@ function EventTypeBadge({ eventType }: { eventType: string }) {
     return (
       <Badge
         variant="outline"
-        className={cn("text-[10px] font-medium", style.className)}
+        size="xs"
+        className={cn("font-medium", style.className)}
       >
         {style.label}
       </Badge>
@@ -111,7 +112,8 @@ function EventTypeBadge({ eventType }: { eventType: string }) {
   return (
     <Badge
       variant="outline"
-      className="text-[10px] font-medium bg-zinc-50 text-zinc-500 border-zinc-200"
+      size="xs"
+      className="font-medium bg-zinc-50 text-zinc-500 border-zinc-200"
     >
       {eventType}
     </Badge>

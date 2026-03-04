@@ -49,7 +49,7 @@ function PageSkeleton() {
           <div className="h-8 w-16 bg-muted rounded animate-pulse" />
         </div>
       </header>
-      <div className="p-8 space-y-6">
+      <div className="p-6 space-y-6">
         <div className="h-40 bg-muted/50 rounded-lg animate-pulse" />
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -182,7 +182,7 @@ export default function ClientDetailPage() {
     return (
       <div>
         <Header title="Client Not Found" />
-        <div className="p-8">
+        <div className="p-6 space-y-6">
           <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
             {error ?? "Client not found"}
           </div>
@@ -245,7 +245,7 @@ export default function ClientDetailPage() {
         }
       />
 
-      <div className="p-8 space-y-6">
+      <div className="p-6 space-y-6">
         {/* Info card */}
         <Card>
           <CardContent className="pt-1">
