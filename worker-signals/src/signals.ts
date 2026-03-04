@@ -5,10 +5,8 @@
 // expireOldSignals   — marks signals with expiresAt in the past as "expired".
 // disconnectPrisma   — closes the Prisma connection pool (call before process.exit).
 
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "./db.js";
 import type { SignalInput } from "./types.js";
-
-const prisma = new PrismaClient();
 
 // ---------------------------------------------------------------------------
 // writeSignalEvents
