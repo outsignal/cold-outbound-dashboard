@@ -15,7 +15,7 @@ Requirements for Lead Discovery & Intelligence milestone. Each maps to roadmap p
 - [x] **DISC-04**: Leads Agent can search Serper.dev for Google web results, Maps results, and social mentions (Reddit/Twitter) via natural language queries
 - [x] **DISC-05**: Leads Agent can scrape custom directories via Firecrawl /extract endpoint with structured JSON schema (association member lists, government databases, etc.)
 - [x] **DISC-06**: Discovery results are written to a DiscoveredPerson staging table (not directly to Person) for dedup before promotion
-- [ ] **DISC-07**: Agent deduplicates discovered leads against local Person DB (by LinkedIn URL, email, or name+company match) before enrichment
+- [x] **DISC-07**: Agent deduplicates discovered leads against local Person DB (by LinkedIn URL, email, or name+company match) before enrichment
 - [ ] **DISC-08**: Agent automatically selects best discovery sources based on ICP type (enterprise B2B → Apollo/Prospeo, niche → Serper/Firecrawl directories, local/SMB → Serper Maps)
 - [x] **DISC-09**: Per-workspace API keys for Apollo.io (ToS requirement — no shared keys across workspaces)
 - [x] **DISC-10**: Discovery adapter pattern (DiscoveryAdapter interface) so new sources can be added without restructuring
@@ -140,7 +140,7 @@ Deferred to next milestone. Tracked but not in current roadmap.
 | DISC-03 | Phase 16 | Complete |
 | DISC-04 | Phase 16 | Complete |
 | DISC-05 | Phase 16 | Complete |
-| DISC-07 | Phase 17 | Pending |
+| DISC-07 | Phase 17 | Complete |
 | DISC-08 | Phase 17 | Pending |
 | DISC-11 | Phase 17 | Pending |
 | DISC-12 | Phase 17 | Pending |

@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Lead Discovery & Intelligence
 status: unknown
-last_updated: "2026-03-04T12:54:14.350Z"
+last_updated: "2026-03-04T13:40:57Z"
 progress:
   total_phases: 13
   completed_phases: 11
   total_plans: 47
-  completed_plans: 48
+  completed_plans: 49
 ---
 
 # Project State
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Core value:** Own the lead data pipeline end-to-end so we never pay for the same lead twice and can cancel the $300+/month Clay subscription.
-**Current focus:** v2.0 Phase 16 — Discovery Sources
+**Current focus:** v2.0 Phase 17 — Leads Agent Discovery Upgrade
 
 ## Current Position
 
-Phase: 16 of 21 (Discovery Sources)
-Plan: 03 complete — phase 16 COMPLETE
+Phase: 17 of 21 (Leads Agent Discovery Upgrade)
+Plan: 01 complete
 Status: In progress
-Last activity: 2026-03-04 — 16-03 complete (5 discovery adapters wired into Leads Agent as callable tools, system prompt updated)
+Last activity: 2026-03-04 — 17-01 complete (dedup + promotion engine built, waterfall enrichment trigger wired)
 
 Progress: [░░░░░░░░░░] ~3% (v2.0)
 
@@ -60,6 +60,10 @@ Progress: [░░░░░░░░░░] ~3% (v2.0)
 - [16-03 leads-agent]: searchGoogle web mode returns informational results only — NOT staged (no person data); agent uses URLs to feed extractDirectory
 - [16-03 leads-agent]: Apollo tool omits incrementDailySpend — search is free, costUsd=0 from adapter
 - [16-03 leads-agent]: Prospeo extras built inline in tool execute — fundingStages/departments mapped to company_funding/person_department before passing to adapter.search() extras param
+- [17-01 promotion]: promotedAt set only on promoted records (not duplicates) — duplicates free for quota; quota function filters by promotedAt date window
+- [17-01 promotion]: "waterfall" sentinel provider value used for enrichment queue — cron calls enrichEmail() for all person jobs regardless of provider
+- [17-01 promotion]: Placeholder email pattern placeholder-{uuid}@discovery.internal for leads without email to satisfy Person.email unique constraint
+- [17-01 promotion]: Fuzzy name match threshold 0.85 Levenshtein similarity — only fires when firstName + lastName + companyDomain all present
 
 ### Blockers/Concerns
 
@@ -74,5 +78,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Completed 16-03-PLAN.md (5 discovery adapters wired into Leads Agent, system prompt updated, Phase 16 complete)
-Resume file: .planning/phases/ (Phase 17 planning next)
+Stopped at: Completed 17-01-PLAN.md (dedup + promotion engine, waterfall enrichment trigger, Provider type extended)
+Resume file: .planning/phases/17-leads-agent-discovery-upgrade/ (plan 02 next)
