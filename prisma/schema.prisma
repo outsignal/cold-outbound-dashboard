@@ -183,6 +183,7 @@ model DiscoveredPerson {
 
   // Batch tracking
   discoveryRunId  String?  // Groups records from the same discovery batch
+  rawResponse     String?  // JSON — raw API response from discovery source for debugging/audit
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
