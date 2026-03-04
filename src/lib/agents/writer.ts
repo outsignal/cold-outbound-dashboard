@@ -216,20 +216,26 @@ const writerTools = {
         )
         .optional()
         .describe("LinkedIn sequence steps"),
+      copyStrategy: z
+        .enum(["creative-ideas", "pvp", "one-liner", "custom"])
+        .optional()
+        .describe("The copy strategy used to generate this sequence"),
     }),
-    execute: async ({ campaignId, emailSequence, linkedinSequence }) => {
+    execute: async ({ campaignId, emailSequence, linkedinSequence, copyStrategy }) => {
       const { saveCampaignSequences } = await import(
         "@/lib/campaigns/operations"
       );
       const updated = await saveCampaignSequences(campaignId, {
         emailSequence: emailSequence ?? undefined,
         linkedinSequence: linkedinSequence ?? undefined,
+        copyStrategy: copyStrategy ?? undefined,
       });
       return {
         status: "saved",
         campaignName: updated.name,
         emailStepCount: emailSequence?.length ?? 0,
         linkedinStepCount: linkedinSequence?.length ?? 0,
+        copyStrategy: copyStrategy ?? null,
       };
     },
   }),
