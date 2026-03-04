@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Core value:** Own the lead data pipeline end-to-end so we never pay for the same lead twice and can cancel the $300+/month Clay subscription.
-**Current focus:** v2.0 Phase 19 — Evergreen Signal Campaign Auto-Pipeline (plan 04 of 04 complete)
+**Current focus:** v2.0 Phase 22 — Client Financials & Invoicing (plan 01 of N complete)
 
 ## Current Position
 
-Phase: 19 of 21 (Evergreen Signal Campaign Auto-Pipeline) -- IN PROGRESS
-Plan: 04 of 04 complete
-Status: Phase 19 plan 04 complete — Worker pipeline trigger + signal campaign dashboard controls (Type badges, Signal Stats card, pause/resume button)
-Last activity: 2026-03-04 -- 19-04 complete (triggerSignalPipeline in worker-signals, PATCH /api/campaigns/[id]/signal-status, SignalStatusButton, Type column in campaigns list, Signal Stats card on detail page)
+Phase: 22 of 22 (Client Financials & Invoicing) -- IN PROGRESS
+Plan: 01 of N complete
+Status: Phase 22 plan 01 complete — Prisma invoice schema (4 models, 13 Workspace billing fields) + TypeScript types, GBP utilities, atomic invoice numbering, and CRUD operations
+Last activity: 2026-03-04 -- 22-01 complete (Invoice/InvoiceLineItem/InvoiceSequence/InvoiceSenderSettings models, src/lib/invoices/)
 
 Progress: [######░░░░] ~7% (v2.0)
 
@@ -108,6 +108,11 @@ Progress: [######░░░░] ~7% (v2.0)
 - [Phase 19]: processSignalCampaigns updates lastSignalProcessedAt even with 0 signals — prevents re-processing old signals on every run
 - [Phase 19]: Pipeline auth fails closed — PIPELINE_INTERNAL_SECRET unset means all requests rejected
 - [Phase 19]: Signal campaign domain dedup via SignalCampaignLead.companyDomain — prevents reprocessing same company across multiple signal cycles
+- [22-01 schema]: All monetary amounts stored as integer pence (never Float for currency) — InvoiceLineItem.unitPricePence, amountPence; Invoice.subtotalPence, taxAmountPence, totalPence
+- [22-01 schema]: InvoiceSenderSettings is a single global record (not per-workspace) — one sender (Jonathan) for all invoices
+- [22-01 schema]: Invoice snapshots sender + client details at creation time for immutability — changes to workspace billing fields don't retroactively alter issued invoices
+- [22-01 operations]: viewToken uses crypto.randomUUID() for portal access — no auth required, token-based
+- [22-01 operations]: advanceRenewalDate is month-end safe (Jan 31 -> Feb 28/29) — uses setDate(0) rollback pattern
 
 ### Blockers/Concerns
 
@@ -122,5 +127,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Completed 19-03-PLAN.md (Phase 19 Plan 03 -- Signal campaign pipeline processor: processSignalCampaigns, POST /api/pipeline/signal-campaigns/process)
-Resume file: .planning/phases/19-evergreen-signal-campaign-auto-pipeline/19-05-PLAN.md (Phase 19 Plans 01-04 all complete)
+Stopped at: Completed 22-01-PLAN.md (Phase 22 Plan 01 -- Schema Foundation + Core Business Logic: Invoice models, Workspace billing fields, src/lib/invoices/)
+Resume file: .planning/phases/22-client-financials-invoicing/22-02-PLAN.md (if it exists)
