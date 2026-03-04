@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-03-04)
 ## Current Position
 
 Phase: 22 of 22 (Client Financials & Invoicing) -- IN PROGRESS
-Plan: 03 of 5 complete
-Status: Phase 22 plan 03 complete — Invoice auto-generation cron (7-day window, idempotency guard), overdue detection with branded reminder email, 48h unpaid renewal Slack alerts, all merged into existing daily cron
-Last activity: 2026-03-04 -- 22-03 complete (src/lib/invoices/generator.ts, src/lib/invoices/overdue.ts, /api/inbox-health/check extended)
+Plan: 05 of 5 complete
+Status: Phase 22 plan 05 complete — Portal billing tab (sidebar Billing nav item, /portal/billing invoice history page, GET /api/portal/invoices session-gated route, viewToken PDF download links)
+Last activity: 2026-03-04 -- 22-05 complete (src/components/portal/portal-sidebar.tsx, src/app/api/portal/invoices/route.ts, src/app/(portal)/portal/billing/page.tsx)
 
 Progress: [######░░░░] ~7% (v2.0)
 
@@ -128,6 +128,9 @@ Progress: [######░░░░] ~7% (v2.0)
 - [21-01 signal-dashboard]: totalSignals uses feed.length (capped at limit=100) — reflects visible data, no extra COUNT query
 - [21-01 signal-dashboard]: Tooltip labelFormatter omitted from BarChart — Recharts v3 overload types reject string formatters; XAxis tickFormatter handles human labels instead
 - [21-01 signal-dashboard]: Tooltip formatter typed as (value: number | undefined) — matches existing enrichment-costs page pattern for Recharts v3 compatibility
+- [22-05 portal-billing]: Server component queries prisma directly rather than calling /api/portal/invoices — eliminates fetch round-trip, keeps session logic server-side only
+- [22-05 portal-billing]: Mobile menu wraps PortalSidebar — no separate nav item changes needed; sidebar update propagates automatically
+- [22-05 portal-billing]: PDF download links use viewToken query param (/api/invoices/[id]/pdf?token=...) — Plan 02 token-based access pattern, no admin auth required
 
 ### Blockers/Concerns
 
@@ -142,5 +145,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Completed 22-03-PLAN.md (Phase 22 Plan 03 -- Invoice auto-generation cron, overdue detection, 48h unpaid alerts)
-Resume file: .planning/phases/22-client-financials-invoicing/22-04-PLAN.md (if it exists)
+Stopped at: Completed 22-05-PLAN.md (Phase 22 Plan 05 -- Portal billing tab, /portal/billing page, session-gated invoice API)
+Resume file: None — Phase 22 complete (all 5 plans done)
