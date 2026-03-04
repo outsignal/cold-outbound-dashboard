@@ -27,6 +27,8 @@ import {
   CircleDot,
   CircleDashed,
   Zap,
+  FileText,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -129,6 +131,16 @@ const STATIC_NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/senders", label: "Senders", icon: Linkedin },
       { href: "/linkedin-queue", label: "LinkedIn Queue", icon: ListOrdered },
+    ],
+  },
+  {
+    key: "financials",
+    label: "Financials",
+    collapsible: true,
+    tier: "secondary",
+    items: [
+      { href: "/financials", label: "Invoices", icon: FileText },
+      { href: "/revenue", label: "Revenue", icon: TrendingUp },
     ],
   },
   // WORKSPACES group is inserted dynamically by buildNavGroups()
