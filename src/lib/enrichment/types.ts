@@ -3,7 +3,7 @@
  * Central source of truth for provider names, entity types, and enrichment results.
  */
 
-/** Supported enrichment providers. "clay" is the legacy provider (existing webhook). */
+/** Supported enrichment providers. "clay" is the legacy provider (existing webhook). "waterfall" is a sentinel value used when enqueuing promoted discovery leads for full-waterfall enrichment. */
 export type Provider =
   | "prospeo"
   | "aiark"
@@ -12,7 +12,8 @@ export type Provider =
   | "findymail"
   | "firecrawl"
   | "clay"
-  | "ai-normalizer";
+  | "ai-normalizer"
+  | "waterfall";
 
 /** Entity types that can be enriched. */
 export type EntityType = "person" | "company";
