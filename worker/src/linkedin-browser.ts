@@ -142,21 +142,25 @@ export class LinkedInBrowser {
   private exec(command: string, timeoutMs = LinkedInBrowser.CMD_TIMEOUT): string {
     const args = ["--session", this.session];
 
-    if (this.proxyUrl) {
-      args.push("--proxy", this.proxyUrl);
-    }
-
-    args.push("--user-agent", LinkedInBrowser.USER_AGENT);
-
     // Split command string into individual args
     const cmdParts = this.parseCommand(command);
     args.push(...cmdParts);
+
+    // Pass proxy and user-agent via environment variables instead of CLI flags.
+    // The daemon ignores --proxy/--user-agent if already running, but env vars
+    // are picked up at daemon startup and work reliably.
+    const env: Record<string, string> = { ...process.env } as Record<string, string>;
+    if (this.proxyUrl) {
+      env.AGENT_BROWSER_PROXY = this.proxyUrl;
+    }
+    env.AGENT_BROWSER_USER_AGENT = LinkedInBrowser.USER_AGENT;
 
     try {
       const result = execFileSync("agent-browser", args, {
         encoding: "utf-8",
         timeout: timeoutMs,
         maxBuffer: 10 * 1024 * 1024, // 10MB for large snapshots
+        env,
       });
       return result.trim();
     } catch (error) {
@@ -1647,6 +1651,28 @@ export class LinkedInBrowser {
           );
           this.exec(`click ${authAppLink.ref}`);
           await this.sleep(3000);
+
+          // Check if clicking authenticator link already completed login
+          // (e.g. 2FA was pre-approved on mobile, or LinkedIn auto-accepted)
+          const postAuthUrl = this.exec("get url");
+          this.log(`Post-authenticator URL: ${postAuthUrl}`);
+          if (
+            postAuthUrl.includes("/feed") ||
+            postAuthUrl.includes("/mynetwork") ||
+            postAuthUrl.includes("/messaging") ||
+            postAuthUrl.includes("/in/")
+          ) {
+            this.log("Login succeeded after clicking authenticator link (no TOTP entry needed)");
+            await this.saveSessionState();
+            this.launched = true;
+            this._voyagerCookies = await this.extractVoyagerCookies();
+            if (this._voyagerCookies) {
+              this.log("Voyager cookies extracted successfully");
+            } else {
+              console.warn("[LinkedInBrowser] Failed to extract Voyager cookies — HTTP actions will not work");
+            }
+            return true;
+          }
 
           // Take a fresh snapshot of the authenticator TOTP page
           const authSnapshot = this.exec("snapshot -i");
