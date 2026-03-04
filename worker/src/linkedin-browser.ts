@@ -101,30 +101,34 @@ export class LinkedInBrowser {
    * causing blocks or different page layouts.
    */
   private killDaemon(): void {
-    // First close attempt
+    // Try graceful close first
     try {
       execFileSync("agent-browser", ["--session", this.session, "close"], {
         encoding: "utf-8",
         timeout: 5000,
       });
-      this.log("Killed stale agent-browser daemon (attempt 1)");
+      this.log("Sent close command to agent-browser daemon");
     } catch {
       // daemon may not be running, that's ok
     }
 
-    // Give the process a moment to exit, then try once more in case it was
-    // still shutting down when the first close returned.
-    execFileSync("node", ["-e", "setTimeout(()=>{},800)"], { timeout: 2000 });
-
+    // Hard-kill ALL agent-browser processes to ensure the daemon is truly dead.
+    // The `close` command only closes the browser page, not the daemon process.
+    // Without this, the daemon stays alive and ignores --proxy/--user-agent on
+    // subsequent commands.
     try {
-      execFileSync("agent-browser", ["--session", this.session, "close"], {
+      execFileSync("pkill", ["-f", "agent-browser"], {
         encoding: "utf-8",
         timeout: 3000,
       });
-      this.log("Killed stale agent-browser daemon (attempt 2)");
+      this.log("Killed agent-browser processes via pkill");
     } catch {
-      // daemon is gone — that's what we want
+      // no matching processes — fine
     }
+
+    // Wait for processes to fully exit
+    execFileSync("node", ["-e", "setTimeout(()=>{},1500)"], { timeout: 3000 });
+    this.log("Daemon kill complete");
   }
 
   /**
