@@ -19,7 +19,9 @@ import {
   PerformanceChartLegend,
   type PerformanceDayPoint,
 } from "@/components/portal/portal-performance-chart";
-import { Linkedin, Clock } from "lucide-react";
+import { RelativeTimestamp } from "@/components/portal/relative-timestamp";
+import { Linkedin } from "lucide-react";
+import Link from "next/link";
 import type { Campaign } from "@/lib/emailbison/types";
 
 export default async function PortalDashboardPage() {
@@ -46,6 +48,23 @@ export default async function PortalDashboardPage() {
   } catch (err) {
     error = err instanceof Error ? err.message : "Failed to fetch campaigns";
   }
+
+  // Build a mapping from EmailBison campaign ID to internal campaign ID
+  const ebCampaignIds = campaigns.map((c) => c.id).filter(Boolean);
+  const internalCampaigns = ebCampaignIds.length > 0
+    ? await prisma.campaign.findMany({
+        where: {
+          workspaceSlug,
+          emailBisonCampaignId: { in: ebCampaignIds },
+        },
+        select: { id: true, emailBisonCampaignId: true },
+      })
+    : [];
+  const ebToInternalId = new Map(
+    internalCampaigns
+      .filter((c) => c.emailBisonCampaignId !== null)
+      .map((c) => [c.emailBisonCampaignId!, c.id]),
+  );
 
   const totalSent = campaigns.reduce((sum, c) => sum + (c.emails_sent ?? 0), 0);
   const totalOpens = campaigns.reduce((sum, c) => sum + (c.unique_opens ?? 0), 0);
@@ -129,10 +148,7 @@ export default async function PortalDashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="hidden sm:inline-flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Clock className="h-3 w-3" />
-            Updated {now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}
-          </span>
+          <RelativeTimestamp timestamp={now.toISOString()} />
           <PortalRefreshButton />
         </div>
       </div>
@@ -265,10 +281,23 @@ export default async function PortalDashboardPage() {
                     sent > 0
                       ? ((campaign.replied / sent) * 100).toFixed(1)
                       : "0.0";
+                  const internalId = ebToInternalId.get(campaign.id);
                   return (
-                    <TableRow key={campaign.id}>
+                    <TableRow
+                      key={campaign.id}
+                      className={internalId ? "hover:bg-muted/50 cursor-pointer group" : ""}
+                    >
                       <TableCell className="font-medium">
-                        {campaign.name}
+                        {internalId ? (
+                          <Link
+                            href={`/portal/campaigns/${internalId}`}
+                            className="group-hover:underline"
+                          >
+                            {campaign.name}
+                          </Link>
+                        ) : (
+                          campaign.name
+                        )}
                       </TableCell>
                       <TableCell>
                         <Badge

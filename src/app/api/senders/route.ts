@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Strip sensitive fields before returning
-    const sanitized = senders.map(({ sessionData, linkedinPassword, totpSecret, ...rest }) => rest);
+    const sanitized = senders.map(({ sessionData, linkedinPassword, totpSecret, inviteToken, ...rest }) => rest);
 
     return NextResponse.json({ senders: sanitized });
   } catch (error) {
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     if (!workspace) {
       return NextResponse.json(
-        { error: `Workspace '${workspaceSlug}' not found` },
+        { error: "Workspace not found" },
         { status: 400 }
       );
     }
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const { sessionData, linkedinPassword, totpSecret, ...sanitized } = sender;
+    const { sessionData, linkedinPassword, totpSecret, inviteToken, ...sanitized } = sender;
     return NextResponse.json({ sender: sanitized }, { status: 201 });
   } catch (error) {
     console.error("Create sender error:", error);

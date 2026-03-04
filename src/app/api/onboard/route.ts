@@ -3,6 +3,10 @@ import { prisma } from "@/lib/db";
 import { createChannelWithMembers, postMessage } from "@/lib/slack";
 import { runResearchAgent } from "@/lib/agents/research";
 import { notify } from "@/lib/notify";
+import {
+  verifyAdminSession,
+  ADMIN_COOKIE_NAME,
+} from "@/lib/admin-auth";
 
 function slugify(text: string): string {
   return text
@@ -13,6 +17,15 @@ function slugify(text: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    // Admin session validation
+    const cookie = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
+    if (!cookie || !verifyAdminSession(cookie)) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const body = await request.json();
 
     const { name, senderFullName } = body;

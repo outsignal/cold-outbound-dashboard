@@ -27,7 +27,7 @@ export async function GET(
       return NextResponse.json({ error: "Sender not found" }, { status: 404 });
     }
 
-    const { sessionData, linkedinPassword, totpSecret, ...sanitized } = sender;
+    const { sessionData, linkedinPassword, totpSecret, inviteToken, ...sanitized } = sender;
     return NextResponse.json({ sender: sanitized });
   } catch (error) {
     console.error("Get sender error:", error);
@@ -63,7 +63,7 @@ export async function PATCH(
     // Validate status if provided
     if (status !== undefined && !ALLOWED_STATUSES.includes(status)) {
       return NextResponse.json(
-        { error: `Invalid status '${status}'. Must be one of: ${ALLOWED_STATUSES.join(", ")}` },
+        { error: "Invalid status value" },
         { status: 400 }
       );
     }
@@ -96,7 +96,7 @@ export async function PATCH(
       },
     });
 
-    const { sessionData, linkedinPassword, totpSecret, ...sanitized } = sender;
+    const { sessionData, linkedinPassword, totpSecret, inviteToken, ...sanitized } = sender;
     return NextResponse.json({ sender: sanitized });
   } catch (error) {
     console.error("Update sender error:", error);
@@ -132,7 +132,7 @@ export async function DELETE(
     if (pendingActionCount > 0) {
       return NextResponse.json(
         {
-          error: `Cannot delete sender with ${pendingActionCount} pending or running action(s). Cancel or wait for them to complete first.`,
+          error: "Cannot delete sender with pending or running actions. Cancel or wait for them to complete first.",
         },
         { status: 409 }
       );

@@ -17,7 +17,7 @@ export async function GET(
 
     if (!campaign) {
       return NextResponse.json(
-        { error: `Campaign not found: '${id}'` },
+        { error: "Not found" },
         { status: 404 },
       );
     }

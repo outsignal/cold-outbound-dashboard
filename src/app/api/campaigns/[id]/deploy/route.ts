@@ -49,7 +49,7 @@ export async function POST(
   // Fresh deploy: validate status
   if (campaign.status !== "approved") {
     return NextResponse.json(
-      { error: `Campaign must be in 'approved' status to deploy. Current: '${campaign.status}'` },
+      { error: "Campaign must be in 'approved' status to deploy" },
       { status: 400 },
     );
   }

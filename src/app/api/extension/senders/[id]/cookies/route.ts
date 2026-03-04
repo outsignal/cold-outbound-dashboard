@@ -1,20 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getExtensionSession } from "@/lib/extension-auth";
+import { getExtensionSession, extensionCorsHeaders } from "@/lib/extension-auth";
 import { encrypt } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
-
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
 
 /**
  * OPTIONS /api/extension/senders/[id]/cookies
  * CORS preflight.
  */
-export async function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, { status: 204, headers: extensionCorsHeaders(request) });
 }
 
 /**
@@ -30,12 +24,13 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const cors = extensionCorsHeaders(request);
   try {
     const session = getExtensionSession(request);
     if (!session) {
       return NextResponse.json(
         { error: "Unauthorized" },
-        { status: 401, headers: CORS_HEADERS },
+        { status: 401, headers: cors },
       );
     }
 
@@ -45,7 +40,7 @@ export async function POST(
     if (session.senderId !== id) {
       return NextResponse.json(
         { error: "Forbidden — token is not scoped to this sender" },
-        { status: 403, headers: CORS_HEADERS },
+        { status: 403, headers: cors },
       );
     }
 
@@ -57,7 +52,7 @@ export async function POST(
     if (!cookies || !Array.isArray(cookies) || cookies.length === 0) {
       return NextResponse.json(
         { error: "cookies array is required and must be non-empty" },
-        { status: 400, headers: CORS_HEADERS },
+        { status: 400, headers: cors },
       );
     }
 
@@ -84,13 +79,13 @@ export async function POST(
         linkedinConnected: true,
         warnings: hasLiAt ? [] : ["li_at cookie not found in saved cookies"],
       },
-      { headers: CORS_HEADERS },
+      { headers: cors },
     );
   } catch (error) {
     console.error("[extension/senders/[id]/cookies] Error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500, headers: CORS_HEADERS },
+      { status: 500, headers: cors },
     );
   }
 }

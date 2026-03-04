@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle2, MessageSquare, ChevronDown, Mail, Linkedin, Loader2 } from "lucide-react";
+import { CheckCircle2, MessageSquare, ChevronDown, Mail, Linkedin, Loader2, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { resolveSpintax, substituteTokens } from "@/lib/content-preview";
 
@@ -195,6 +195,15 @@ export function CampaignApprovalContent({
           </p>
         ) : (
           <div className="space-y-6">
+            {/* Spintax explanation banner */}
+            <div className="flex items-start gap-2.5 bg-muted/50 border border-border rounded-md p-3">
+              <Info className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Email content uses dynamic variations — different recipients may see
+                slightly different wording. The preview below shows one possible version.
+              </p>
+            </div>
+
             {/* Email Sequence Accordion */}
             {hasEmail && (
               <div>

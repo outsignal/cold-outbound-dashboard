@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import { prisma } from "@/lib/db";
 import { normalizeCompanyName } from "@/lib/normalize";
 import { rateLimit } from "@/lib/rate-limit";
@@ -208,7 +209,16 @@ export async function POST(request: NextRequest) {
       );
     } else {
       const apiKey = request.headers.get("x-api-key");
-      if (!apiKey || apiKey !== secret) {
+      if (!apiKey) {
+        return NextResponse.json(
+          { error: "Invalid or missing API key" },
+          { status: 401 },
+        );
+      }
+      // Timing-safe comparison to prevent timing attacks
+      const apiKeyBuf = Buffer.from(apiKey);
+      const secretBuf = Buffer.from(secret);
+      if (apiKeyBuf.length !== secretBuf.length || !crypto.timingSafeEqual(apiKeyBuf, secretBuf)) {
         return NextResponse.json(
           { error: "Invalid or missing API key" },
           { status: 401 },

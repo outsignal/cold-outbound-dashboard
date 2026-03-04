@@ -14,7 +14,7 @@ export async function POST(
     const client = await getClient(id);
     if (!client) {
       return NextResponse.json(
-        { error: `Client not found: '${id}'` },
+        { error: "Not found" },
         { status: 404 },
       );
     }

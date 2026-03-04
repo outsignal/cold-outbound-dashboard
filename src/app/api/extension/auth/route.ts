@@ -1,20 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createExtensionToken } from "@/lib/extension-auth";
+import { createExtensionToken, extensionCorsHeaders } from "@/lib/extension-auth";
 import { prisma } from "@/lib/db";
 import { randomUUID } from "crypto";
-
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
 
 /**
  * OPTIONS /api/extension/auth
  * CORS preflight for Chrome extension popup fetch calls.
  */
-export async function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, { status: 204, headers: extensionCorsHeaders(request) });
 }
 
 /**
@@ -30,6 +24,7 @@ export async function OPTIONS() {
  *   - workspaceSlug
  */
 export async function POST(request: NextRequest) {
+  const cors = extensionCorsHeaders(request);
   try {
     const body = await request.json();
     const { token } = body as { token?: string };
@@ -37,7 +32,7 @@ export async function POST(request: NextRequest) {
     if (!token || typeof token !== "string" || token.trim() === "") {
       return NextResponse.json(
         { error: "token is required" },
-        { status: 400, headers: CORS_HEADERS },
+        { status: 400, headers: cors },
       );
     }
 
@@ -56,7 +51,7 @@ export async function POST(request: NextRequest) {
     if (!sender) {
       return NextResponse.json(
         { error: "Invalid invite token" },
-        { status: 401, headers: CORS_HEADERS },
+        { status: 401, headers: cors },
       );
     }
 
@@ -74,13 +69,13 @@ export async function POST(request: NextRequest) {
           lastActiveAt: sender.lastActiveAt,
         },
       },
-      { headers: CORS_HEADERS },
+      { headers: cors },
     );
   } catch (error) {
     console.error("[extension/auth] Error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500, headers: CORS_HEADERS },
+      { status: 500, headers: cors },
     );
   }
 }

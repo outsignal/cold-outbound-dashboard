@@ -18,6 +18,7 @@ import {
   LinkedInActivityChart,
   LinkedInChartLegend,
 } from "@/components/portal/linkedin-activity-chart";
+import { HealthStatusBadge } from "@/components/portal/health-status-badge";
 import { LinkedinIcon, Clock } from "lucide-react";
 
 export default async function PortalLinkedInPage() {
@@ -185,11 +186,10 @@ export default async function PortalLinkedInPage() {
                           )}
                         </TableCell>
                         <TableCell>
-                          <Badge
-                            className={`text-xs ${healthColors[sender.healthStatus] ?? ""}`}
-                          >
-                            {sender.healthStatus}
-                          </Badge>
+                          <HealthStatusBadge
+                            status={sender.healthStatus}
+                            className={healthColors[sender.healthStatus] ?? ""}
+                          />
                         </TableCell>
                         <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
                           {usage?.connectionsSent ?? 0}

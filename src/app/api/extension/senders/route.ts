@@ -1,19 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getExtensionSession } from "@/lib/extension-auth";
+import { getExtensionSession, extensionCorsHeaders } from "@/lib/extension-auth";
 import { prisma } from "@/lib/db";
-
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-};
 
 /**
  * OPTIONS /api/extension/senders
  * CORS preflight.
  */
-export async function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, { status: 204, headers: extensionCorsHeaders(request) });
 }
 
 /**
@@ -23,12 +17,13 @@ export async function OPTIONS() {
  * Requires: Bearer token (workspace-scoped or sender-scoped)
  */
 export async function GET(request: NextRequest) {
+  const cors = extensionCorsHeaders(request);
   try {
     const session = getExtensionSession(request);
     if (!session) {
       return NextResponse.json(
         { error: "Unauthorized" },
-        { status: 401, headers: CORS_HEADERS },
+        { status: 401, headers: cors },
       );
     }
 
@@ -44,12 +39,12 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ senders }, { headers: CORS_HEADERS });
+    return NextResponse.json({ senders }, { headers: cors });
   } catch (error) {
     console.error("[extension/senders] Error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500, headers: CORS_HEADERS },
+      { status: 500, headers: cors },
     );
   }
 }

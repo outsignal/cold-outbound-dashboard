@@ -1,20 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateAdminPassword } from "@/lib/admin-auth";
-import { createExtensionToken } from "@/lib/extension-auth";
+import { createExtensionToken, extensionCorsHeaders } from "@/lib/extension-auth";
 import { prisma } from "@/lib/db";
-
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
 
 /**
  * OPTIONS /api/extension/login
  * CORS preflight for Chrome extension popup fetch calls.
  */
-export async function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, { status: 204, headers: extensionCorsHeaders(request) });
 }
 
 /**
@@ -29,6 +23,7 @@ export async function OPTIONS() {
  *   - senderToken + selectedSenderId if exactly 1 sender (skip select-sender step)
  */
 export async function POST(request: NextRequest) {
+  const cors = extensionCorsHeaders(request);
   try {
     const body = await request.json();
     const { email, workspaceSlug, password } = body as {
@@ -40,7 +35,7 @@ export async function POST(request: NextRequest) {
     if (!email || !workspaceSlug || !password) {
       return NextResponse.json(
         { error: "email, workspaceSlug, and password are required" },
-        { status: 400, headers: CORS_HEADERS },
+        { status: 400, headers: cors },
       );
     }
 
@@ -48,7 +43,7 @@ export async function POST(request: NextRequest) {
     if (!validateAdminPassword(password)) {
       return NextResponse.json(
         { error: "Invalid credentials" },
-        { status: 401, headers: CORS_HEADERS },
+        { status: 401, headers: cors },
       );
     }
 
@@ -61,7 +56,7 @@ export async function POST(request: NextRequest) {
     if (!workspace) {
       return NextResponse.json(
         { error: "Workspace not found" },
-        { status: 404, headers: CORS_HEADERS },
+        { status: 404, headers: cors },
       );
     }
 
@@ -81,7 +76,7 @@ export async function POST(request: NextRequest) {
     if (senders.length === 0) {
       return NextResponse.json(
         { error: "No senders configured for this workspace" },
-        { status: 400, headers: CORS_HEADERS },
+        { status: 400, headers: cors },
       );
     }
 
@@ -98,7 +93,7 @@ export async function POST(request: NextRequest) {
           senderToken,
           selectedSenderId: senders[0].id,
         },
-        { headers: CORS_HEADERS },
+        { headers: cors },
       );
     }
 
@@ -110,13 +105,13 @@ export async function POST(request: NextRequest) {
         senderToken: null,
         selectedSenderId: null,
       },
-      { headers: CORS_HEADERS },
+      { headers: cors },
     );
   } catch (error) {
     console.error("[extension/login] Error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500, headers: CORS_HEADERS },
+      { status: 500, headers: cors },
     );
   }
 }

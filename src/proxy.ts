@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import "@/lib/env"; // Validate critical env vars on startup
 import { verifySessionEdge } from "@/lib/portal-auth-edge";
 import {
   verifyAdminSessionEdge,
@@ -18,7 +19,7 @@ const PUBLIC_API_PREFIXES = [
   "/api/companies/enrich", // Clay company enrichment webhook
   "/api/stripe/",          // Stripe webhook + checkout (customer-facing)
   "/api/linkedin/",        // LinkedIn worker API (Bearer token auth)
-  "/api/onboard",          // Customer onboarding submission
+  // /api/onboard removed — now requires admin session
   "/api/domains/",         // Domain suggestions (customer onboarding)
   "/api/enrichment/jobs/", // Cron-triggered enrichment processing
   "/api/inbox-health/",    // Cron-triggered inbox health monitoring

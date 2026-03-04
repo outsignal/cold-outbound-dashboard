@@ -108,3 +108,24 @@ export function getExtensionSession(
 
   return verifyExtensionToken(token);
 }
+
+/**
+ * Build CORS headers for extension endpoints.
+ * Restricts Access-Control-Allow-Origin to chrome-extension:// origins only.
+ * Returns "*" as a fallback for preflight requests without an Origin header.
+ */
+export function extensionCorsHeaders(request?: NextRequest): Record<string, string> {
+  let allowedOrigin = "";
+  const origin = request?.headers.get("origin");
+
+  if (origin && origin.startsWith("chrome-extension://")) {
+    allowedOrigin = origin;
+  }
+
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin || "chrome-extension://",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    ...(allowedOrigin ? { "Vary": "Origin" } : {}),
+  };
+}

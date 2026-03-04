@@ -1,19 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getExtensionSession } from "@/lib/extension-auth";
+import { getExtensionSession, extensionCorsHeaders } from "@/lib/extension-auth";
 import { prisma } from "@/lib/db";
-
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-};
 
 /**
  * OPTIONS /api/extension/status
  * CORS preflight.
  */
-export async function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, { status: 204, headers: extensionCorsHeaders(request) });
 }
 
 /**
@@ -23,19 +17,20 @@ export async function OPTIONS() {
  * Requires: Bearer sender-scoped token
  */
 export async function GET(request: NextRequest) {
+  const cors = extensionCorsHeaders(request);
   try {
     const session = getExtensionSession(request);
     if (!session) {
       return NextResponse.json(
         { error: "Unauthorized" },
-        { status: 401, headers: CORS_HEADERS },
+        { status: 401, headers: cors },
       );
     }
 
     if (!session.senderId) {
       return NextResponse.json(
         { error: "Token is workspace-scoped; please select a sender first" },
-        { status: 400, headers: CORS_HEADERS },
+        { status: 400, headers: cors },
       );
     }
 
@@ -53,16 +48,16 @@ export async function GET(request: NextRequest) {
     if (!sender) {
       return NextResponse.json(
         { error: "Sender not found" },
-        { status: 404, headers: CORS_HEADERS },
+        { status: 404, headers: cors },
       );
     }
 
-    return NextResponse.json({ sender }, { headers: CORS_HEADERS });
+    return NextResponse.json({ sender }, { headers: cors });
   } catch (error) {
     console.error("[extension/status] Error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500, headers: CORS_HEADERS },
+      { status: 500, headers: cors },
     );
   }
 }

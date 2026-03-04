@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
   // Generate magic link token
   const token = randomBytes(24).toString("base64url");
-  const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+  const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
 
   await prisma.magicLinkToken.create({
     data: {
@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
                 </td>
               </tr>
               <tr>
-                <td style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#a1a1aa;line-height:1.5;">This link expires in 15 minutes. If you didn't request this, you can safely ignore this email.</td>
+                <td style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#a1a1aa;line-height:1.5;">This link expires in 30 minutes. If you didn't request this, you can safely ignore this email.</td>
               </tr>
             </table>
           </td>

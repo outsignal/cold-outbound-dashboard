@@ -13,7 +13,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { CheckCircle2, MessageSquare, ExternalLink, Loader2 } from "lucide-react";
+import { CheckCircle2, MessageSquare, ExternalLink, Loader2, Download, Users } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 interface LeadSample {
@@ -131,6 +137,37 @@ export function CampaignApprovalLeads({
           </p>
         ) : (
           <>
+            {/* Lead count banner */}
+            <div className="flex items-center justify-between rounded-lg bg-muted/50 border border-border px-4 py-3 mb-4">
+              <div className="flex items-center gap-2 text-sm">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <span>
+                  Showing <strong>{leads.length.toLocaleString()}</strong> of{" "}
+                  <strong>{totalCount.toLocaleString()}</strong> leads, sorted by ICP score
+                </span>
+              </div>
+              {totalCount > 500 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled
+                          className="gap-1.5"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          Download full list
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>Coming soon</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+            </div>
+
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
