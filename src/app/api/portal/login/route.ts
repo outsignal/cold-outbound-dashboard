@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/db";
 import { sendNotificationEmail } from "@/lib/resend";
+import { rateLimit } from "@/lib/rate-limit";
+
+const portalLoginLimiter = rateLimit({ windowMs: 60_000, max: 5 });
 
 /**
  * POST /api/portal/login
@@ -12,6 +15,19 @@ import { sendNotificationEmail } from "@/lib/resend";
  * Always returns { ok: true } to avoid leaking whether an email is registered.
  */
 export async function POST(req: NextRequest) {
+  // Rate limiting — 5 requests per minute per IP
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown";
+  const { success: rateLimitOk } = portalLoginLimiter(ip);
+  if (!rateLimitOk) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429 },
+    );
+  }
+
   const { email } = (await req.json()) as { email?: string };
 
   if (!email || typeof email !== "string") {

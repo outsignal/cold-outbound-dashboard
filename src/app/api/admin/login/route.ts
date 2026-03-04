@@ -4,6 +4,9 @@ import {
   createAdminSessionCookie,
   AdminSession,
 } from "@/lib/admin-auth";
+import { rateLimit } from "@/lib/rate-limit";
+
+const loginLimiter = rateLimit({ windowMs: 60_000, max: 5 });
 
 /**
  * POST /api/admin/login
@@ -12,6 +15,19 @@ import {
  * and set a signed admin session cookie.
  */
 export async function POST(req: NextRequest) {
+  // Rate limiting — 5 requests per minute per IP
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown";
+  const { success: rateLimitOk } = loginLimiter(ip);
+  if (!rateLimitOk) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429 },
+    );
+  }
+
   const { password } = (await req.json()) as { password?: string };
 
   if (!password || typeof password !== "string") {

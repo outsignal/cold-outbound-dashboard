@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { normalizeCompanyName } from "@/lib/normalize";
+import { rateLimit } from "@/lib/rate-limit";
+
+const enrichLimiter = rateLimit({ windowMs: 60_000, max: 30 });
 
 interface EnrichmentPayload {
   email: string;
@@ -206,11 +209,28 @@ async function enrichPerson(
 
 export async function POST(request: NextRequest) {
   try {
-    // API key check (optional — skipped if env var not set)
+    // Rate limiting — 30 requests per minute per IP
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      request.headers.get("x-real-ip") ??
+      "unknown";
+    const { success: rateLimitOk } = enrichLimiter(ip);
+    if (!rateLimitOk) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 },
+      );
+    }
+
+    // API key check — enforced when CLAY_WEBHOOK_SECRET is configured
     const secret = process.env.CLAY_WEBHOOK_SECRET;
-    if (secret) {
+    if (!secret) {
+      console.warn(
+        "CLAY_WEBHOOK_SECRET not configured — webhook authentication is disabled",
+      );
+    } else {
       const apiKey = request.headers.get("x-api-key");
-      if (apiKey !== secret) {
+      if (!apiKey || apiKey !== secret) {
         return NextResponse.json(
           { error: "Invalid or missing API key" },
           { status: 401 },

@@ -1,10 +1,67 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHmac, timingSafeEqual } from "crypto";
 import { prisma } from "@/lib/db";
 import { notifyReply } from "@/lib/notifications";
 import { notify } from "@/lib/notify";
 import { enqueueAction, bumpPriority } from "@/lib/linkedin/queue";
 import { assignSenderForPerson } from "@/lib/linkedin/sender";
 import { evaluateSequenceRules } from "@/lib/linkedin/sequencing";
+import { rateLimit } from "@/lib/rate-limit";
+
+const webhookLimiter = rateLimit({ windowMs: 60_000, max: 60 });
+
+/**
+ * Verify HMAC-SHA256 signature from EmailBison webhook.
+ * Returns { valid: true } if signature matches or secret is not configured.
+ * Returns { valid: false, response } with a 401 response if verification fails.
+ */
+function verifyWebhookSignature(
+  rawBody: string,
+  request: NextRequest,
+): { valid: true } | { valid: false; response: NextResponse } {
+  const secret = process.env.EMAILBISON_WEBHOOK_SECRET;
+  const signature =
+    request.headers.get("x-emailbison-signature") ??
+    request.headers.get("x-webhook-signature");
+
+  if (!secret) {
+    console.warn(
+      "EMAILBISON_WEBHOOK_SECRET not configured — webhook signature verification is disabled",
+    );
+    return { valid: true };
+  }
+
+  if (!signature) {
+    return {
+      valid: false,
+      response: NextResponse.json(
+        { error: "Missing webhook signature" },
+        { status: 401 },
+      ),
+    };
+  }
+
+  const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
+
+  // Use timing-safe comparison to prevent timing attacks
+  const sigBuffer = Buffer.from(signature, "hex");
+  const expectedBuffer = Buffer.from(expected, "hex");
+
+  if (
+    sigBuffer.length !== expectedBuffer.length ||
+    !timingSafeEqual(sigBuffer, expectedBuffer)
+  ) {
+    return {
+      valid: false,
+      response: NextResponse.json(
+        { error: "Invalid webhook signature" },
+        { status: 401 },
+      ),
+    };
+  }
+
+  return { valid: true };
+}
 
 async function generateReplySuggestion(params: {
   workspaceSlug: string;
@@ -41,7 +98,27 @@ Write a brief, conversational response (under 70 words). This is a reply to an e
 
 export async function POST(request: NextRequest) {
   try {
-    const payload = await request.json();
+    // Rate limiting
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      request.headers.get("x-real-ip") ??
+      "unknown";
+    const { success: rateLimitOk } = webhookLimiter(ip);
+    if (!rateLimitOk) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        { status: 429 },
+      );
+    }
+
+    // Read raw body for signature verification, then parse
+    const rawBody = await request.text();
+    const sigCheck = verifyWebhookSignature(rawBody, request);
+    if (!sigCheck.valid) {
+      return sigCheck.response;
+    }
+
+    const payload = JSON.parse(rawBody);
     const eventObj = payload.event ?? {};
     const eventType = typeof eventObj === "string" ? eventObj : eventObj.type ?? "UNKNOWN";
     const data = payload.data ?? {};

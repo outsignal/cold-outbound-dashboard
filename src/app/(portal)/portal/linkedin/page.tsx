@@ -14,6 +14,10 @@ import { ConnectButton } from "@/components/linkedin/connect-button";
 import { AddAccountButton } from "@/components/linkedin/add-account-button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PortalRefreshButton } from "@/components/portal/portal-refresh-button";
+import {
+  LinkedInActivityChart,
+  LinkedInChartLegend,
+} from "@/components/portal/linkedin-activity-chart";
 import { LinkedinIcon, Clock } from "lucide-react";
 
 export default async function PortalLinkedInPage() {
@@ -24,18 +28,63 @@ export default async function PortalLinkedInPage() {
     orderBy: { createdAt: "desc" },
   });
 
+  const senderIds = senders.map((s) => s.id);
+
   // Get today's usage per sender
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
 
   const dailyUsage = await prisma.linkedInDailyUsage.findMany({
     where: {
-      senderId: { in: senders.map((s) => s.id) },
+      senderId: { in: senderIds },
       date: todayStart,
     },
   });
 
   const usageMap = new Map(dailyUsage.map((u) => [u.senderId, u]));
+
+  // Fetch last 7 days of usage for the trend chart
+  const sevenDaysAgo = new Date(todayStart);
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+
+  const weeklyUsage = await prisma.linkedInDailyUsage.findMany({
+    where: {
+      senderId: { in: senderIds },
+      date: { gte: sevenDaysAgo, lte: todayStart },
+    },
+    orderBy: { date: "asc" },
+  });
+
+  // Aggregate by date across all senders
+  const dateMap = new Map<
+    string,
+    { connections: number; messages: number; views: number }
+  >();
+
+  // Initialize all 7 days
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(sevenDaysAgo);
+    d.setDate(d.getDate() + i);
+    const key = d.toISOString().slice(0, 10);
+    dateMap.set(key, { connections: 0, messages: 0, views: 0 });
+  }
+
+  for (const row of weeklyUsage) {
+    const key = row.date.toISOString().slice(0, 10);
+    const existing = dateMap.get(key) ?? { connections: 0, messages: 0, views: 0 };
+    existing.connections += row.connectionsSent;
+    existing.messages += row.messagesSent;
+    existing.views += row.profileViews;
+    dateMap.set(key, existing);
+  }
+
+  const chartData = Array.from(dateMap.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, vals]) => ({ date, ...vals }));
+
+  const hasChartData = chartData.some(
+    (d) => d.connections > 0 || d.messages > 0 || d.views > 0,
+  );
 
   const healthColors: Record<string, string> = {
     healthy: "bg-emerald-100 text-emerald-800",
@@ -77,71 +126,95 @@ export default async function PortalLinkedInPage() {
           description="LinkedIn senders will appear here once they are configured for your workspace."
         />
       ) : (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="font-heading">Senders</CardTitle>
-            <AddAccountButton workspaceSlug={workspaceSlug} />
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Health</TableHead>
-                  <TableHead className="text-right">Connections</TableHead>
-                  <TableHead className="text-right">Messages</TableHead>
-                  <TableHead className="text-right">Views</TableHead>
-                  <TableHead>Session</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {senders.map((sender) => {
-                  const usage = usageMap.get(sender.id);
-                  return (
-                    <TableRow key={sender.id}>
-                      <TableCell className="font-medium">
-                        {sender.name}
-                        {sender.linkedinProfileUrl && (
-                          <a
-                            href={sender.linkedinProfileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="ml-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        <>
+          {/* 7-Day Activity Trend */}
+          <Card density="compact">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="font-heading text-base">
+                  7-Day Activity
+                </CardTitle>
+                <LinkedInChartLegend />
+              </div>
+            </CardHeader>
+            <CardContent>
+              {hasChartData ? (
+                <LinkedInActivityChart data={chartData} />
+              ) : (
+                <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+                  No LinkedIn activity in the last 7 days.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Senders Table */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="font-heading">Senders</CardTitle>
+              <AddAccountButton workspaceSlug={workspaceSlug} />
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Health</TableHead>
+                    <TableHead className="text-right">Connections</TableHead>
+                    <TableHead className="text-right">Messages</TableHead>
+                    <TableHead className="text-right">Views</TableHead>
+                    <TableHead>Session</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {senders.map((sender) => {
+                    const usage = usageMap.get(sender.id);
+                    return (
+                      <TableRow key={sender.id}>
+                        <TableCell className="font-medium">
+                          {sender.name}
+                          {sender.linkedinProfileUrl && (
+                            <a
+                              href={sender.linkedinProfileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="ml-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              Profile
+                            </a>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            className={`text-xs ${healthColors[sender.healthStatus] ?? ""}`}
                           >
-                            Profile
-                          </a>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          className={`text-xs ${healthColors[sender.healthStatus] ?? ""}`}
-                        >
-                          {sender.healthStatus}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
-                        {usage?.connectionsSent ?? 0}
-                      </TableCell>
-                      <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
-                        {usage?.messagesSent ?? 0}
-                      </TableCell>
-                      <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
-                        {usage?.profileViews ?? 0}
-                      </TableCell>
-                      <TableCell>
-                        <ConnectButton
-                          senderId={sender.id}
-                          senderName={sender.name}
-                          sessionStatus={sender.sessionStatus}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                            {sender.healthStatus}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
+                          {usage?.connectionsSent ?? 0}
+                        </TableCell>
+                        <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
+                          {usage?.messagesSent ?? 0}
+                        </TableCell>
+                        <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
+                          {usage?.profileViews ?? 0}
+                        </TableCell>
+                        <TableCell>
+                          <ConnectButton
+                            senderId={sender.id}
+                            senderName={sender.name}
+                            sessionStatus={sender.sessionStatus}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </>
       )}
     </div>
   );

@@ -52,6 +52,14 @@ export function CampaignApprovalLeads({
 
   const canAct = isPending && !leadsApproved;
 
+  // Client-side pagination
+  const pageSize = 20;
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(leads.length / pageSize));
+  const startIdx = (currentPage - 1) * pageSize;
+  const endIdx = Math.min(startIdx + pageSize, leads.length);
+  const paginatedLeads = leads.slice(startIdx, endIdx);
+
   async function handleApprove() {
     setLoading(true);
     setError(null);
@@ -102,7 +110,9 @@ export function CampaignApprovalLeads({
         </div>
         {totalCount > 0 && (
           <p className="text-sm text-muted-foreground">
-            Showing top {Math.min(leads.length, 50)} of {totalCount.toLocaleString()} leads, ordered by ICP score
+            {leads.length >= totalCount
+              ? `${totalCount.toLocaleString()} leads, ordered by ICP score`
+              : `Showing top ${leads.length} of ${totalCount.toLocaleString()} leads, ordered by ICP score`}
           </p>
         )}
       </CardHeader>
@@ -120,64 +130,99 @@ export function CampaignApprovalLeads({
             No leads linked to this campaign yet.
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>LinkedIn</TableHead>
-                  <TableHead className="text-right">ICP Score</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {leads.map((lead) => (
-                  <TableRow key={lead.personId}>
-                    <TableCell className="font-medium whitespace-nowrap">
-                      {[lead.firstName, lead.lastName].filter(Boolean).join(" ") || "—"}
-                    </TableCell>
-                    <TableCell>{lead.jobTitle ?? "—"}</TableCell>
-                    <TableCell>{lead.company ?? "—"}</TableCell>
-                    <TableCell>{lead.location ?? "—"}</TableCell>
-                    <TableCell>
-                      {lead.linkedinUrl ? (
-                        <a
-                          href={lead.linkedinUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-blue-600 hover:underline text-sm"
-                        >
-                          Profile <ExternalLink className="h-3 w-3" />
-                        </a>
-                      ) : (
-                        "—"
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {lead.icpScore !== null ? (
-                        <span
-                          className={cn(
-                            "font-medium",
-                            lead.icpScore >= 70
-                              ? "text-emerald-700"
-                              : lead.icpScore >= 40
-                                ? "text-amber-700"
-                                : "text-gray-500",
-                          )}
-                        >
-                          {lead.icpScore}
-                        </span>
-                      ) : (
-                        "—"
-                      )}
-                    </TableCell>
+          <>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Title</TableHead>
+                    <TableHead>Company</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead>LinkedIn</TableHead>
+                    <TableHead className="text-right">ICP Score</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {paginatedLeads.map((lead) => (
+                    <TableRow key={lead.personId}>
+                      <TableCell className="font-medium whitespace-nowrap">
+                        {[lead.firstName, lead.lastName].filter(Boolean).join(" ") || "—"}
+                      </TableCell>
+                      <TableCell>{lead.jobTitle ?? "—"}</TableCell>
+                      <TableCell>{lead.company ?? "—"}</TableCell>
+                      <TableCell>{lead.location ?? "—"}</TableCell>
+                      <TableCell>
+                        {lead.linkedinUrl ? (
+                          <a
+                            href={lead.linkedinUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-blue-600 hover:underline text-sm"
+                          >
+                            Profile <ExternalLink className="h-3 w-3" />
+                          </a>
+                        ) : (
+                          "—"
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {lead.icpScore !== null ? (
+                          <span
+                            className={cn(
+                              "font-medium",
+                              lead.icpScore >= 70
+                                ? "text-emerald-700"
+                                : lead.icpScore >= 40
+                                  ? "text-amber-700"
+                                  : "text-gray-500",
+                            )}
+                          >
+                            {lead.icpScore}
+                          </span>
+                        ) : (
+                          "—"
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Pagination controls */}
+            {leads.length > pageSize && (
+              <div className="flex items-center justify-between pt-4 border-t mt-4">
+                <p className="text-sm text-muted-foreground">
+                  Showing {startIdx + 1}–{endIdx} of {leads.length} leads
+                  {leads.length < totalCount && (
+                    <span className="ml-1">({totalCount.toLocaleString()} total)</span>
+                  )}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground tabular-nums">
+                    {currentPage} / {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* Approval buttons — only show when campaign is pending and leads not yet approved */}

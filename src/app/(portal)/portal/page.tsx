@@ -14,6 +14,10 @@ import {
 } from "@/components/ui/table";
 import { prisma } from "@/lib/db";
 import { PortalRefreshButton } from "@/components/portal/portal-refresh-button";
+import {
+  PortalPerformanceChart,
+  PerformanceChartLegend,
+} from "@/components/portal/portal-performance-chart";
 import { Linkedin, Clock } from "lucide-react";
 import type { Campaign } from "@/lib/emailbison/types";
 
@@ -124,6 +128,34 @@ export default async function PortalDashboardPage() {
           density="compact"
         />
       </div>
+
+      {/* Campaign Performance Chart */}
+      {campaigns.filter((c) => (c.emails_sent ?? 0) > 0).length > 0 && (
+        <Card density="compact">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="font-heading text-base">
+                Campaign Performance
+              </CardTitle>
+              <PerformanceChartLegend />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <PortalPerformanceChart
+              data={campaigns
+                .filter((c) => (c.emails_sent ?? 0) > 0)
+                .sort((a, b) => (b.emails_sent ?? 0) - (a.emails_sent ?? 0))
+                .slice(0, 8)
+                .map((c) => ({
+                  name: c.name,
+                  sent: c.emails_sent ?? 0,
+                  opened: c.unique_opens ?? 0,
+                  replied: c.replied ?? 0,
+                }))}
+            />
+          </CardContent>
+        </Card>
+      )}
 
       {/* LinkedIn Summary */}
       <Card density="compact">

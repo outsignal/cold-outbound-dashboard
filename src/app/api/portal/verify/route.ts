@@ -4,6 +4,9 @@ import {
   createSessionCookie,
   type PortalSession,
 } from "@/lib/portal-auth";
+import { rateLimit } from "@/lib/rate-limit";
+
+const verifyLimiter = rateLimit({ windowMs: 60_000, max: 10 });
 
 /**
  * GET /api/portal/verify?token=xxx
@@ -12,6 +15,19 @@ import {
  * sets the session cookie, and redirects to /portal.
  */
 export async function GET(req: NextRequest) {
+  // Rate limiting — 10 requests per minute per IP
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown";
+  const { success: rateLimitOk } = verifyLimiter(ip);
+  if (!rateLimitOk) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429 },
+    );
+  }
+
   const token = req.nextUrl.searchParams.get("token");
 
   if (!token) {

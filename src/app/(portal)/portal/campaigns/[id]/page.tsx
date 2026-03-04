@@ -28,6 +28,7 @@ export default async function PortalCampaignDetailPage({
     leadSample = await getCampaignLeadSample(
       campaign.targetListId,
       workspaceSlug,
+      500, // fetch up to 500 leads so clients can paginate through them
     );
   }
 
