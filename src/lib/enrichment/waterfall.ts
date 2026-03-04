@@ -1,9 +1,9 @@
 /**
  * Waterfall enrichment orchestrators.
  *
- * enrichEmail: AI Ark (person data) → Prospeo → LeadMagic → FindyMail.
+ * enrichEmail: AI Ark (person data) → FindyMail → Prospeo → LeadMagic (cheapest-first).
  *   AI Ark runs first as a person-data step (fills jobTitle, company, location, etc.).
- *   Then Prospeo → LeadMagic → FindyMail run in order to find the email.
+ *   Then FindyMail → Prospeo → LeadMagic run in cheapest-first order to find the email.
  *   Stops at the first email found (from any step).
  * enrichCompany: Tries AI Ark → Firecrawl in order, stopping at first success with data.
  *
@@ -66,17 +66,18 @@ interface EmailProvider {
 }
 
 const EMAIL_PROVIDERS: EmailProvider[] = [
-  { adapter: prospeoAdapter, name: "prospeo" },
-  { adapter: leadmagicAdapter, name: "leadmagic" },
-  { adapter: findymailAdapter, name: "findymail" },
+  { adapter: findymailAdapter, name: "findymail" },  // $0.001 — cheapest first
+  { adapter: prospeoAdapter, name: "prospeo" },      // $0.002
+  { adapter: leadmagicAdapter, name: "leadmagic" },  // $0.005 — most expensive last
 ];
 
 /**
  * Run the email enrichment waterfall for a person.
  *
- * Tries Prospeo → LeadMagic → FindyMail. Stops at the first provider that
- * returns a non-null email. When no LinkedIn URL is present, only Prospeo is
- * attempted (LeadMagic and FindyMail both require a LinkedIn URL).
+ * Tries FindyMail → Prospeo → LeadMagic (cheapest-first). Stops at the first
+ * provider that returns a non-null email. When no LinkedIn URL is present,
+ * FindyMail is skipped (requires LinkedIn URL) and only Prospeo and LeadMagic
+ * are attempted.
  *
  * Throws "DAILY_CAP_HIT" when the daily cost cap is reached — the queue
  * processor catches this and pauses the job until midnight UTC.
@@ -246,12 +247,14 @@ export async function enrichEmail(
   }
 
   // ---------------------------------------------------------------------------
-  // Email-finding waterfall: Prospeo → LeadMagic → FindyMail
+  // Email-finding waterfall: FindyMail → Prospeo → LeadMagic (cheapest-first)
   // ---------------------------------------------------------------------------
 
-  // When no LinkedIn URL, only Prospeo can attempt (via name+company fallback).
-  // LeadMagic and FindyMail both require a LinkedIn URL, so skip them.
-  const providers = input.linkedinUrl ? EMAIL_PROVIDERS : EMAIL_PROVIDERS.slice(0, 1);
+  // FindyMail requires a LinkedIn URL (endpoint: /api/search/linkedin).
+  // When no LinkedIn URL is present, skip FindyMail and try Prospeo + LeadMagic.
+  const providers = input.linkedinUrl
+    ? EMAIL_PROVIDERS
+    : EMAIL_PROVIDERS.filter(p => p.name !== "findymail");
 
   for (const { adapter, name } of providers) {
     // --- Circuit breaker ---
