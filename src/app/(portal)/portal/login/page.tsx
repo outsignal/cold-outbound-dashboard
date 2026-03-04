@@ -94,7 +94,6 @@ export default function PortalLoginPage() {
       }}
     >
       <Card className="w-full max-w-sm overflow-hidden">
-        <div className="h-1 bg-brand rounded-t-lg" />
         <CardContent className="pt-8 pb-8 space-y-8">
           <div className="text-center">
             <OutsignalLogo

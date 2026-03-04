@@ -6,19 +6,19 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Bar,
-  BarChart,
+  Area,
+  AreaChart,
 } from "recharts";
 
-export interface CampaignPerformanceData {
-  name: string;
+/** Daily aggregated data point for the area chart */
+export interface PerformanceDayPoint {
+  date: string;
   sent: number;
-  opened: number;
   replied: number;
 }
 
 interface Props {
-  data: CampaignPerformanceData[];
+  data: PerformanceDayPoint[];
 }
 
 interface TooltipEntry {
@@ -33,13 +33,22 @@ interface CustomTooltipProps {
   label?: string | number;
 }
 
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr + "T00:00:00Z");
+  return date.toLocaleDateString("en-GB", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+}
+
 const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (!active || !payload || payload.length === 0) return null;
 
   return (
-    <div className="bg-popover border border-border rounded-md shadow-md p-3 text-xs max-w-[220px]">
-      <p className="font-medium text-popover-foreground mb-2 truncate">
-        {String(label ?? "")}
+    <div className="bg-popover border border-border rounded-md shadow-md p-3 text-xs">
+      <p className="font-medium text-popover-foreground mb-2">
+        {formatDate(String(label ?? ""))}
       </p>
       {payload.map((entry) => (
         <div key={entry.name} className="flex items-center gap-2 mb-1">
@@ -58,72 +67,69 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
 };
 
 const colors = {
-  sent: "oklch(0.87 0 0)",                  // light gray
-  opened: "oklch(0 0 0)",                    // black
-  replied: "oklch(0.85 0.12 110)",           // brand accent
+  sent: "oklch(0 0 0)",            // black
+  replied: "oklch(0.85 0.12 110)", // brand accent
 };
 
-// Shorten campaign name for chart labels
-function shortenName(name: string, max = 18): string {
-  if (name.length <= max) return name;
-  return name.slice(0, max - 1) + "\u2026";
-}
-
 export function PortalPerformanceChart({ data }: Props) {
-  const chartData = data.map((d) => ({
-    ...d,
-    shortName: shortenName(d.name),
-  }));
-
   return (
-    <ResponsiveContainer width="100%" height={Math.max(160, data.length * 48)}>
-      <BarChart
-        data={chartData}
-        layout="vertical"
-        margin={{ top: 4, right: 4, left: 4, bottom: 0 }}
+    <ResponsiveContainer width="100%" height={240}>
+      <AreaChart
+        data={data}
+        margin={{ top: 4, right: 4, left: -12, bottom: 0 }}
       >
+        <defs>
+          <linearGradient id="portalGradSent" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor={colors.sent} stopOpacity={0.08} />
+            <stop offset="95%" stopColor={colors.sent} stopOpacity={0} />
+          </linearGradient>
+          <linearGradient id="portalGradReplied" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor={colors.replied} stopOpacity={0.2} />
+            <stop offset="95%" stopColor={colors.replied} stopOpacity={0} />
+          </linearGradient>
+        </defs>
         <CartesianGrid
           strokeDasharray="3 3"
           stroke="oklch(0.92 0 0)"
-          horizontal={false}
+          vertical={false}
         />
         <XAxis
-          type="number"
+          dataKey="date"
+          fontSize={11}
+          tickLine={false}
+          axisLine={false}
+          tickFormatter={formatDate}
+          tick={{ fill: "oklch(0.45 0 0)" }}
+          interval="preserveStartEnd"
+        />
+        <YAxis
           fontSize={11}
           tickLine={false}
           axisLine={false}
           tick={{ fill: "oklch(0.45 0 0)" }}
           allowDecimals={false}
-        />
-        <YAxis
-          type="category"
-          dataKey="shortName"
-          fontSize={11}
-          tickLine={false}
-          axisLine={false}
-          tick={{ fill: "oklch(0.45 0 0)" }}
-          width={100}
+          width={36}
         />
         <Tooltip content={<CustomTooltip />} />
-        <Bar
+        <Area
+          type="monotone"
           dataKey="sent"
-          fill={colors.sent}
-          radius={[0, 3, 3, 0]}
-          barSize={16}
+          stroke={colors.sent}
+          strokeWidth={1.5}
+          fill="url(#portalGradSent)"
+          dot={false}
+          activeDot={{ r: 3, strokeWidth: 0 }}
         />
-        <Bar
-          dataKey="opened"
-          fill={colors.opened}
-          radius={[0, 3, 3, 0]}
-          barSize={16}
-        />
-        <Bar
+        <Area
+          type="monotone"
           dataKey="replied"
-          fill={colors.replied}
-          radius={[0, 3, 3, 0]}
-          barSize={16}
+          stroke={colors.replied}
+          strokeWidth={2}
+          fill="url(#portalGradReplied)"
+          dot={false}
+          activeDot={{ r: 3, strokeWidth: 0 }}
         />
-      </BarChart>
+      </AreaChart>
     </ResponsiveContainer>
   );
 }
@@ -131,7 +137,6 @@ export function PortalPerformanceChart({ data }: Props) {
 export function PerformanceChartLegend() {
   const items = [
     { label: "Sent", color: colors.sent },
-    { label: "Opened", color: colors.opened },
     { label: "Replied", color: colors.replied },
   ];
 
@@ -140,7 +145,7 @@ export function PerformanceChartLegend() {
       {items.map((item) => (
         <div key={item.label} className="flex items-center gap-1.5">
           <span
-            className="inline-block w-2.5 h-2.5 rounded-sm"
+            className="inline-block w-3 h-0.5 rounded-full"
             style={{ backgroundColor: item.color }}
           />
           {item.label}

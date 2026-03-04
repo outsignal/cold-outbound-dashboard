@@ -17,6 +17,7 @@ import { PortalRefreshButton } from "@/components/portal/portal-refresh-button";
 import {
   PortalPerformanceChart,
   PerformanceChartLegend,
+  type PerformanceDayPoint,
 } from "@/components/portal/portal-performance-chart";
 import { Linkedin, Clock } from "lucide-react";
 import type { Campaign } from "@/lib/emailbison/types";
@@ -64,6 +65,49 @@ export default async function PortalDashboardPage() {
       completedAt: { gte: todayStart },
     },
   });
+
+  // Time-series data from WebhookEvent for the last 14 days
+  const timeSeriesDays = 14;
+  const sinceDate = new Date();
+  sinceDate.setDate(sinceDate.getDate() - timeSeriesDays);
+
+  const webhookEvents = await prisma.webhookEvent.findMany({
+    where: {
+      workspace: workspaceSlug,
+      receivedAt: { gte: sinceDate },
+      eventType: {
+        in: ["EMAIL_SENT", "LEAD_REPLIED", "LEAD_INTERESTED"],
+      },
+    },
+    select: {
+      receivedAt: true,
+      eventType: true,
+    },
+    orderBy: { receivedAt: "asc" },
+  });
+
+  const timeSeriesMap: Record<string, PerformanceDayPoint> = {};
+  for (const event of webhookEvents) {
+    const dateStr = event.receivedAt.toISOString().slice(0, 10);
+    if (!timeSeriesMap[dateStr]) {
+      timeSeriesMap[dateStr] = { date: dateStr, sent: 0, replied: 0 };
+    }
+    if (event.eventType === "EMAIL_SENT") timeSeriesMap[dateStr].sent++;
+    else if (event.eventType === "LEAD_REPLIED" || event.eventType === "LEAD_INTERESTED") {
+      timeSeriesMap[dateStr].replied++;
+    }
+  }
+
+  // Fill in all days in range (including zeros)
+  const performanceTimeSeries: PerformanceDayPoint[] = [];
+  for (let i = timeSeriesDays - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().slice(0, 10);
+    performanceTimeSeries.push(
+      timeSeriesMap[dateStr] ?? { date: dateStr, sent: 0, replied: 0 }
+    );
+  }
 
   const statusColors: Record<string, string> = {
     active: "bg-emerald-100 text-emerald-800",
@@ -130,29 +174,18 @@ export default async function PortalDashboardPage() {
       </div>
 
       {/* Campaign Performance Chart */}
-      {campaigns.filter((c) => (c.emails_sent ?? 0) > 0).length > 0 && (
+      {performanceTimeSeries.some((d) => d.sent > 0 || d.replied > 0) && (
         <Card density="compact">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="font-heading text-base">
-                Campaign Performance
+                Email Activity
               </CardTitle>
               <PerformanceChartLegend />
             </div>
           </CardHeader>
           <CardContent>
-            <PortalPerformanceChart
-              data={campaigns
-                .filter((c) => (c.emails_sent ?? 0) > 0)
-                .sort((a, b) => (b.emails_sent ?? 0) - (a.emails_sent ?? 0))
-                .slice(0, 8)
-                .map((c) => ({
-                  name: c.name,
-                  sent: c.emails_sent ?? 0,
-                  opened: c.unique_opens ?? 0,
-                  replied: c.replied ?? 0,
-                }))}
-            />
+            <PortalPerformanceChart data={performanceTimeSeries} />
           </CardContent>
         </Card>
       )}
