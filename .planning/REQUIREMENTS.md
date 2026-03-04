@@ -82,9 +82,9 @@ Requirements for Lead Discovery & Intelligence milestone. Each maps to roadmap p
 
 ### CLI Orchestrator
 
-- [ ] **CLI-01**: Admin can start interactive chat session with orchestrator agent from Claude Code terminal
-- [ ] **CLI-02**: CLI chat supports all existing orchestrator capabilities (delegate to Research, Leads, Writer, Campaign agents)
-- [ ] **CLI-03**: CLI chat maintains conversation context across multiple turns within a session
+- [x] **CLI-01**: Admin can start interactive chat session with orchestrator agent from Claude Code terminal
+- [x] **CLI-02**: CLI chat supports all existing orchestrator capabilities (delegate to Research, Leads, Writer, Campaign agents)
+- [x] **CLI-03**: CLI chat maintains conversation context across multiple turns within a session
 
 ### Quick Fixes
 
@@ -177,9 +177,9 @@ Deferred to next milestone. Tracked but not in current roadmap.
 | DASH-03 | Phase 21 | Pending |
 | DASH-04 | Phase 21 | Pending |
 | DASH-05 | Phase 21 | Pending |
-| CLI-01 | Phase 21 | Pending |
-| CLI-02 | Phase 21 | Pending |
-| CLI-03 | Phase 21 | Pending |
+| CLI-01 | Phase 21 | Complete |
+| CLI-02 | Phase 21 | Complete |
+| CLI-03 | Phase 21 | Complete |
 
 **Coverage:**
 - v2.0 requirements: 56 total

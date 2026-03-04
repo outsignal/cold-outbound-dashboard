@@ -50,7 +50,7 @@ Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 - [x] **Phase 18: Signal Monitoring Infrastructure** - Railway signal worker, PredictLeads integration (5 signal types), Serper social listening, SignalEvent ingestion, budget governor (completed 2026-03-04)
 - [x] **Phase 19: Evergreen Signal Campaign Auto-Pipeline** - Signal campaign schema + dual state machine, Campaign Agent signal tools, signal-to-deploy pipeline processor, worker trigger + admin UI (4 plans) (completed 2026-03-04)
 - [x] **Phase 20: Copy Strategy Framework** - Writer Agent multi-strategy support (Creative Ideas, PVP, one-liner, custom), per-client KB examples by strategy, groundedIn validation, full KB consultation (completed 2026-03-04)
-- [ ] **Phase 21: Signal Dashboard + CLI Chat** - /admin/signals live feed and breakdown, CLI orchestrator chat via scripts/chat.ts (2 plans)
+- [x] **Phase 21: Signal Dashboard + CLI Chat** - /admin/signals live feed and breakdown, CLI orchestrator chat via scripts/chat.ts (2 plans) (completed 2026-03-04)
 - [ ] **Phase 22: Client Financials & Invoicing** - Quote/invoice management, PDF generation, revenue dashboard, client portal billing view — replacing Google Docs manual process
 
 ## Phase Details
@@ -183,6 +183,6 @@ v2.0 phases: 15 → 16 → 17 → 18 → 19 → 20 (parallel with 18-19) → 21 
 | 18. Signal Monitoring Infrastructure | 4/4 | Complete    | 2026-03-04 | - |
 | 19. Evergreen Signal Campaign Auto-Pipeline | 4/4 | Complete    | 2026-03-04 | - |
 | 20. Creative Ideas Copy Framework | 2/2 | Complete    | 2026-03-04 | - |
-| 21. Signal Dashboard + CLI Chat | v2.0 | 0/2 | Planned | - |
+| 21. Signal Dashboard + CLI Chat | 2/2 | Complete   | 2026-03-04 | - |
 | 22. Client Financials & Invoicing | 1/5 | In Progress|  | - |
 | 22. Client Financials & Invoicing | v2.0 | 0/TBD | Not started | - |

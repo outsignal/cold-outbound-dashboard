@@ -113,6 +113,13 @@ Progress: [######░░░░] ~7% (v2.0)
 - [22-01 schema]: Invoice snapshots sender + client details at creation time for immutability — changes to workspace billing fields don't retroactively alter issued invoices
 - [22-01 operations]: viewToken uses crypto.randomUUID() for portal access — no auth required, token-based
 - [22-01 operations]: advanceRenewalDate is month-end safe (Jan 31 -> Feb 28/29) — uses setDate(0) rollback pattern
+- [21-02 cli-chat]: AI SDK v6 uses stopWhen/stepCountIs not maxSteps on generateText — plan referenced deprecated API, updated to match runner.ts pattern
+- [21-02 cli-chat]: ModelMessage (not CoreMessage) is the correct type for multi-turn messages in AI SDK v6
+- [21-02 cli-chat]: chalk@4 was pre-installed (v4.1.2) — CommonJS-compatible, no install step needed
+- [21-02 cli-chat]: scripts/ excluded from tsconfig; tsc chalk default-import error is irrelevant — tsx handles interop at runtime
+- [21-01 signal-dashboard]: totalSignals uses feed.length (capped at limit=100) — reflects visible data, no extra COUNT query
+- [21-01 signal-dashboard]: Tooltip labelFormatter omitted from BarChart — Recharts v3 overload types reject string formatters; XAxis tickFormatter handles human labels instead
+- [21-01 signal-dashboard]: Tooltip formatter typed as (value: number | undefined) — matches existing enrichment-costs page pattern for Recharts v3 compatibility
 
 ### Blockers/Concerns
 
@@ -127,5 +134,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Completed 22-01-PLAN.md (Phase 22 Plan 01 -- Schema Foundation + Core Business Logic: Invoice models, Workspace billing fields, src/lib/invoices/)
+Stopped at: Completed 21-02-PLAN.md (Phase 21 Plan 02 -- Interactive CLI chat for Outsignal Orchestrator: scripts/chat.ts, npm run chat)
 Resume file: .planning/phases/22-client-financials-invoicing/22-02-PLAN.md (if it exists)
