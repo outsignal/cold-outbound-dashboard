@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Lead Discovery & Intelligence
 status: unknown
-last_updated: "2026-03-04T23:13:19Z"
+last_updated: "2026-03-04T23:21:36Z"
 progress:
   total_phases: 19
   completed_phases: 16
   total_plans: 66
-  completed_plans: 64
+  completed_plans: 65
 ---
 
 # Project State
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-04)
 
 **Core value:** Own the lead data pipeline end-to-end so we never pay for the same lead twice and can cancel the $300+/month Clay subscription.
-**Current focus:** v2.0 Phase 22 — Client Financials & Invoicing (plan 03 of 5 complete)
+**Current focus:** v2.0 Phase 22 — Client Financials & Invoicing (plan 04 of 5 complete)
 
 ## Current Position
 
 Phase: 22 of 22 (Client Financials & Invoicing) -- IN PROGRESS
-Plan: 05 of 5 complete
-Status: Phase 22 plan 05 complete — Portal billing tab (sidebar Billing nav item, /portal/billing invoice history page, GET /api/portal/invoices session-gated route, viewToken PDF download links)
-Last activity: 2026-03-04 -- 22-05 complete (src/components/portal/portal-sidebar.tsx, src/app/api/portal/invoices/route.ts, src/app/(portal)/portal/billing/page.tsx)
+Plan: 04 of 5 complete
+Status: Phase 22 plan 04 complete — Sidebar Financials group, invoice list page with create form, revenue dashboard with KPI cards + chart + per-client breakdown
+Last activity: 2026-03-04 -- 22-04 complete (src/components/financials/, src/app/(admin)/financials/page.tsx, src/app/(admin)/revenue/page.tsx, src/app/api/revenue/route.ts)
 
 Progress: [######░░░░] ~7% (v2.0)
 
@@ -121,6 +121,10 @@ Progress: [######░░░░] ~7% (v2.0)
 - [22-03 generator]: alertUnpaidBeforeRenewal targets OPS_SLACK_CHANNEL_ID via notify() — billing urgency is admin-internal, not client-facing
 - [22-03 overdue]: reminderSentAt guard ensures overdue reminder email sent exactly once per invoice regardless of cron frequency
 - [22-03 overdue]: subtractOneMonth() mirrors advanceRenewalDate() using same setDate(0) rollback pattern for month-end safety
+- [22-04 admin-ui]: InvoiceForm pre-populates Cold Outbound Retainer + Platform Fee from workspace billing config when workspace selected
+- [22-04 admin-ui]: GET /api/workspaces created as new endpoint to serve billing fields for form dropdown — no workspace list endpoint previously existed
+- [22-04 admin-ui]: MRR computed as 3-month average of paid invoice totals (not sum of workspace retainer fields) — more accurate for variable-amount invoices
+- [22-04 admin-ui]: Revenue page is client component (consistent with rest of codebase, not server-rendered)
 - [21-02 cli-chat]: AI SDK v6 uses stopWhen/stepCountIs not maxSteps on generateText — plan referenced deprecated API, updated to match runner.ts pattern
 - [21-02 cli-chat]: ModelMessage (not CoreMessage) is the correct type for multi-turn messages in AI SDK v6
 - [21-02 cli-chat]: chalk@4 was pre-installed (v4.1.2) — CommonJS-compatible, no install step needed
@@ -145,5 +149,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Completed 22-05-PLAN.md (Phase 22 Plan 05 -- Portal billing tab, /portal/billing page, session-gated invoice API)
-Resume file: None — Phase 22 complete (all 5 plans done)
+Stopped at: Completed 22-04-PLAN.md (Phase 22 Plan 04 -- Sidebar Financials group, invoice list page, revenue dashboard)
+Resume file: .planning/phases/22-client-financials-invoicing/22-05-PLAN.md
