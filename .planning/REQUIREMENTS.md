@@ -14,11 +14,11 @@ Requirements for Lead Discovery & Intelligence milestone. Each maps to roadmap p
 - [ ] **DISC-03**: Leads Agent can search AI Ark People Search API by role, seniority, department, location, keywords
 - [ ] **DISC-04**: Leads Agent can search Serper.dev for Google web results, Maps results, and social mentions (Reddit/Twitter) via natural language queries
 - [ ] **DISC-05**: Leads Agent can scrape custom directories via Firecrawl /extract endpoint with structured JSON schema (association member lists, government databases, etc.)
-- [ ] **DISC-06**: Discovery results are written to a DiscoveredPerson staging table (not directly to Person) for dedup before promotion
+- [x] **DISC-06**: Discovery results are written to a DiscoveredPerson staging table (not directly to Person) for dedup before promotion
 - [ ] **DISC-07**: Agent deduplicates discovered leads against local Person DB (by LinkedIn URL, email, or name+company match) before enrichment
 - [ ] **DISC-08**: Agent automatically selects best discovery sources based on ICP type (enterprise B2B → Apollo/Prospeo, niche → Serper/Firecrawl directories, local/SMB → Serper Maps)
-- [ ] **DISC-09**: Per-workspace API keys for Apollo.io (ToS requirement — no shared keys across workspaces)
-- [ ] **DISC-10**: Discovery adapter pattern (DiscoveryAdapter interface) so new sources can be added without restructuring
+- [x] **DISC-09**: Per-workspace API keys for Apollo.io (ToS requirement — no shared keys across workspaces)
+- [x] **DISC-10**: Discovery adapter pattern (DiscoveryAdapter interface) so new sources can be added without restructuring
 - [ ] **DISC-11**: Agent generates a discovery plan (sources selected, reasoning, estimated cost, estimated lead volume per source) and presents for admin approval before executing searches
 - [ ] **DISC-12**: Admin can adjust the discovery plan (add/remove sources, change filters) before approving execution
 - [ ] **DISC-13**: Discovery plan shows how campaign lead volume tracks against workspace monthly lead quota (e.g., "500 of 2,000 monthly leads used")
@@ -50,7 +50,7 @@ Requirements for Lead Discovery & Intelligence milestone. Each maps to roadmap p
 
 ### Workspace Configuration
 
-- [ ] **CFG-01**: Workspace model has a campaign package config defining allowed campaign types (static email, static LinkedIn, signal email, signal LinkedIn)
+- [x] **CFG-01**: Workspace model has a campaign package config defining allowed campaign types (static email, static LinkedIn, signal email, signal LinkedIn)
 - [ ] **CFG-02**: Agent enforces workspace package — cannot create signal campaigns if workspace is not approved for signals
 - [ ] **CFG-03**: Monthly campaign allowance tracked per workspace (e.g., 2 static campaigns/month)
 - [ ] **CFG-04**: Admin can upgrade/downgrade workspace package via chat or API
@@ -126,10 +126,10 @@ Deferred to next milestone. Tracked but not in current roadmap.
 |-------------|-------|--------|
 | FIX-01 | Phase 15 | Complete |
 | FIX-02 | Phase 15 | Complete |
-| DISC-06 | Phase 15 | Pending |
-| DISC-09 | Phase 15 | Pending |
-| DISC-10 | Phase 15 | Pending |
-| CFG-01 | Phase 15 | Pending |
+| DISC-06 | Phase 15 | Complete |
+| DISC-09 | Phase 15 | Complete |
+| DISC-10 | Phase 15 | Complete |
+| CFG-01 | Phase 15 | Complete |
 | CFG-02 | Phase 15 | Pending |
 | CFG-03 | Phase 15 | Pending |
 | CFG-04 | Phase 15 | Pending |
