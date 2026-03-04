@@ -64,7 +64,11 @@ Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
   3. DiscoveredPerson table exists in the database and accepts staged discovery records without touching the Person table
   4. Workspace admin screen shows campaign package and monthly lead quota, and the agent refuses signal campaign creation for non-signal-approved workspaces
   5. DiscoveryAdapter interface is defined and a new discovery source can be added by implementing one interface with no other changes
-**Plans**: TBD
+**Plans**: 4 plans
+- [ ] 15-01-PLAN.md -- Quick fixes: Research Agent KB access (FIX-01) + enrichment waterfall reorder (FIX-02)
+- [ ] 15-02-PLAN.md -- Schema foundation: DiscoveredPerson model, Workspace package columns, DiscoveryAdapter interface, quota helpers
+- [ ] 15-03-PLAN.md -- Agent enforcement: Campaign Agent package checks, Orchestrator quota tools, package API endpoint
+- [ ] 15-04-PLAN.md -- Admin UI: Global packages overview page, workspace settings Package & Quotas section
 
 ### Phase 16: Discovery Sources
 **Goal**: The Leads Agent has access to five external discovery sources — Apollo, Prospeo Search, AI Ark Search, Serper.dev, and Firecrawl directory extraction — each returning structured DiscoveredPerson records
@@ -147,7 +151,7 @@ v2.0 phases: 15 → 16 → 17 → 18 → 19 → 20 (parallel with 18-19) → 21
 |-------|-----------|----------------|--------|-----------|
 | 1-6 | v1.0 | 22/22 | Complete | 2026-02-27 |
 | 7-14 | v1.1 | 40/40 | Complete | 2026-03-03 |
-| 15. Foundation | v2.0 | 0/TBD | Not started | - |
+| 15. Foundation | v2.0 | 0/4 | Planned | - |
 | 16. Discovery Sources | v2.0 | 0/TBD | Not started | - |
 | 17. Leads Agent Discovery Upgrade | v2.0 | 0/TBD | Not started | - |
 | 18. Signal Monitoring Infrastructure | v2.0 | 0/TBD | Not started | - |
