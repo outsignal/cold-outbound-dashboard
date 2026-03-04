@@ -72,6 +72,10 @@ Progress: [######░░░░] ~7% (v2.0)
 - [18-01 schema]: SignalDailyCost is per-workspace (not global) — each workspace tracks independent signal spend against its own cap
 - [18-01 schema]: SeenSignalUrl has no workspace scoping — social post URLs deduplicated globally across all workspaces
 - [18-01 signals-api]: No auth guard on /api/workspaces/[slug]/signals — consistent with all other workspace routes (15-04 decision)
+- [18-02 worker-signals]: Zod v3 used in worker-signals (not v4) — matches main project pattern from 17-02
+- [18-02 worker-signals]: Dockerfile copies prisma/ from repo root for prisma generate — monorepo pattern, Railway build context must be repo root
+- [18-02 worker-signals]: railway.toml uses cronSchedule not restartPolicyType — cron services exit after run
+- [18-02 worker-signals]: predictLeadsGet() retries on 429 and AbortError only — other 4xx/5xx thrown immediately as non-retryable
 
 ### Blockers/Concerns
 
@@ -86,5 +90,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-04
-Stopped at: Completed 18-01-PLAN.md (Phase 18 Plan 01 -- signal schema + config API)
-Resume file: .planning/phases/18-signal-monitoring-infrastructure/18-02-PLAN.md
+Stopped at: Completed 18-02-PLAN.md (Phase 18 Plan 02 -- worker-signals scaffold + PredictLeads client)
+Resume file: .planning/phases/18-signal-monitoring-infrastructure/18-03-PLAN.md
