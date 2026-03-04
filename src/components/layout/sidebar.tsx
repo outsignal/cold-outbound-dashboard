@@ -25,6 +25,7 @@ import {
   Webhook,
   ListOrdered,
   Megaphone,
+  Package,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -85,6 +86,7 @@ const navGroups: NavItem[][] = [
   ],
   // Group 5 — Config
   [
+    { href: "/packages", label: "Packages", icon: Package },
     { href: "/settings", label: "Settings", icon: Settings },
   ],
 ];
