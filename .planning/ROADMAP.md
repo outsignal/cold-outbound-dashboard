@@ -48,7 +48,7 @@ Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 - [x] **Phase 16: Discovery Sources** - Apollo, Prospeo Search, AI Ark Search, Serper.dev, and Firecrawl directory adapters wired into discovery module (completed 2026-03-04)
 - [x] **Phase 17: Leads Agent Discovery Upgrade** - discoverLeads/searchDirectory tools, dedup against staging table, ICP-to-source routing, plan approval flow, quota enforcement (completed 2026-03-04)
 - [x] **Phase 18: Signal Monitoring Infrastructure** - Railway signal worker, PredictLeads integration (5 signal types), Serper social listening, SignalEvent ingestion, budget governor (completed 2026-03-04)
-- [ ] **Phase 19: Evergreen Signal Campaign Auto-Pipeline** - Signal campaign CRUD, full signal-to-deploy pipeline, human approval gate, daily caps, pause/resume, Slack notifications
+- [ ] **Phase 19: Evergreen Signal Campaign Auto-Pipeline** - Signal campaign schema + dual state machine, Campaign Agent signal tools, signal-to-deploy pipeline processor, worker trigger + admin UI (4 plans)
 - [ ] **Phase 20: Copy Strategy Framework** - Writer Agent multi-strategy support (Creative Ideas, PVP, one-liner, custom), per-client KB examples by strategy, groundedIn validation, full KB consultation
 - [ ] **Phase 21: Signal Dashboard + CLI Chat** - /admin/signals live feed and breakdown, CLI orchestrator chat via scripts/cli-chat.ts
 
@@ -116,7 +116,11 @@ Full details: [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
   3. No leads are deployed to EmailBison or LinkedIn from a signal campaign until a human has explicitly approved them through the portal approval flow
   4. Admin receives a Slack notification when leads are added to a signal campaign, and can pause or resume the campaign from the admin dashboard instantly
   5. Static campaigns (one-off list build) continue to operate exactly as before and are unaffected by signal campaign infrastructure
-**Plans**: TBD
+**Plans**: 4 plans
+- [ ] 19-01-PLAN.md — Schema extension: Campaign type/signal fields, SignalCampaignLead junction, dual state machine (static vs signal)
+- [ ] 19-02-PLAN.md — Campaign Agent tools: createSignalCampaign (ICP extraction), activateSignalCampaign (pre-provision EmailBison), pauseResumeSignalCampaign + orchestrator prompt
+- [ ] 19-03-PLAN.md — Signal pipeline processor: match signals to campaigns, discover/enrich/ICP-score leads, auto-deploy, daily cap enforcement, Slack notifications
+- [ ] 19-04-PLAN.md — Worker trigger: HTTP POST to pipeline after runCycle(); Admin UI: type badges on campaigns list, signal stats card + pause/resume on detail page
 
 ### Phase 20: Copy Strategy Framework
 **Goal**: The Writer Agent supports multiple copy strategies (Creative Ideas, PVP, one-liner, custom) with admin/agent selection per campaign, per-client KB examples tagged by strategy, groundedIn validation for Creative Ideas, and full Knowledge Base consultation regardless of strategy
@@ -157,6 +161,6 @@ v2.0 phases: 15 → 16 → 17 → 18 → 19 → 20 (parallel with 18-19) → 21
 | 16. Discovery Sources | v2.0 | Complete    | 2026-03-04 | 2026-03-04 |
 | 17. Leads Agent Discovery Upgrade | 2/2 | Complete    | 2026-03-04 | - |
 | 18. Signal Monitoring Infrastructure | 4/4 | Complete    | 2026-03-04 | - |
-| 19. Evergreen Signal Campaign Auto-Pipeline | v2.0 | 0/TBD | Not started | - |
+| 19. Evergreen Signal Campaign Auto-Pipeline | v2.0 | 0/4 | Planned | - |
 | 20. Creative Ideas Copy Framework | v2.0 | 0/2 | Planned | - |
 | 21. Signal Dashboard + CLI Chat | v2.0 | 0/TBD | Not started | - |
