@@ -702,6 +702,7 @@ model Sender {
   warmupDay       Int       @default(0) // 0 = not started, 1-28 = warmup day
   warmupStartedAt DateTime?
   lastActiveAt    DateTime?
+  lastPolledAt    DateTime?
 
   // Rate limits (account-level, adjusted by warm-up)
   dailyConnectionLimit  Int @default(5)
