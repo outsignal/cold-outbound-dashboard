@@ -3,6 +3,7 @@ import { z } from "zod";
 import * as operations from "@/lib/leads/operations";
 import { searchKnowledgeBase } from "./shared-tools";
 import { runAgent } from "./runner";
+import { leadsOutputSchema } from "./types";
 import type { AgentConfig, LeadsInput, LeadsOutput } from "./types";
 import { apolloAdapter } from "@/lib/discovery/adapters/apollo";
 import { prospeoSearchAdapter } from "@/lib/discovery/adapters/prospeo-search";
@@ -743,6 +744,7 @@ const leadsConfig: AgentConfig = {
   systemPrompt: LEADS_SYSTEM_PROMPT,
   tools: leadsTools,
   maxSteps: 15,
+  outputSchema: leadsOutputSchema,
 };
 
 // --- Public API ---

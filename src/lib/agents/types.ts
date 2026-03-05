@@ -1,4 +1,5 @@
 import type { Tool } from "ai";
+import { z } from "zod";
 
 // --- Agent Configuration ---
 
@@ -11,6 +12,7 @@ export interface AgentConfig {
   systemPrompt: string;
   tools: Record<string, Tool>;
   maxSteps?: number; // default 10
+  outputSchema?: z.ZodType<unknown>; // Optional Zod schema for validating parsed output
 }
 
 // --- Agent Run Logging ---
@@ -151,3 +153,86 @@ export interface CampaignOutput {
   campaignId?: string;
   data?: unknown;
 }
+
+// --- Zod Output Schemas (for runtime validation in runner.ts) ---
+// Zod v4: objects are loose by default (extra keys pass through), no .passthrough() needed.
+
+export const researchOutputSchema = z.object({
+  companyOverview: z.string(),
+  icpIndicators: z.object({
+    industries: z.string(),
+    titles: z.string(),
+    companySize: z.string(),
+    countries: z.string(),
+  }),
+  valuePropositions: z.array(z.string()),
+  caseStudies: z.array(
+    z.object({
+      client: z.string(),
+      result: z.string(),
+      metrics: z.string().optional(),
+    }),
+  ),
+  painPoints: z.array(z.string()),
+  differentiators: z.array(z.string()),
+  pricingSignals: z.string().optional(),
+  contentTone: z.string(),
+  suggestions: z.array(z.string()),
+});
+
+export const writerOutputSchema = z.object({
+  campaignName: z.string(),
+  channel: z.enum(["email", "linkedin", "email_linkedin"]),
+  emailSteps: z
+    .array(
+      z.object({
+        position: z.number(),
+        subjectLine: z.string(),
+        subjectVariantB: z.string().optional(),
+        body: z.string(),
+        delayDays: z.number(),
+        notes: z.string(),
+      }),
+    )
+    .optional(),
+  linkedinSteps: z
+    .array(
+      z.object({
+        position: z.number(),
+        type: z.enum(["connection_request", "message", "inmail"]),
+        body: z.string(),
+        delayDays: z.number(),
+        notes: z.string(),
+      }),
+    )
+    .optional(),
+  reviewNotes: z.string(),
+  creativeIdeas: z
+    .array(
+      z.object({
+        position: z.number(),
+        title: z.string(),
+        groundedIn: z.string(),
+        subjectLine: z.string(),
+        subjectVariantB: z.string().optional(),
+        body: z.string(),
+        notes: z.string(),
+      }),
+    )
+    .optional(),
+  strategy: z.string().optional(),
+  references: z.array(z.string()).optional(),
+});
+
+export const leadsOutputSchema = z.object({
+  action: z.string(),
+  summary: z.string(),
+  data: z.unknown().optional(),
+});
+
+export const campaignOutputSchema = z.object({
+  action: z.string(),
+  summary: z.string(),
+  campaignId: z.string().optional(),
+  data: z.unknown().optional(),
+});

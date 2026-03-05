@@ -69,11 +69,29 @@ export async function runAgent<TOutput = unknown>(
     try {
       // Look for JSON in the response text
       const jsonMatch = result.text.match(/```json\n([\s\S]*?)\n```/);
+      let rawOutput: unknown;
       if (jsonMatch) {
-        output = JSON.parse(jsonMatch[1]) as TOutput;
+        rawOutput = JSON.parse(jsonMatch[1]);
       } else {
         // Try parsing the whole text as JSON
-        output = JSON.parse(result.text) as TOutput;
+        rawOutput = JSON.parse(result.text);
+      }
+
+      // Validate against schema if provided (graceful degradation)
+      if (config.outputSchema) {
+        const parsed = config.outputSchema.safeParse(rawOutput);
+        if (!parsed.success) {
+          console.error(
+            `[Agent ${config.name}] Output validation failed:`,
+            parsed.error,
+          );
+          // Still use raw output -- don't crash on validation failure
+          output = rawOutput as TOutput;
+        } else {
+          output = parsed.data as TOutput;
+        }
+      } else {
+        output = rawOutput as TOutput;
       }
     } catch {
       // If no structured output, use the raw text

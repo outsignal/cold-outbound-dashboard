@@ -5,6 +5,7 @@ import { crawlWebsite, scrapeUrl } from "@/lib/firecrawl/client";
 import { notify } from "@/lib/notify";
 import { runAgent } from "./runner";
 import { searchKnowledgeBase } from "./shared-tools";
+import { researchOutputSchema } from "./types";
 import type { AgentConfig, ResearchInput, ResearchOutput } from "./types";
 
 // --- Research Agent Tools ---
@@ -242,6 +243,7 @@ const researchConfig: AgentConfig = {
   systemPrompt: RESEARCH_SYSTEM_PROMPT,
   tools: researchTools,
   maxSteps: 8,
+  outputSchema: researchOutputSchema,
 };
 
 // --- Public API ---

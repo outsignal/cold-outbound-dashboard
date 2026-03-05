@@ -4,6 +4,7 @@ import { z } from "zod";
 import * as campaignOperations from "@/lib/campaigns/operations";
 import * as leadsOperations from "@/lib/leads/operations";
 import { runAgent } from "./runner";
+import { campaignOutputSchema } from "./types";
 import type { AgentConfig, CampaignInput, CampaignOutput } from "./types";
 import { prisma } from "@/lib/db";
 import { hasModule, getWorkspaceQuotaUsage } from "@/lib/workspaces/quota";
@@ -463,6 +464,7 @@ const campaignConfig: AgentConfig = {
   systemPrompt: CAMPAIGN_SYSTEM_PROMPT,
   tools: campaignTools,
   maxSteps: 10,
+  outputSchema: campaignOutputSchema,
 };
 
 // --- Public API ---

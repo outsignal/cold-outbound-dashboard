@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getClientForWorkspace } from "@/lib/workspaces";
 import { searchKnowledgeBase } from "./shared-tools";
 import { runAgent } from "./runner";
+import { writerOutputSchema } from "./types";
 import type { AgentConfig, WriterInput, WriterOutput, SignalContext, CreativeIdeaDraft } from "./types";
 
 // --- Writer Agent Tools ---
@@ -560,6 +561,7 @@ const writerConfig: AgentConfig = {
   systemPrompt: WRITER_SYSTEM_PROMPT,
   tools: writerTools,
   maxSteps: 10,
+  outputSchema: writerOutputSchema,
 };
 
 // --- Public API ---
