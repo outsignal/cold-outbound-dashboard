@@ -50,6 +50,7 @@ export class VoyagerClient {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private readonly proxyDispatcher: any;
   private readonly baseUrl = "https://www.linkedin.com/voyager/api";
+  private selfUrn: string | null = null;
 
   constructor(liAt: string, jsessionId: string, proxyUrl?: string) {
     this.liAt = liAt;
@@ -280,57 +281,115 @@ export class VoyagerClient {
   }
 
   /**
+   * Generate a random 16-byte tracking ID for messaging requests.
+   */
+  private generateTrackingId(): string {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return String.fromCharCode(...bytes);
+  }
+
+  /**
+   * Fetch the authenticated user's own fsd_profile URN.
+   * Cached after first call so /me is only hit once per instance.
+   */
+  private async getSelfUrn(): Promise<string | null> {
+    if (this.selfUrn) return this.selfUrn;
+
+    try {
+      const res = await this.request("/me");
+      const data = (await res.json()) as Record<string, unknown>;
+
+      // Try included[].dashEntityUrn (normalized response format)
+      const included = data?.included as Array<Record<string, unknown>> | undefined;
+      if (included) {
+        for (const item of included) {
+          const dash = item.dashEntityUrn as string | undefined;
+          if (dash?.startsWith("urn:li:fsd_profile:")) {
+            this.selfUrn = dash;
+            return dash;
+          }
+        }
+      }
+
+      // Try data.*miniProfile → extract ID → construct fsd_profile URN
+      const innerData = data?.data as Record<string, unknown> | undefined;
+      const miniProfileUrn = innerData?.["*miniProfile"] as string | undefined;
+      if (miniProfileUrn) {
+        const id = miniProfileUrn.split(":").pop();
+        if (id) {
+          this.selfUrn = `urn:li:fsd_profile:${id}`;
+          return this.selfUrn;
+        }
+      }
+
+      console.error(
+        "[VoyagerClient] Could not extract selfUrn from /me response:",
+        JSON.stringify(data).substring(0, 500)
+      );
+      return null;
+    } catch (err) {
+      console.error("[VoyagerClient] Failed to fetch /me:", err);
+      return null;
+    }
+  }
+
+  /**
    * Send a message to an existing 1st-degree LinkedIn connection.
    *
-   * Only works for connected profiles — returns not_connected error
-   * if the API returns 403 on messaging attempt.
+   * Uses the dash messaging endpoint (voyagerMessagingDashMessengerMessages).
+   * Only works for connected profiles.
    */
   async sendMessage(
     profileUrl: string,
     message: string
   ): Promise<ActionResult> {
-    try {
-      // Always view profile first to extract memberUrn
-      const profileResult = await this.viewProfile(profileUrl);
-      if (!profileResult.success) {
-        return profileResult;
-      }
-
-      const memberUrn = profileResult.details?.memberUrn as string;
-
-      const body = {
-        recipients: [`urn:li:fsd_profile:${memberUrn}`],
-        subject: "",
-        body: message,
-        messageType: "MEMBER_TO_MEMBER",
+    // Step 1: View profile to get recipient's memberUrn
+    const profileResult = await this.viewProfile(profileUrl);
+    if (!profileResult.success || !profileResult.details?.memberUrn) {
+      return {
+        success: false,
+        error: "Failed to resolve profile",
+        details: profileResult.details,
       };
+    }
 
-      const response = await this.request("/messaging/conversations", {
-        method: "POST",
-        body: JSON.stringify(body),
-        extraHeaders: {
-          "Content-Type": "application/json",
-        },
-      });
+    const memberUrn = profileResult.details.memberUrn as string;
 
-      // Checkpoint detection
-      if (
-        response.url.includes("/checkpoint/") ||
-        response.url.includes("/challenge/")
-      ) {
-        return {
-          success: false,
-          error: "checkpoint_detected",
-          details: { retry: false },
-        };
-      }
+    // Step 2: Get sender's own URN for mailboxUrn
+    const selfUrn = await this.getSelfUrn();
+    if (!selfUrn) {
+      return { success: false, error: "Failed to resolve sender profile URN" };
+    }
 
-      return { success: true, details: { memberUrn } };
+    // Step 3: Send message via new dash endpoint
+    const recipientUrn = `urn:li:fsd_profile:${memberUrn}`;
+    const body = {
+      dedupeByClientGeneratedToken: false,
+      hostRecipientUrns: [recipientUrn],
+      mailboxUrn: selfUrn,
+      message: {
+        body: { attributes: [], text: message },
+        originToken: crypto.randomUUID(),
+        renderContentUnions: [],
+      },
+      trackingId: this.generateTrackingId(),
+    };
+
+    try {
+      await this.request(
+        "/voyagerMessagingDashMessengerMessages?action=createMessage",
+        {
+          method: "POST",
+          body: JSON.stringify(body),
+          extraHeaders: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      return { success: true, details: { memberUrn, recipientUrn } };
     } catch (err) {
-      // 403 on messaging = not connected (can't message non-connections)
-      if (err instanceof VoyagerError && err.status === 403) {
-        return { success: false, error: "not_connected" };
-      }
       return this.handleError(err);
     }
   }

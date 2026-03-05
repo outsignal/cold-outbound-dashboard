@@ -430,6 +430,9 @@ export class Worker {
       await this.safeMarkComplete(action.id, result.details);
     } else {
       console.error(`[Worker] Action ${action.id} failed: ${result.error}`);
+      if (result.details) {
+        console.error(`[Worker] Error details:`, JSON.stringify(result.details));
+      }
       await this.safeMarkFailed(action.id, result.error ?? "Unknown error");
 
       // Handle auth/blocking errors — invalidate cached client and update sender health.
