@@ -150,7 +150,7 @@ export function PortalSidebar({ workspaceName }: PortalSidebarProps) {
       )}
 
       {/* Navigation */}
-      <nav className={cn("flex-1 py-4", isCollapsed ? "px-1.5" : "px-3")}>
+      <nav aria-label="Portal navigation" className={cn("flex-1 py-4", isCollapsed ? "px-1.5" : "px-3")}>
         <div className="space-y-1">
           {navItems.map((item) => renderNavItem(item))}
         </div>
@@ -163,6 +163,7 @@ export function PortalSidebar({ workspaceName }: PortalSidebarProps) {
           <TooltipTrigger asChild>
             <button
               onClick={handleLogout}
+              aria-label="Sign out"
               className={cn(
                 "flex w-full items-center rounded-lg py-2 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors duration-150",
                 isCollapsed ? "justify-center px-2" : "gap-3 px-3",
@@ -184,6 +185,7 @@ export function PortalSidebar({ workspaceName }: PortalSidebarProps) {
           <TooltipTrigger asChild>
             <button
               onClick={toggleCollapsed}
+              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
               className={cn(
                 "flex w-full items-center rounded-lg py-2 text-sm text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors duration-150",
                 isCollapsed ? "justify-center px-2" : "gap-3 px-3",

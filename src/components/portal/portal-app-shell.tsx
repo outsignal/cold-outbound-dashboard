@@ -17,6 +17,13 @@ export async function PortalAppShell({ workspaceSlug, children }: PortalAppShell
   return (
     <TooltipProvider delayDuration={0}>
       <div className="flex h-screen overflow-hidden">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:bg-white focus:text-black focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg focus:text-sm focus:font-medium"
+        >
+          Skip to main content
+        </a>
+
         <div className="hidden md:flex">
           <PortalSidebar
             workspaceSlug={workspaceSlug}
@@ -27,7 +34,7 @@ export async function PortalAppShell({ workspaceSlug, children }: PortalAppShell
           workspaceSlug={workspaceSlug}
           workspaceName={workspace?.name ?? workspaceSlug}
         />
-        <main className="flex-1 overflow-auto">
+        <main id="main-content" className="flex-1 overflow-auto">
           {children}
         </main>
       </div>

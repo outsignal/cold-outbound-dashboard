@@ -340,6 +340,18 @@ export default function NotificationsPage() {
                     <TableRow
                       key={n.id}
                       onClick={() => !n.read && handleMarkRead(n.id)}
+                      tabIndex={!n.read ? 0 : undefined}
+                      role={!n.read ? "button" : undefined}
+                      onKeyDown={
+                        !n.read
+                          ? (e) => {
+                              if (e.key === "Enter" || e.key === " ") {
+                                e.preventDefault();
+                                handleMarkRead(n.id);
+                              }
+                            }
+                          : undefined
+                      }
                       className={cn(
                         "border-border transition-colors",
                         !n.read && "bg-muted/50 cursor-pointer",

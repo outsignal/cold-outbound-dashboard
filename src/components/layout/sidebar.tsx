@@ -440,7 +440,7 @@ export function Sidebar({ workspaces }: SidebarProps) {
         )}
       >
         {isCollapsed ? (
-          <button onClick={toggleCollapsed} className="cursor-pointer" title="Expand sidebar">
+          <button onClick={toggleCollapsed} className="cursor-pointer" title="Expand sidebar" aria-label="Expand sidebar">
             <OutsignalLogo variant="mark" className="h-7 w-7" />
           </button>
         ) : (
@@ -450,7 +450,7 @@ export function Sidebar({ workspaces }: SidebarProps) {
 
       {/* Scrollable nav */}
       <ScrollArea className={cn("flex-1 py-3", isCollapsed ? "px-1.5" : "px-3")}>
-        <nav className="space-y-3">
+        <nav aria-label="Main navigation" className="space-y-3">
           {navGroups.map((group) => {
             const isGroupOpen = !collapsedGroups[group.key];
             return (
@@ -473,6 +473,7 @@ export function Sidebar({ workspaces }: SidebarProps) {
           <TooltipTrigger asChild>
             <button
               onClick={toggleCollapsed}
+              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
               className={cn(
                 "flex w-full items-center rounded-lg py-2 text-sm text-sidebar-foreground/50 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors duration-150",
                 isCollapsed ? "justify-center px-2" : "gap-3 px-3",
