@@ -22,6 +22,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "senderId is required" }, { status: 400 });
     }
 
+    // Update heartbeat timestamp — tracks worker polling
+    await prisma.sender.update({
+      where: { id: senderId },
+      data: { lastPolledAt: new Date() },
+    });
+
     const actions = await getNextBatch(senderId, limit);
 
     // Mark each as running and resolve LinkedIn URLs
