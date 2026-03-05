@@ -127,6 +127,8 @@ model Person {
   @@index([status])
   @@index([company])
   @@index([vertical])
+  @@index([companyDomain])
+  @@index([linkedinUrl])
   @@map("Lead")
 }
 
@@ -230,6 +232,7 @@ model WebhookEvent {
   @@index([workspace, eventType])
   @@index([leadEmail])
   @@index([senderEmail, eventType])
+  @@index([receivedAt])
 }
 
 model CachedMetrics {
@@ -249,8 +252,6 @@ model InboxStatusSnapshot {
   disconnectedEmails String   @default("[]")  // JSON array of disconnected emails
   checkedAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
-
-  @@index([workspaceSlug])
 }
 
 model Proposal {
@@ -473,7 +474,6 @@ model SignalDailyCost {
   updatedAt     DateTime @updatedAt
 
   @@unique([workspaceSlug, date])
-  @@index([workspaceSlug, date])
 }
 
 model SeenSignalUrl {
@@ -852,7 +852,6 @@ model MagicLinkToken {
   used          Boolean  @default(false)
   createdAt     DateTime @default(now())
 
-  @@index([token])
   @@index([email])
 }
 
