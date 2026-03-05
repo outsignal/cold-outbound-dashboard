@@ -88,6 +88,9 @@ export async function runAgent<TOutput = unknown>(
         output: JSON.stringify(output),
         steps: JSON.stringify(steps),
         durationMs,
+        inputTokens: result.usage?.inputTokens,
+        outputTokens: result.usage?.outputTokens,
+        modelId: config.model,
       },
     });
 

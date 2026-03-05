@@ -322,6 +322,10 @@ model AgentRun {
   status        String   @default("running") // running | complete | failed
   steps         String? // JSON - tool call log
   durationMs    Int?
+  inputTokens   Int?
+  outputTokens  Int?
+  modelId       String?
+  parentRunId   String?
   error         String?
   triggeredBy   String? // "orchestrator" | "cli" | "api" | "pipeline"
   createdAt     DateTime @default(now())
