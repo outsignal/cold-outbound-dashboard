@@ -19,10 +19,10 @@ const VOLUME_JITTER_FRACTION = 0.2;
  * Messages and profile views scale proportionally.
  */
 const WARMUP_SCHEDULE: Array<{ maxDay: number; connections: number; messages: number; profileViews: number }> = [
-  { maxDay: 7, connections: 5, messages: 10, profileViews: 15 },
-  { maxDay: 14, connections: 8, messages: 15, profileViews: 25 },
-  { maxDay: 21, connections: 12, messages: 25, profileViews: 40 },
-  { maxDay: Infinity, connections: 15, messages: 30, profileViews: 50 },
+  { maxDay: 7, connections: 5, messages: 5, profileViews: 10 },
+  { maxDay: 14, connections: 8, messages: 10, profileViews: 20 },
+  { maxDay: 21, connections: 12, messages: 20, profileViews: 30 },
+  { maxDay: Infinity, connections: 20, messages: 30, profileViews: 50 },
 ];
 
 /**
