@@ -5,7 +5,7 @@
  * Used in route handlers and server actions (NOT in middleware — use portal-auth-edge.ts there).
  */
 
-import { createHmac } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 
 const COOKIE_NAME = "portal_session";
 const COOKIE_MAX_AGE = 30 * 24 * 60 * 60; // 30 days in seconds
@@ -45,7 +45,15 @@ export function verifySession(cookieValue: string): PortalSession | null {
   const [payload, signature] = parts;
   const expected = sign(payload);
 
-  if (signature !== expected) return null;
+  // Timing-safe comparison to prevent timing attacks
+  try {
+    const sigBuf = Buffer.from(signature);
+    const expBuf = Buffer.from(expected);
+    if (sigBuf.length !== expBuf.length) return null;
+    if (!timingSafeEqual(sigBuf, expBuf)) return null;
+  } catch {
+    return null;
+  }
 
   try {
     const session: PortalSession = JSON.parse(

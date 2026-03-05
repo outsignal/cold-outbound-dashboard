@@ -65,7 +65,15 @@ export function verifyAdminSession(cookieValue: string): AdminSession | null {
   const [payload, signature] = parts;
   const expected = sign(payload);
 
-  if (signature !== expected) return null;
+  // Timing-safe comparison to prevent timing attacks
+  try {
+    const sigBuf = Buffer.from(signature);
+    const expBuf = Buffer.from(expected);
+    if (sigBuf.length !== expBuf.length) return null;
+    if (!timingSafeEqual(sigBuf, expBuf)) return null;
+  } catch {
+    return null;
+  }
 
   try {
     const session: AdminSession = JSON.parse(

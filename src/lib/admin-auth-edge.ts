@@ -35,23 +35,22 @@ export async function verifyAdminSessionEdge(
     encoder.encode(secret),
     { name: "HMAC", hash: "SHA-256" },
     false,
-    ["sign"],
+    ["sign", "verify"],
   );
 
-  // Sign the payload
-  const signatureBytes = await crypto.subtle.sign(
+  // Decode the provided signature from base64url to raw bytes
+  const sigBase64 = signature.replace(/-/g, "+").replace(/_/g, "/");
+  const sigRaw = Uint8Array.from(atob(sigBase64), (c) => c.charCodeAt(0));
+
+  // Timing-safe verification using crypto.subtle.verify (constant-time internally)
+  const valid = await crypto.subtle.verify(
     "HMAC",
     key,
+    sigRaw,
     encoder.encode(payload),
   );
 
-  // Convert to base64url for comparison
-  const expected = btoa(String.fromCharCode(...new Uint8Array(signatureBytes)))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-
-  if (signature !== expected) return null;
+  if (!valid) return null;
 
   try {
     const decoded = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
