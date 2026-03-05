@@ -21,6 +21,7 @@ import {
   ListOrdered,
   Megaphone,
   Package,
+  Plug,
   Mail,
   DollarSign,
   ClipboardList,
@@ -153,6 +154,7 @@ const STATIC_NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/agent-runs", label: "Agent Runs", icon: Activity },
       { href: "/enrichment-costs", label: "Enrichment Costs", icon: DollarSign },
+      { href: "/integrations", label: "Integrations", icon: Plug },
       { href: "/packages", label: "Packages", icon: Package },
       { href: "/settings", label: "Settings", icon: Settings },
     ],

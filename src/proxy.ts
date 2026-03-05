@@ -67,6 +67,7 @@ const ADMIN_PAGE_PREFIXES = [
   "/revenue",
   "/agent-runs",
   "/packages",
+  "/integrations",
 ];
 
 function isAdminPageRoute(pathname: string): boolean {
@@ -211,6 +212,7 @@ export const config = {
     "/revenue/:path*",
     "/agent-runs/:path*",
     "/packages/:path*",
+    "/integrations/:path*",
     // API routes (all — public ones are filtered in proxy logic)
     "/api/:path*",
   ],
