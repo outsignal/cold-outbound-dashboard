@@ -201,35 +201,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // API key check — enforced when CLAY_WEBHOOK_SECRET is configured
+    // API key check — reject all requests when CLAY_WEBHOOK_SECRET is not configured
     const secret = process.env.CLAY_WEBHOOK_SECRET;
     if (!secret) {
       console.warn(
-        "CLAY_WEBHOOK_SECRET not configured — webhook authentication is disabled",
+        "[Clay Enrich] CLAY_WEBHOOK_SECRET not configured — rejecting all requests",
       );
-    } else {
-      const apiKey = request.headers.get("x-api-key");
-      if (!apiKey) {
-        return NextResponse.json(
-          { error: "Invalid or missing API key" },
-          { status: 401 },
-        );
-      }
-      // Timing-safe comparison to prevent timing attacks
-      const apiKeyBuf = Buffer.from(apiKey);
-      const secretBuf = Buffer.from(secret);
-      if (apiKeyBuf.length !== secretBuf.length || !crypto.timingSafeEqual(apiKeyBuf, secretBuf)) {
-        return NextResponse.json(
-          { error: "Invalid or missing API key" },
-          { status: 401 },
-        );
-      }
+      return NextResponse.json(
+        { error: "Webhook authentication not configured" },
+        { status: 401 },
+      );
+    }
+
+    const apiKey = request.headers.get("x-api-key");
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: "Invalid or missing API key" },
+        { status: 401 },
+      );
+    }
+    // Timing-safe comparison to prevent timing attacks
+    const apiKeyBuf = Buffer.from(apiKey);
+    const secretBuf = Buffer.from(secret);
+    if (apiKeyBuf.length !== secretBuf.length || !crypto.timingSafeEqual(apiKeyBuf, secretBuf)) {
+      return NextResponse.json(
+        { error: "Invalid or missing API key" },
+        { status: 401 },
+      );
     }
 
     const body = await request.json();
 
     // Batch mode
     if (Array.isArray(body)) {
+      if (body.length > 500) {
+        return NextResponse.json(
+          { error: "Batch size exceeds maximum of 500 items" },
+          { status: 400 },
+        );
+      }
+
       const results: {
         domain: string;
         updated: boolean;

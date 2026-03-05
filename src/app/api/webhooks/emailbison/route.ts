@@ -12,7 +12,7 @@ const webhookLimiter = rateLimit({ windowMs: 60_000, max: 60 });
 
 /**
  * Verify HMAC-SHA256 signature from EmailBison webhook.
- * Returns { valid: true } if signature matches or secret is not configured.
+ * Returns { valid: true } if signature matches.
  * Returns { valid: false, response } with a 401 response if verification fails.
  */
 function verifyWebhookSignature(
@@ -26,9 +26,15 @@ function verifyWebhookSignature(
 
   if (!secret) {
     console.warn(
-      "EMAILBISON_WEBHOOK_SECRET not configured — webhook signature verification is disabled",
+      "[EmailBison Webhook] EMAILBISON_WEBHOOK_SECRET not configured — rejecting all requests",
     );
-    return { valid: true };
+    return {
+      valid: false,
+      response: NextResponse.json(
+        { error: "Webhook authentication not configured" },
+        { status: 401 },
+      ),
+    };
   }
 
   if (!signature) {
