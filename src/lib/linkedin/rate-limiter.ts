@@ -202,6 +202,16 @@ export async function progressWarmup(senderId: string): Promise<void> {
   const sender = await prisma.sender.findUnique({ where: { id: senderId } });
   if (!sender || sender.warmupDay <= 0) return;
 
+  // Idempotency: only advance once per calendar day.
+  // warmupDay should equal (days since warmupStartedAt) + 1
+  if (sender.warmupStartedAt) {
+    const daysSinceStart = Math.floor(
+      (Date.now() - sender.warmupStartedAt.getTime()) / (24 * 60 * 60 * 1000)
+    );
+    const expectedDay = daysSinceStart + 1;
+    if (sender.warmupDay >= expectedDay) return;
+  }
+
   // Don't increase if acceptance rate is below 20%
   if (sender.acceptanceRate !== null && sender.acceptanceRate < 0.2) {
     return;

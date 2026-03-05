@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { activateSender } from "@/lib/linkedin/sender";
 
 const ALLOWED_STATUSES = ["setup", "active", "paused", "disabled"];
 
@@ -84,7 +85,16 @@ export async function PATCH(
     if (dailyConnectionLimit !== undefined) updateData.dailyConnectionLimit = Number(dailyConnectionLimit);
     if (dailyMessageLimit !== undefined) updateData.dailyMessageLimit = Number(dailyMessageLimit);
     if (dailyProfileViewLimit !== undefined) updateData.dailyProfileViewLimit = Number(dailyProfileViewLimit);
-    if (status !== undefined) updateData.status = status;
+    if (status !== undefined) {
+      // First-time activation: use activateSender() to init warmup
+      if (status === "active" && existing.status !== "active" && existing.warmupDay === 0) {
+        await activateSender(id);
+        // activateSender sets status, warmupDay, warmupStartedAt, and initial limits
+        // Don't set status again in updateData, but still allow other field updates
+      } else {
+        updateData.status = status;
+      }
+    }
 
     const sender = await prisma.sender.update({
       where: { id },

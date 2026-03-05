@@ -7,6 +7,10 @@ import { runSenderHealthCheck } from "@/lib/linkedin/health-check";
 import { refreshStaleSessions } from "@/lib/linkedin/session-refresh";
 import { generateDueInvoices, alertUnpaidBeforeRenewal } from "@/lib/invoices/generator";
 import { markAndNotifyOverdueInvoices } from "@/lib/invoices/overdue";
+import { progressWarmup } from "@/lib/linkedin/rate-limiter";
+import { updateAcceptanceRate } from "@/lib/linkedin/sender";
+import { recoverStuckActions, expireStaleActions } from "@/lib/linkedin/queue";
+import { prisma } from "@/lib/db";
 
 export async function GET(request: Request) {
   if (!validateCronSecret(request)) {
@@ -169,6 +173,43 @@ export async function GET(request: Request) {
       console.log(`[${timestamp}] Unpaid renewal alerts: ${unpaidAlertCount} sent`);
     }
 
+    // --- LinkedIn Maintenance ---
+    let warmupProcessed = 0;
+    let warmupErrors = 0;
+    let stuckRecovered = 0;
+    let staleExpired = 0;
+
+    try {
+      const activeSenders = await prisma.sender.findMany({
+        where: { status: "active" },
+        select: { id: true, name: true },
+      });
+
+      for (const sender of activeSenders) {
+        try {
+          await progressWarmup(sender.id);
+          warmupProcessed++;
+        } catch (err) {
+          warmupErrors++;
+          console.error(`[linkedin-maintenance] progressWarmup failed for ${sender.name}:`, err);
+        }
+        try {
+          await updateAcceptanceRate(sender.id);
+        } catch (err) {
+          console.error(`[linkedin-maintenance] updateAcceptanceRate failed for ${sender.name}:`, err);
+        }
+      }
+
+      stuckRecovered = await recoverStuckActions();
+      staleExpired = await expireStaleActions();
+
+      console.log(
+        `[${timestamp}] LinkedIn maintenance: warmup=${warmupProcessed}/${activeSenders.length}, stuck=${stuckRecovered}, expired=${staleExpired}`
+      );
+    } catch (err) {
+      console.error("[linkedin-maintenance] Error:", err);
+    }
+
     return NextResponse.json({
       checked: changes.length,
       workspacesWithChanges: changes.map((c) => ({
@@ -185,6 +226,10 @@ export async function GET(request: Request) {
       invoicesSkipped: invoiceGenResult.skipped,
       overdueInvoices: overdueCount,
       unpaidRenewalAlerts: unpaidAlertCount,
+      linkedinWarmup: warmupProcessed,
+      linkedinWarmupErrors: warmupErrors,
+      linkedinStuckRecovered: stuckRecovered,
+      linkedinStaleExpired: staleExpired,
     });
   } catch (error) {
     console.error("[inbox-health/check] Error:", error);
