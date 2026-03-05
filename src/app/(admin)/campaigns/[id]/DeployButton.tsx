@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Rocket } from "lucide-react";
+import { toast } from "sonner";
 
 interface DeployButtonProps {
   campaignId: string;
@@ -50,6 +51,7 @@ export function DeployButton({
         throw new Error(data.error ?? `Deploy failed (${res.status})`);
       }
       setSuccess(true);
+      toast.success("Campaign deployed");
       // Refresh page data after short delay so user can read success message
       setTimeout(() => {
         setModalOpen(false);
@@ -58,6 +60,7 @@ export function DeployButton({
       }, 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Deploy failed");
+      toast.error("Failed to deploy campaign");
     } finally {
       setLoading(false);
     }

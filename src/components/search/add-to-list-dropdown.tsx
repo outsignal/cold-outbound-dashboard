@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ChevronDown, Plus, Search } from "lucide-react";
+import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -114,12 +115,14 @@ export function AddToListDropdown({
 
       const result = (await res.json()) as { added: number };
       setAddedFeedback(`Added ${result.added}`);
+      toast.success(`Added ${result.added} to list`);
       setTimeout(() => {
         setAddedFeedback(null);
         onComplete();
       }, 1500);
     } catch {
       setAddedFeedback("Failed");
+      toast.error("Failed to add to list");
       setTimeout(() => setAddedFeedback(null), 2000);
     } finally {
       setAddingToListId(null);
@@ -169,8 +172,10 @@ export function AddToListDropdown({
       setNewListDescription("");
       setCreateOpen(false);
       onComplete();
+      toast.success("List created and people added");
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : "Failed to create list");
+      toast.error("Failed to create list");
     } finally {
       setCreating(false);
     }

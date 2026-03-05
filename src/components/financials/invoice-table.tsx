@@ -14,6 +14,7 @@ import {
 import { InvoiceStatusBadge } from "./invoice-status-badge";
 import { formatGBP, formatInvoiceDate } from "@/lib/invoices/format";
 import type { InvoiceWithLineItems } from "@/lib/invoices/types";
+import { toast } from "sonner";
 
 interface InvoiceTableProps {
   invoices: InvoiceWithLineItems[];
@@ -29,9 +30,10 @@ export function InvoiceTable({ invoices, onRefresh }: InvoiceTableProps) {
       const res = await fetch(`/api/invoices/${id}/send`, { method: "POST" });
       if (res.ok) {
         onRefresh();
+        toast.success("Invoice sent");
       } else {
         const err = await res.json().catch(() => ({ error: "Failed to send" }));
-        alert(err.error ?? "Failed to send invoice");
+        toast.error(err.error ?? "Failed to send invoice");
       }
     } finally {
       setLoadingId(null);
@@ -48,9 +50,10 @@ export function InvoiceTable({ invoices, onRefresh }: InvoiceTableProps) {
       });
       if (res.ok) {
         onRefresh();
+        toast.success("Invoice marked as paid");
       } else {
         const err = await res.json().catch(() => ({ error: "Failed to update" }));
-        alert(err.error ?? "Failed to mark invoice as paid");
+        toast.error(err.error ?? "Failed to mark invoice as paid");
       }
     } finally {
       setLoadingId(null);

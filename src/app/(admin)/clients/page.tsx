@@ -35,6 +35,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { STAGES, CAMPAIGN_TYPES } from "@/lib/clients/task-templates";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -235,7 +236,12 @@ function AddClientDialog({ onCreated }: { onCreated: () => void }) {
         resetForm();
         setOpen(false);
         onCreated();
+        toast.success("Client created");
+      } else {
+        toast.error("Failed to create client");
       }
+    } catch {
+      toast.error("Failed to create client");
     } finally {
       setSubmitting(false);
     }

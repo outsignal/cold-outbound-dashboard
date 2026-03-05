@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -172,8 +173,10 @@ export function ProposalFormModal({
 
       onOpenChange(false);
       router.refresh();
+      toast.success(proposalId ? "Proposal updated" : "Proposal created");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
+      toast.error("Failed to save proposal");
     } finally {
       setSaving(false);
     }

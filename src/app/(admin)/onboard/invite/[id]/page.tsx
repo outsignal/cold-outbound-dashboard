@@ -38,7 +38,7 @@ export default async function OnboardingInviteDetailPage({
     <div>
       <Breadcrumb
         items={[
-          { label: "Onboarding", href: "/onboarding" },
+          { label: "Onboarding", href: "/onboard" },
           { label: invite.clientName },
         ]}
       />

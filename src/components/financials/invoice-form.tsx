@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatGBP } from "@/lib/invoices/format";
+import { toast } from "sonner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -175,10 +176,14 @@ export function InvoiceForm({ workspaces, onCreated, trigger }: InvoiceFormProps
         resetForm();
         setOpen(false);
         onCreated();
+        toast.success("Invoice created");
       } else {
         const err = await res.json().catch(() => ({ error: "Failed to create invoice" }));
         setError(err.error ?? "Failed to create invoice");
+        toast.error("Failed to create invoice");
       }
+    } catch {
+      toast.error("Failed to create invoice");
     } finally {
       setSubmitting(false);
     }

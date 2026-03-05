@@ -2,6 +2,7 @@
 
 import { useDebouncedCallback } from "use-debounce";
 import { useState } from "react";
+import { SlidersHorizontal, X } from "lucide-react";
 
 interface FilterSidebarProps {
   verticals: string[];
@@ -42,13 +43,20 @@ export function FilterSidebar({
   onCompanyChange,
 }: FilterSidebarProps) {
   const [companyInput, setCompanyInput] = useState(companyFilter);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const debouncedCompanyChange = useDebouncedCallback((value: string) => {
     onCompanyChange(value);
   }, 300);
 
-  return (
-    <aside className="hidden md:block w-60 flex-shrink-0 space-y-6">
+  const activeFilterCount =
+    selectedVerticals.length +
+    (selectedEnrichment ? 1 : 0) +
+    (selectedWorkspace ? 1 : 0) +
+    (companyFilter ? 1 : 0);
+
+  const filterContent = (
+    <>
       {/* Vertical filter */}
       {verticals.length > 0 && (
         <div>
@@ -168,6 +176,42 @@ export function FilterSidebar({
           className="w-full bg-background border border-border text-sm text-foreground placeholder-muted-foreground rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-brand"
         />
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside className="hidden md:block w-60 flex-shrink-0 space-y-6">
+        {filterContent}
+      </aside>
+
+      {/* Mobile filter toggle button */}
+      <div className="md:hidden flex-shrink-0">
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border border-border rounded-md bg-secondary text-foreground hover:bg-muted transition-colors"
+        >
+          {mobileOpen ? (
+            <X className="w-3.5 h-3.5" />
+          ) : (
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+          )}
+          Filters
+          {activeFilterCount > 0 && (
+            <span className="ml-0.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-brand text-brand-foreground text-[10px] font-bold">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+
+        {/* Mobile expandable filter panel */}
+        {mobileOpen && (
+          <div className="mt-3 p-4 border border-border rounded-lg bg-card space-y-6">
+            {filterContent}
+          </div>
+        )}
+      </div>
+    </>
   );
 }

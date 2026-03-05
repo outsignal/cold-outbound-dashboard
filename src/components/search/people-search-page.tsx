@@ -18,6 +18,7 @@ import { FilterSidebar } from "./filter-sidebar";
 import { EnrichmentBadge } from "./enrichment-badge";
 import { BulkActionBar } from "./bulk-action-bar";
 import { AddToListDropdown } from "./add-to-list-dropdown";
+import { ErrorBanner } from "@/components/ui/error-banner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -307,7 +308,7 @@ export function PeopleSearchPage() {
         </div>
       </div>
 
-      <div className="flex gap-6 p-4 sm:p-6">
+      <div className="flex flex-col md:flex-row gap-4 md:gap-6 p-4 sm:p-6">
         {/* Left sidebar */}
         <FilterSidebar
           verticals={filterOptions.verticals}
@@ -371,15 +372,7 @@ export function PeopleSearchPage() {
 
           {/* Error state */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center justify-between">
-              <p className="text-red-800 text-sm">Failed to load people: {error}</p>
-              <button
-                onClick={() => void fetchData()}
-                className="text-xs bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded"
-              >
-                Retry
-              </button>
-            </div>
+            <ErrorBanner message={`Failed to load people: ${error}`} onRetry={() => void fetchData()} />
           )}
 
           {/* Select all matching banner */}
