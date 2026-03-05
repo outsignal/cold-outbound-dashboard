@@ -32,6 +32,7 @@ import {
   Trash2,
   Key,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { SenderFormModal } from "./sender-form-modal";
 import { SenderHealthPanel } from "./sender-health-panel";
 import type { SenderWithWorkspace } from "./types";
@@ -61,6 +62,17 @@ const SESSION_LABEL: Record<string, string> = {
   active: "Active",
   expired: "Expired",
 };
+
+function formatTimeAgo(date: Date | string): string {
+  const diffMs = Date.now() - new Date(date).getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  if (diffSec < 60) return "just now";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHr = Math.floor(diffMin / 60);
+  if (diffHr < 24) return `${diffHr}h ago`;
+  return `${Math.floor(diffHr / 24)}d ago`;
+}
 
 export function SenderCard({ sender, workspaces }: SenderCardProps) {
   const router = useRouter();
@@ -210,6 +222,23 @@ export function SenderCard({ sender, workspaces }: SenderCardProps) {
             <span className="text-muted-foreground w-20 shrink-0">Warmup</span>
             <span className="text-foreground/80">
               {sender.warmupDay > 0 ? `Day ${sender.warmupDay}` : "Not started"}
+            </span>
+          </div>
+
+          {/* Last seen (worker heartbeat) */}
+          <div className="flex items-start gap-2">
+            <span className="text-muted-foreground w-20 shrink-0">Last seen</span>
+            <span className={cn(
+              "text-foreground/80",
+              sender.lastPolledAt
+                ? (Date.now() - new Date(sender.lastPolledAt).getTime() < 10 * 60_000
+                    ? "text-emerald-600"
+                    : Date.now() - new Date(sender.lastPolledAt).getTime() < 60 * 60_000
+                    ? "text-amber-600"
+                    : "text-muted-foreground")
+                : "text-muted-foreground"
+            )}>
+              {sender.lastPolledAt ? formatTimeAgo(sender.lastPolledAt) : "Never"}
             </span>
           </div>
 
