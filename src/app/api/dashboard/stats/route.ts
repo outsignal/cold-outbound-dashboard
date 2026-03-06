@@ -35,6 +35,7 @@ export interface DashboardKPIs {
   linkedinAccountsTotal: number;
   campaignsActive: number;
   campaignsPaused: number;
+  campaignsCompleted: number;
   campaignsDraft: number;
   // Inbox KPIs (sender email accounts from EmailBison)
   inboxesActive: number;
@@ -433,6 +434,7 @@ export async function GET(request: NextRequest) {
       campaignsActive: campaignMap["active"] ?? 0,
       campaignsPaused: campaignMap["paused"] ?? 0,
       campaignsDraft: campaignMap["draft"] ?? 0,
+      campaignsCompleted: campaignMap["completed"] ?? 0,
       inboxesActive,
       inboxesTotal,
       inboxesIssues,

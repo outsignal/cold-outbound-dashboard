@@ -54,6 +54,7 @@ const emptyKpis: DashboardKPIs = {
   linkedinAccountsTotal: 0,
   campaignsActive: 0,
   campaignsPaused: 0,
+  campaignsCompleted: 0,
   campaignsDraft: 0,
   inboxesActive: 0,
   inboxesTotal: 0,
@@ -199,7 +200,7 @@ export default function DashboardPage() {
                 : "Never polled";
 
               return (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 items-stretch">
                   <Link href="/senders" className="block">
                     <MetricCard
                       label="Senders"
@@ -207,6 +208,7 @@ export default function DashboardPage() {
                       trend={kpis.linkedinAccountsExpired > 0 ? "warning" : kpis.linkedinAccountsActive > 0 ? "up" : "neutral"}
                       detail={`${kpis.linkedinAccountsTotal} total${kpis.linkedinAccountsExpired > 0 ? ` · ${kpis.linkedinAccountsExpired} expired` : ""}`}
                       density="compact"
+                      className="h-full"
                     />
                   </Link>
                   <MetricCard
@@ -215,13 +217,15 @@ export default function DashboardPage() {
                     trend={kpis.inboxesIssues > 0 || Number(bounceRate) > 5 ? "warning" : kpis.inboxesActive > 0 ? "up" : "neutral"}
                     detail={`${kpis.inboxesActive} connected · ${kpis.inboxesIssues} disconnected${Number(bounceRate) > 5 ? ` · ${bounceRate}% bounce` : ""}`}
                     density="compact"
+                    className="h-full"
                   />
                   <MetricCard
                     label="Campaigns"
-                    value={`${kpis.campaignsActive + kpis.campaignsPaused + kpis.campaignsDraft} total`}
+                    value={`${kpis.campaignsActive + kpis.campaignsPaused + kpis.campaignsCompleted + kpis.campaignsDraft} total`}
                     trend={kpis.campaignsActive > 0 ? "up" : "neutral"}
-                    detail={`${kpis.campaignsActive} active · ${kpis.campaignsPaused} paused · ${kpis.campaignsDraft} draft`}
+                    detail={`${kpis.campaignsActive} active · ${kpis.campaignsPaused} paused · ${kpis.campaignsCompleted} done · ${kpis.campaignsDraft} draft`}
                     density="compact"
+                    className="h-full"
                   />
                   <MetricCard
                     label="Emails"
@@ -229,6 +233,7 @@ export default function DashboardPage() {
                     trend={kpis.emailBounced > 0 ? "warning" : kpis.emailSent > 0 ? "up" : "neutral"}
                     detail={`${kpis.emailBounced.toLocaleString()} bounced · ${kpis.emailReplied.toLocaleString()} replies`}
                     density="compact"
+                    className="h-full"
                   />
                   <MetricCard
                     label="LinkedIn"
@@ -236,6 +241,7 @@ export default function DashboardPage() {
                     trend={kpis.linkedinFailed > 0 ? "warning" : (kpis.linkedinConnect + kpis.linkedinMessage + kpis.linkedinProfileView) > 0 ? "up" : "neutral"}
                     detail={`${kpis.linkedinProfileView} views · ${kpis.linkedinConnect} connects · ${kpis.linkedinMessage} messages`}
                     density="compact"
+                    className="h-full"
                   />
                   <MetricCard
                     label="Worker"
@@ -243,6 +249,7 @@ export default function DashboardPage() {
                     trend={kpis.workerOnline ? "up" : "down"}
                     detail={workerDetail}
                     density="compact"
+                    className="h-full"
                   />
                 </div>
               );
