@@ -50,3 +50,4 @@ worker/dist/
 
 # Extension build artifacts
 extension/*.zip
+worker-signals/node_modules/
