@@ -118,12 +118,37 @@ export class EmailBisonClient {
     return allData;
   }
 
+  private async getPages<T>(endpoint: string, maxPages: number): Promise<T[]> {
+    let page = 1;
+    const allData: T[] = [];
+
+    const first = await this.request<PaginatedResponse<T>>(
+      `${endpoint}${endpoint.includes("?") ? "&" : "?"}page=${page}`,
+    );
+    allData.push(...first.data);
+    const lastPage = Math.min(first.meta.last_page, maxPages);
+
+    while (page < lastPage) {
+      page++;
+      const response = await this.request<PaginatedResponse<T>>(
+        `${endpoint}${endpoint.includes("?") ? "&" : "?"}page=${page}`,
+      );
+      allData.push(...response.data);
+    }
+
+    return allData;
+  }
+
   async getCampaigns(): Promise<Campaign[]> {
     return this.getAllPages<Campaign>("/campaigns");
   }
 
   async getReplies(): Promise<Reply[]> {
     return this.getAllPages<Reply>("/replies");
+  }
+
+  async getRecentReplies(maxPages = 2): Promise<Reply[]> {
+    return this.getPages<Reply>("/replies", maxPages);
   }
 
   async getLeads(): Promise<Lead[]> {

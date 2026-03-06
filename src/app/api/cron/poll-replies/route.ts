@@ -28,7 +28,7 @@ export async function GET(request: Request) {
       if (!config) continue;
 
       const client = new EmailBisonClient(config.apiToken);
-      const replies = await client.getReplies();
+      const replies = await client.getRecentReplies(2);
 
       // Only look at replies from the last 2 hours
       const recent = replies.filter((r) => new Date(r.date_received) >= cutoff);
