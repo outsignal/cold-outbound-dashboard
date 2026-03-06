@@ -12,6 +12,8 @@ import { MetricCard } from "@/components/dashboard/metric-card";
 import { ClientFilter } from "@/components/dashboard/client-filter";
 import { ActivityChart, ActivityChartLegend } from "@/components/dashboard/activity-chart";
 import { LinkedInChart, LinkedInChartLegend } from "@/components/dashboard/linkedin-chart";
+import { CombinedChart, CombinedChartLegend } from "@/components/dashboard/combined-chart";
+import { CollapsibleSection } from "@/components/dashboard/collapsible-section";
 import { AlertsSection } from "@/components/dashboard/alerts-section";
 import {
   OverviewTable,
@@ -58,13 +60,15 @@ const emptyKpis: DashboardKPIs = {
   pipelineContacted: 0,
   pipelineReplied: 0,
   pipelineInterested: 0,
-  pipelineMeetings: 0,
   sendersHealthy: 0,
   sendersWarning: 0,
   sendersPaused: 0,
   sendersBlocked: 0,
   sendersSessionExpired: 0,
   sendersActiveTotal: 0,
+  linkedinAccountsActive: 0,
+  linkedinAccountsExpired: 0,
+  linkedinAccountsTotal: 0,
   campaignsActive: 0,
   campaignsPaused: 0,
   campaignsDraft: 0,
@@ -78,8 +82,6 @@ function buildWorkspaceSummaries(
   workspaces: WorkspaceOption[],
   kpis: DashboardKPIs
 ): WorkspaceSummary[] {
-  // When viewing "all", we don't have per-workspace breakdown from this endpoint.
-  // Return minimal summary rows for each workspace.
   return workspaces.map((ws) => ({
     slug: ws.slug,
     name: ws.name,
@@ -98,33 +100,25 @@ function KpiSkeleton() {
 function DashboardSkeleton() {
   return (
     <div className="space-y-6">
-      {/* System Health + Pipeline row */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {Array.from({ length: 3 }).map((_, i) => <KpiSkeleton key={i} />)}
-      </div>
+      {/* Health row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)}
+        {Array.from({ length: 4 }).map((_, i) => (
+          <KpiSkeleton key={i} />
+        ))}
       </div>
-      {/* Email card */}
+      {/* Combined chart */}
       <Card>
-        <CardHeader><div className="h-4 w-16 bg-muted rounded animate-pulse" /></CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)}
-          </div>
-          <div className="h-[240px] bg-muted rounded animate-pulse" />
+        <CardHeader>
+          <div className="h-4 w-32 bg-muted rounded animate-pulse" />
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-[300px] rounded-lg" />
         </CardContent>
       </Card>
-      {/* LinkedIn card */}
-      <Card>
-        <CardHeader><div className="h-4 w-20 bg-muted rounded animate-pulse" /></CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)}
-          </div>
-          <div className="h-[240px] bg-muted rounded animate-pulse" />
-        </CardContent>
-      </Card>
+      {/* Collapsible section skeletons */}
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Skeleton key={i} className="h-12 rounded-lg" />
+      ))}
     </div>
   );
 }
@@ -134,6 +128,8 @@ export default function DashboardPage() {
   const [days] = useQueryState("days", { defaultValue: "7" });
 
   const [data, setData] = useState<DashboardStatsResponse | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [signalsData, setSignalsData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -142,10 +138,18 @@ export default function DashboardPage() {
     setError(null);
     try {
       const params = new URLSearchParams({ workspace, days });
-      const res = await fetch(`/api/dashboard/stats?${params.toString()}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = (await res.json()) as DashboardStatsResponse;
-      setData(json);
+      const [statsRes, signalsRes] = await Promise.all([
+        fetch(`/api/dashboard/stats?${params.toString()}`),
+        fetch(`/api/signals?workspace=${workspace}&limit=20`),
+      ]);
+      if (!statsRes.ok) throw new Error(`HTTP ${statsRes.status}`);
+      const statsJson = (await statsRes.json()) as DashboardStatsResponse;
+      setData(statsJson);
+
+      if (signalsRes.ok) {
+        const signalsJson = await signalsRes.json();
+        setSignalsData(signalsJson);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load dashboard");
     } finally {
@@ -178,7 +182,7 @@ export default function DashboardPage() {
 
   return (
     <div>
-      {/* 1. Header + Alerts — unchanged */}
+      {/* Header */}
       <Header
         title="Dashboard"
         description={`${days === "7" ? "Last 7 days" : days === "14" ? "Last 14 days" : days === "30" ? "Last 30 days" : "Last 90 days"} ${workspace !== "all" ? `· ${workspace}` : "· all campaigns"}`}
@@ -196,71 +200,79 @@ export default function DashboardPage() {
           <AlertsSection alerts={alerts} />
         )}
 
+        {error && (
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+            {error}
+          </div>
+        )}
+
         {loading ? (
           <DashboardSkeleton />
-        ) : (
+        ) : !error ? (
           <>
-            {/* 1. System Health */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {/* Section 1: Health & Alerts */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Link href="/senders" className="block">
                 <MetricCard
                   label="Sender Health"
                   value={`${kpis.sendersHealthy}/${kpis.sendersActiveTotal || kpis.sendersHealthy + unhealthySenders}`}
                   trend={unhealthySenders > 0 ? "warning" : "up"}
                   detail={unhealthySenders > 0 ? `${unhealthySenders} need attention` : "All healthy"}
+                  density="compact"
                 />
               </Link>
               <MetricCard
-                label="Active Campaigns"
-                value={kpis.campaignsActive.toLocaleString()}
-                trend={kpis.campaignsActive > 0 ? "up" : "neutral"}
-                detail={`${kpis.campaignsPaused} paused, ${kpis.campaignsDraft} drafts`}
+                label="LinkedIn Accounts"
+                value={`${kpis.linkedinAccountsActive}/${kpis.linkedinAccountsTotal}`}
+                trend={kpis.linkedinAccountsExpired > 0 ? "warning" : "up"}
+                detail={kpis.linkedinAccountsExpired > 0 ? `${kpis.linkedinAccountsExpired} expired` : "All active"}
+                density="compact"
               />
               <MetricCard
                 label="Inboxes"
                 value={kpis.inboxesConnected.toLocaleString()}
                 trend={kpis.inboxesDisconnected > 0 ? "warning" : "up"}
                 detail={kpis.inboxesDisconnected > 0 ? `${kpis.inboxesDisconnected} disconnected` : "All connected"}
+                density="compact"
+              />
+              <MetricCard
+                label="Active Campaigns"
+                value={kpis.campaignsActive.toLocaleString()}
+                trend={kpis.campaignsActive > 0 ? "up" : "neutral"}
+                detail={`${kpis.campaignsPaused} paused, ${kpis.campaignsDraft} drafts`}
+                density="compact"
               />
             </div>
 
-            {/* 2. Pipeline Summary */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <MetricCard
-                label="Contacted"
-                value={kpis.pipelineContacted.toLocaleString()}
-                trend="neutral"
-              />
-              <MetricCard
-                label="Replied"
-                value={kpis.pipelineReplied.toLocaleString()}
-                trend={kpis.pipelineReplied > 0 ? "up" : "neutral"}
-                detail={
-                  kpis.pipelineContacted > 0
-                    ? `${((kpis.pipelineReplied / kpis.pipelineContacted) * 100).toFixed(1)}% reply rate`
-                    : undefined
-                }
-              />
-              <MetricCard
-                label="Interested"
-                value={kpis.pipelineInterested.toLocaleString()}
-                trend={kpis.pipelineInterested > 0 ? "up" : "neutral"}
-              />
-              <MetricCard
-                label="Meetings Booked"
-                value={kpis.pipelineMeetings.toLocaleString()}
-                trend={kpis.pipelineMeetings > 0 ? "up" : "neutral"}
-                featured
-              />
-            </div>
-
-            {/* 3. Email Performance */}
+            {/* Section 2: Combined Activity Chart */}
             <Card>
               <CardHeader className="flex-row items-center justify-between">
-                <CardTitle>Email</CardTitle>
-                <ActivityChartLegend />
+                <CardTitle>Activity Overview</CardTitle>
+                <CombinedChartLegend />
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent>
+                {timeSeries.length === 0 && linkedInTimeSeries.length === 0 ? (
+                  <div className="h-[240px] flex items-center justify-center text-sm text-muted-foreground">
+                    No activity data for this period
+                  </div>
+                ) : (
+                  <CombinedChart emailData={timeSeries} linkedInData={linkedInTimeSeries} />
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Section 3: Email (collapsible, default open) */}
+            <CollapsibleSection
+              id="email"
+              title="Email"
+              collapsedSummary={
+                <span className="text-xs text-muted-foreground">
+                  {kpis.emailSent.toLocaleString()} sent · {replyRate === "—" ? "—" : `${replyRate}%`} reply rate
+                </span>
+              }
+              actions={<ActivityChartLegend />}
+            >
+              <div className="space-y-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <MetricCard
                     label="Reply Rate"
@@ -295,27 +307,28 @@ export default function DashboardPage() {
                     density="compact"
                   />
                 </div>
-                {error ? (
+                {timeSeries.length === 0 ? (
                   <div className="h-[240px] flex items-center justify-center text-sm text-muted-foreground">
-                    {error}
-                  </div>
-                ) : timeSeries.length === 0 ? (
-                  <div className="h-[240px] flex items-center justify-center text-sm text-muted-foreground">
-                    No activity data for this period
+                    No email activity for this period
                   </div>
                 ) : (
                   <ActivityChart data={timeSeries} />
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </CollapsibleSection>
 
-            {/* 4. LinkedIn Activity */}
-            <Card>
-              <CardHeader className="flex-row items-center justify-between">
-                <CardTitle>LinkedIn</CardTitle>
-                <LinkedInChartLegend />
-              </CardHeader>
-              <CardContent className="space-y-4">
+            {/* Section 4: LinkedIn (collapsible, default open) */}
+            <CollapsibleSection
+              id="linkedin"
+              title="LinkedIn"
+              collapsedSummary={
+                <span className="text-xs text-muted-foreground">
+                  {(kpis.linkedinConnect + kpis.linkedinMessage + kpis.linkedinProfileView).toLocaleString()} actions · {kpis.linkedinConnect.toLocaleString()} connections
+                </span>
+              }
+              actions={<LinkedInChartLegend />}
+            >
+              <div className="space-y-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <MetricCard
                     label="Profile Views"
@@ -350,32 +363,99 @@ export default function DashboardPage() {
                 ) : (
                   <LinkedInChart data={linkedInTimeSeries} />
                 )}
-              </CardContent>
-            </Card>
-          </>
-        )}
-
-        {/* 6. Workspace Overview — unchanged */}
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              Workspace Overview
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {loading ? (
-              <div className="p-6 space-y-2">
-                {Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-10 w-full" />
-                ))}
               </div>
-            ) : (
-              <OverviewTable
-                summaries={buildWorkspaceSummaries(workspaces, kpis)}
-              />
-            )}
-          </CardContent>
-        </Card>
+            </CollapsibleSection>
+
+            {/* Section 5: Signals (collapsible, default open) */}
+            <CollapsibleSection
+              id="signals"
+              title="Signals"
+              collapsedSummary={
+                signalsData ? (
+                  <span className="text-xs text-muted-foreground">
+                    {signalsData.summary?.totalSignals ?? 0} signals (7d) · ${(signalsData.summary?.totalWeeklyUsd ?? 0).toFixed(2)} spend
+                  </span>
+                ) : null
+              }
+            >
+              <div className="grid grid-cols-3 gap-3">
+                <MetricCard
+                  label="Signals (7d)"
+                  value={signalsData?.summary?.totalSignals?.toLocaleString() ?? "—"}
+                  trend={(signalsData?.summary?.totalSignals ?? 0) > 0 ? "up" : "neutral"}
+                  density="compact"
+                />
+                <MetricCard
+                  label="Daily Spend"
+                  value={signalsData ? `$${(signalsData.summary?.totalDailyUsd ?? 0).toFixed(2)}` : "—"}
+                  trend="neutral"
+                  density="compact"
+                />
+                <MetricCard
+                  label="Weekly Spend"
+                  value={signalsData ? `$${(signalsData.summary?.totalWeeklyUsd ?? 0).toFixed(2)}` : "—"}
+                  trend="neutral"
+                  density="compact"
+                />
+              </div>
+            </CollapsibleSection>
+
+            {/* Section 6: Pipeline (collapsible, default open) */}
+            <CollapsibleSection
+              id="pipeline"
+              title="Pipeline"
+              collapsedSummary={
+                <span className="text-xs text-muted-foreground">
+                  {kpis.pipelineContacted.toLocaleString()} contacted · {kpis.pipelineReplied.toLocaleString()} replied · {kpis.pipelineInterested.toLocaleString()} interested
+                </span>
+              }
+            >
+              <div className="grid grid-cols-3 gap-3">
+                <MetricCard
+                  label="Contacted"
+                  value={kpis.pipelineContacted.toLocaleString()}
+                  trend="neutral"
+                  density="compact"
+                />
+                <MetricCard
+                  label="Replied"
+                  value={kpis.pipelineReplied.toLocaleString()}
+                  trend={kpis.pipelineReplied > 0 ? "up" : "neutral"}
+                  detail={
+                    kpis.pipelineContacted > 0
+                      ? `${((kpis.pipelineReplied / kpis.pipelineContacted) * 100).toFixed(1)}% reply rate`
+                      : undefined
+                  }
+                  density="compact"
+                />
+                <MetricCard
+                  label="Interested"
+                  value={kpis.pipelineInterested.toLocaleString()}
+                  trend={kpis.pipelineInterested > 0 ? "up" : "neutral"}
+                  density="compact"
+                />
+              </div>
+            </CollapsibleSection>
+
+            {/* Section 7: Client Overview (collapsible, default COLLAPSED) */}
+            <CollapsibleSection
+              id="clients"
+              title="Client Overview"
+              defaultCollapsed
+              collapsedSummary={
+                <span className="text-xs text-muted-foreground">
+                  {workspaces.length} workspaces
+                </span>
+              }
+            >
+              <Card>
+                <CardContent className="p-0">
+                  <OverviewTable summaries={buildWorkspaceSummaries(workspaces, kpis)} />
+                </CardContent>
+              </Card>
+            </CollapsibleSection>
+          </>
+        ) : null}
       </div>
     </div>
   );

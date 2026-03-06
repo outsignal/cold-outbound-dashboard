@@ -11,6 +11,7 @@ const alertTypeLabel: Record<DashboardAlert["type"], string> = {
   flagged_sender: "Sender",
   failed_agent_run: "Agent Run",
   disconnected_inbox: "Inbox",
+  disconnected_linkedin: "LinkedIn",
 };
 
 export function AlertsSection({ alerts }: AlertsSectionProps) {
