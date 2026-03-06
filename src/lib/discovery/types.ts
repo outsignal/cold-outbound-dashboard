@@ -20,6 +20,8 @@ export interface DiscoveryFilter {
   keywords?: string[];
   /** Target specific company domains */
   companyDomains?: string[];
+  /** Company keyword filters (e.g., ["fit-out", "interior design"]) */
+  companyKeywords?: string[];
 }
 
 export interface DiscoveredPersonResult {

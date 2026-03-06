@@ -144,6 +144,10 @@ export class ProspeoSearchAdapter implements DiscoveryAdapter {
       body.keywords = { include: filters.keywords };
     }
 
+    if (filters.companyKeywords?.length) {
+      body.company_keywords = { include: filters.companyKeywords };
+    }
+
     // Merge Prospeo-specific extras (e.g., company_funding, person_department)
     if (extras) {
       Object.assign(body, extras);
