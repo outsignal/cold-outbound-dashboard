@@ -56,9 +56,10 @@ const emptyKpis: DashboardKPIs = {
   campaignsPaused: 0,
   campaignsCompleted: 0,
   campaignsDraft: 0,
-  inboxesActive: 0,
   inboxesTotal: 0,
-  inboxesIssues: 0,
+  inboxesHealthy: 0,
+  inboxesWarning: 0,
+  inboxesCritical: 0,
   workerOnline: false,
   workerLastPollAt: null,
 };
@@ -214,8 +215,8 @@ export default function DashboardPage() {
                   <MetricCard
                     label="Inboxes"
                     value={`${kpis.inboxesTotal} total`}
-                    trend={kpis.inboxesIssues > 0 || Number(bounceRate) > 5 ? "warning" : kpis.inboxesActive > 0 ? "up" : "neutral"}
-                    detail={`${kpis.inboxesActive} connected · ${kpis.inboxesIssues} disconnected${Number(bounceRate) > 5 ? ` · ${bounceRate}% bounce` : ""}`}
+                    trend={kpis.inboxesCritical > 0 ? "down" : kpis.inboxesWarning > 0 ? "warning" : kpis.inboxesHealthy > 0 ? "up" : "neutral"}
+                    detail={`${kpis.inboxesHealthy} healthy · ${kpis.inboxesWarning} warning · ${kpis.inboxesCritical} critical`}
                     density="compact"
                     className="h-full"
                   />
@@ -243,14 +244,19 @@ export default function DashboardPage() {
                     density="compact"
                     className="h-full"
                   />
-                  <MetricCard
-                    label="Worker"
-                    value={kpis.workerOnline ? "Online" : "Offline"}
-                    trend={kpis.workerOnline ? "up" : "down"}
-                    detail={workerDetail}
-                    density="compact"
-                    className="h-full"
-                  />
+                  <Card className="h-full border-t-2 px-4 py-3" style={{ borderTopColor: kpis.workerOnline ? "#10b981" : "#ef4444" }}>
+                    <div className="flex items-center justify-between">
+                      <p className="text-muted-foreground text-xs font-medium">Worker</p>
+                      <span className="relative flex h-3 w-3">
+                        {kpis.workerOnline && (
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                        )}
+                        <span className={`relative inline-flex h-3 w-3 rounded-full ${kpis.workerOnline ? "bg-emerald-500" : "bg-red-500"}`} />
+                      </span>
+                    </div>
+                    <p className="mt-1 text-lg font-semibold">{kpis.workerOnline ? "Online" : "Offline"}</p>
+                    <p className="text-muted-foreground mt-0.5 text-xs">{workerDetail}</p>
+                  </Card>
                 </div>
               );
             })()}

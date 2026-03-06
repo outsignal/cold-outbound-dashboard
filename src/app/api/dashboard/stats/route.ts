@@ -38,9 +38,10 @@ export interface DashboardKPIs {
   campaignsCompleted: number;
   campaignsDraft: number;
   // Inbox KPIs (sender email accounts from EmailBison)
-  inboxesActive: number;
   inboxesTotal: number;
-  inboxesIssues: number;
+  inboxesHealthy: number;
+  inboxesWarning: number;
+  inboxesCritical: number;
   // Worker status
   workerOnline: boolean;
   workerLastPollAt: string | null;
@@ -220,18 +221,35 @@ export async function GET(request: NextRequest) {
     );
 
     let inboxesTotal = 0;
-    let inboxesActive = 0;
-    let inboxesIssues = 0;
-    for (const result of senderEmailResults) {
+    let inboxesHealthy = 0;
+    let inboxesWarning = 0;
+    let inboxesCritical = 0;
+    const inboxAlerts: { email: string; workspace: string; reason: string; severity: "warning" | "error" }[] = [];
+
+    for (let idx = 0; idx < senderEmailResults.length; idx++) {
+      const result = senderEmailResults[idx];
+      const wsName = filteredWsForInbox[idx]?.name ?? "Unknown";
       if (result.status === "fulfilled") {
         const senders = result.value;
         inboxesTotal += senders.length;
         for (const s of senders) {
           const status = (s.status ?? "").toLowerCase();
-          if (status === "connected" || status === "active") {
-            inboxesActive++;
+          if (status === "disconnected") {
+            inboxesCritical++;
+            inboxAlerts.push({ email: s.email, workspace: wsName, reason: "Disconnected", severity: "error" });
           } else {
-            inboxesIssues++;
+            const sent = s.emails_sent_count ?? 0;
+            const bounced = s.bounced_count ?? 0;
+            const bounceRate = sent > 0 ? (bounced / sent) * 100 : 0;
+            if (bounceRate > 5) {
+              inboxesCritical++;
+              inboxAlerts.push({ email: s.email, workspace: wsName, reason: `${bounceRate.toFixed(1)}% bounce rate`, severity: "error" });
+            } else if (bounceRate > 2) {
+              inboxesWarning++;
+              inboxAlerts.push({ email: s.email, workspace: wsName, reason: `${bounceRate.toFixed(1)}% bounce rate`, severity: "warning" });
+            } else {
+              inboxesHealthy++;
+            }
           }
         }
       }
@@ -435,9 +453,10 @@ export async function GET(request: NextRequest) {
       campaignsPaused: campaignMap["paused"] ?? 0,
       campaignsDraft: campaignMap["draft"] ?? 0,
       campaignsCompleted: campaignMap["completed"] ?? 0,
-      inboxesActive,
       inboxesTotal,
-      inboxesIssues,
+      inboxesHealthy,
+      inboxesWarning,
+      inboxesCritical,
       workerOnline,
       workerLastPollAt: workerLastPollAt?.toISOString() ?? null,
     };
