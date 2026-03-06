@@ -24,6 +24,7 @@ export interface WebhookEvent {
   senderEmail: string | null;
   payload: string;
   receivedAt: string;
+  isAutomated: boolean;
 }
 
 interface WebhookLogTableProps {
@@ -191,7 +192,14 @@ function WebhookEventRow({ event }: { event: WebhookEvent }) {
 
         {/* Event Type */}
         <TableCell className="py-1.5 px-2">
-          <EventTypeBadge eventType={event.eventType} />
+          <span className="inline-flex items-center gap-1">
+            <EventTypeBadge eventType={event.eventType} />
+            {event.isAutomated && (
+              <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                Auto
+              </span>
+            )}
+          </span>
         </TableCell>
 
         {/* Lead Email */}

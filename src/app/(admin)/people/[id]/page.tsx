@@ -116,14 +116,18 @@ export default async function PersonDetailPage({
   for (const ev of webhookEvents) {
     let payload: Record<string, unknown> = {};
     try { payload = JSON.parse(ev.payload) as Record<string, unknown>; } catch {}
+
+    const isReplyType = ["LEAD_REPLIED", "LEAD_INTERESTED", "UNTRACKED_REPLY_RECEIVED"].includes(ev.eventType);
+    const isAutomated = ev.isAutomated && isReplyType;
+
     allEvents.push({
       id: ev.id,
-      type: mapWebhookType(ev.eventType),
-      title: mapWebhookTitle(ev.eventType),
+      type: isAutomated ? "email_auto_reply" : mapWebhookType(ev.eventType),
+      title: isAutomated ? `${mapWebhookTitle(ev.eventType)} (OOO)` : mapWebhookTitle(ev.eventType),
       detail: (payload.subject as string) ?? (payload.campaignName as string) ?? undefined,
       workspace: ev.workspace,
       timestamp: ev.receivedAt.toISOString(),
-      metadata: { campaignId: ev.campaignId, senderEmail: ev.senderEmail },
+      metadata: { campaignId: ev.campaignId, senderEmail: ev.senderEmail, isAutomated: ev.isAutomated },
     });
   }
 
@@ -242,7 +246,11 @@ export default async function PersonDetailPage({
                             {new Date(ev.timestamp).toLocaleDateString("en-GB", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" size="xs">{ev.type.replace("email_", "")}</Badge>
+                            {ev.type === "email_auto_reply" ? (
+                              <Badge variant="outline" size="xs" className="text-muted-foreground border-muted-foreground/30">replied (OOO)</Badge>
+                            ) : (
+                              <Badge variant="outline" size="xs">{ev.type.replace("email_", "")}</Badge>
+                            )}
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground max-w-[300px] truncate">{ev.detail ?? "—"}</TableCell>
                           <TableCell className="text-[10px] text-muted-foreground font-mono">{ev.workspace ?? "—"}</TableCell>

@@ -10,6 +10,7 @@ export interface TimelineEvent {
     | "email_sent"
     | "email_opened"
     | "email_replied"
+    | "email_auto_reply"
     | "email_bounced"
     | "linkedin_connect"
     | "linkedin_message"
@@ -136,10 +137,13 @@ export async function GET(
       (payload.campaignName as string) ??
       undefined;
 
+    const isReplyType = ["LEAD_REPLIED", "LEAD_INTERESTED", "UNTRACKED_REPLY_RECEIVED"].includes(ev.eventType);
+    const isAutomated = ev.isAutomated && isReplyType;
+
     events.push({
       id: ev.id,
-      type: mapWebhookEventType(ev.eventType),
-      title: mapWebhookEventTitle(ev.eventType),
+      type: isAutomated ? "email_auto_reply" : mapWebhookEventType(ev.eventType),
+      title: isAutomated ? `${mapWebhookEventTitle(ev.eventType)} (OOO)` : mapWebhookEventTitle(ev.eventType),
       detail: subject,
       workspace: ev.workspace,
       timestamp: ev.receivedAt.toISOString(),
@@ -147,6 +151,7 @@ export async function GET(
         campaignId: ev.campaignId,
         senderEmail: ev.senderEmail,
         eventType: ev.eventType,
+        isAutomated: ev.isAutomated,
       },
     });
   }

@@ -19,6 +19,7 @@ export interface TimelineEvent {
     | "email_sent"
     | "email_opened"
     | "email_replied"
+    | "email_auto_reply"
     | "email_bounced"
     | "linkedin_connect"
     | "linkedin_message"
@@ -42,6 +43,8 @@ function eventConfig(type: TimelineEvent["type"]) {
       return { icon: Eye, color: "text-green-500", dot: "bg-green-500" };
     case "email_replied":
       return { icon: MessageSquare, color: "text-brand", dot: "bg-brand" };
+    case "email_auto_reply":
+      return { icon: MessageSquare, color: "text-muted-foreground", dot: "bg-muted-foreground" };
     case "email_bounced":
       return { icon: AlertCircle, color: "text-red-500", dot: "bg-red-500" };
     case "linkedin_connect":

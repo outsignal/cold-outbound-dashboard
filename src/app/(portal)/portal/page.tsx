@@ -98,6 +98,7 @@ export default async function PortalDashboardPage() {
       eventType: {
         in: ["EMAIL_SENT", "LEAD_REPLIED", "LEAD_INTERESTED"],
       },
+      isAutomated: false,
     },
     select: {
       receivedAt: true,
