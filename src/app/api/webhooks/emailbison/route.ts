@@ -8,6 +8,8 @@ import { assignSenderForPerson } from "@/lib/linkedin/sender";
 import { evaluateSequenceRules } from "@/lib/linkedin/sequencing";
 import { rateLimit } from "@/lib/rate-limit";
 
+export const maxDuration = 60;
+
 const webhookLimiter = rateLimit({ windowMs: 60_000, max: 60 });
 
 /**
@@ -321,21 +323,7 @@ export async function POST(request: NextRequest) {
       emailSubject.includes("test email");
 
     if (notifyEvents.includes(eventType) && !automatedReply && !isNonRealReply) {
-      let suggestedResponse: string | null = null;
-
-      // Generate reply suggestion for reply/interested events (non-blocking)
-      const replyTriggerEvents = ["LEAD_REPLIED", "LEAD_INTERESTED"];
-      if (replyTriggerEvents.includes(eventType) && textBody) {
-        suggestedResponse = await generateReplySuggestion({
-          workspaceSlug,
-          leadName,
-          leadEmail: leadEmail ?? "unknown",
-          subject,
-          replyBody: textBody,
-          interested,
-        });
-      }
-
+      // 1. Send notification IMMEDIATELY (no waiting for AI)
       try {
         await notifyReply({
           workspaceSlug,
@@ -345,10 +333,38 @@ export async function POST(request: NextRequest) {
           subject,
           bodyPreview: textBody,
           interested,
-          suggestedResponse,
+          suggestedResponse: null, // send now, follow up with suggestion
         });
       } catch (err) {
         console.error("Notification error:", err);
+      }
+
+      // 2. Generate reply suggestion in background (non-blocking for the response)
+      const replyTriggerEvents = ["LEAD_REPLIED", "LEAD_INTERESTED"];
+      if (replyTriggerEvents.includes(eventType) && textBody) {
+        generateReplySuggestion({
+          workspaceSlug,
+          leadName,
+          leadEmail: leadEmail ?? "unknown",
+          subject,
+          replyBody: textBody,
+          interested,
+        }).then(async (suggestion) => {
+          if (suggestion) {
+            // Send follow-up Slack message with AI suggestion
+            const { postMessage } = await import("@/lib/slack");
+            const workspace = await prisma.workspace.findUnique({ where: { slug: workspaceSlug } });
+            if (workspace?.slackChannelId) {
+              await postMessage(workspace.slackChannelId, `*Suggested Response for ${leadName || leadEmail}:*\n${suggestion}`).catch(() => {});
+            }
+            const opsChannelId = process.env.OPS_SLACK_CHANNEL_ID;
+            if (opsChannelId) {
+              await postMessage(opsChannelId, `*Suggested Response for ${leadName || leadEmail}:*\n${suggestion}`).catch(() => {});
+            }
+          }
+        }).catch((err) => {
+          console.error("Reply suggestion follow-up error:", err);
+        });
       }
 
       if (eventType === "LEAD_INTERESTED") {
