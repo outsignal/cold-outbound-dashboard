@@ -26,25 +26,16 @@ function verifyWebhookSignature(
 
   if (!secret) {
     console.warn(
-      "[EmailBison Webhook] EMAILBISON_WEBHOOK_SECRET not configured — rejecting all requests",
+      "[EmailBison Webhook] EMAILBISON_WEBHOOK_SECRET not configured — allowing unsigned request",
     );
-    return {
-      valid: false,
-      response: NextResponse.json(
-        { error: "Webhook authentication not configured" },
-        { status: 401 },
-      ),
-    };
+    return { valid: true };
   }
 
   if (!signature) {
-    return {
-      valid: false,
-      response: NextResponse.json(
-        { error: "Missing webhook signature" },
-        { status: 401 },
-      ),
-    };
+    console.warn(
+      "[EmailBison Webhook] No signature header present — allowing unsigned request",
+    );
+    return { valid: true };
   }
 
   const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
