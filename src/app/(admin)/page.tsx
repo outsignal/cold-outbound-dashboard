@@ -5,10 +5,8 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState, useCallback } from "react";
 import { useQueryState } from "nuqs";
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import { Header } from "@/components/layout/header";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { ClientFilter } from "@/components/dashboard/client-filter";
@@ -95,67 +93,41 @@ function KpiSkeleton() {
   return <Skeleton className="h-[88px] rounded-lg" />;
 }
 
-function SecondaryKpis({
-  kpis,
-  bounceRate,
-}: {
-  kpis: DashboardKPIs;
-  bounceRate: string;
-}) {
-  const [open, setOpen] = useState(false);
-
+function DashboardSkeleton() {
   return (
-    <div>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => setOpen((v) => !v)}
-        className="text-xs text-muted-foreground hover:text-foreground gap-1.5"
-      >
-        <ChevronDown
-          className={cn(
-            "h-3.5 w-3.5 transition-transform duration-200",
-            open && "rotate-180"
-          )}
-        />
-        {open ? "Hide details" : "More stats"}
-      </Button>
-      {open && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mt-2">
-          <MetricCard
-            label="Bounces"
-            value={kpis.emailBounced.toLocaleString()}
-            trend={kpis.emailBounced > 0 ? "down" : "neutral"}
-            detail={kpis.emailBounced > 0 ? `${bounceRate}% bounce rate` : "Clean"}
-            density="compact"
-          />
-          <MetricCard
-            label="Contacted"
-            value={kpis.pipelineContacted.toLocaleString()}
-            trend="neutral"
-            density="compact"
-          />
-          <MetricCard
-            label="LI Connections"
-            value={kpis.linkedinConnect.toLocaleString()}
-            trend={kpis.linkedinConnect > 0 ? "up" : "neutral"}
-            density="compact"
-          />
-          <MetricCard
-            label="LI Messages"
-            value={kpis.linkedinMessage.toLocaleString()}
-            trend={kpis.linkedinMessage > 0 ? "up" : "neutral"}
-            density="compact"
-          />
-          <MetricCard
-            label="Inboxes"
-            value={kpis.inboxesConnected.toLocaleString()}
-            trend={kpis.inboxesDisconnected > 0 ? "warning" : "up"}
-            detail={kpis.inboxesDisconnected > 0 ? `${kpis.inboxesDisconnected} disconnected` : "All connected"}
-            density="compact"
-          />
-        </div>
-      )}
+    <div className="space-y-6">
+      {/* Pipeline row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)}
+      </div>
+      {/* Email card */}
+      <Card>
+        <CardHeader><div className="h-4 w-16 bg-muted rounded animate-pulse" /></CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)}
+          </div>
+          <div className="h-[240px] bg-muted rounded animate-pulse" />
+        </CardContent>
+      </Card>
+      {/* LinkedIn card */}
+      <Card>
+        <CardHeader><div className="h-4 w-20 bg-muted rounded animate-pulse" /></CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)}
+          </div>
+        </CardContent>
+      </Card>
+      {/* System Health card */}
+      <Card>
+        <CardHeader><div className="h-4 w-28 bg-muted rounded animate-pulse" /></CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {Array.from({ length: 3 }).map((_, i) => <KpiSkeleton key={i} />)}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -208,6 +180,7 @@ export default function DashboardPage() {
 
   return (
     <div>
+      {/* 1. Header + Alerts — unchanged */}
       <Header
         title="Dashboard"
         description={`${days === "7" ? "Last 7 days" : days === "14" ? "Last 14 days" : days === "30" ? "Last 30 days" : "Last 90 days"} ${workspace !== "all" ? `· ${workspace}` : "· all campaigns"}`}
@@ -220,96 +193,173 @@ export default function DashboardPage() {
       />
 
       <div className="p-6 space-y-6">
-        {/* Alerts — shown above KPIs so critical items are immediately visible */}
+        {/* Alerts */}
         {!loading && alerts.length > 0 && (
           <AlertsSection alerts={alerts} />
         )}
 
-        {/* Primary KPIs — the 6 metrics that matter most */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {loading ? (
-            Array.from({ length: 6 }).map((_, i) => <KpiSkeleton key={i} />)
-          ) : (
-            <>
+        {loading ? (
+          <DashboardSkeleton />
+        ) : (
+          <>
+            {/* 2. Pipeline Summary */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <MetricCard
-                label="Reply Rate"
-                value={replyRate === "—" ? "—" : `${replyRate}%`}
-                trend={totalReplies > 0 ? "up" : "neutral"}
-                detail={`${totalReplies.toLocaleString()} replies from ${kpis.emailSent.toLocaleString()} sent`}
-                density="compact"
-                featured
+                label="Contacted"
+                value={kpis.pipelineContacted.toLocaleString()}
+                trend="neutral"
               />
               <MetricCard
-                label="Emails Sent"
-                value={kpis.emailSent.toLocaleString()}
-                trend="neutral"
-                density="compact"
+                label="Replied"
+                value={kpis.pipelineReplied.toLocaleString()}
+                trend={kpis.pipelineReplied > 0 ? "up" : "neutral"}
+                detail={
+                  kpis.pipelineContacted > 0
+                    ? `${((kpis.pipelineReplied / kpis.pipelineContacted) * 100).toFixed(1)}% reply rate`
+                    : undefined
+                }
               />
               <MetricCard
                 label="Interested"
                 value={kpis.pipelineInterested.toLocaleString()}
                 trend={kpis.pipelineInterested > 0 ? "up" : "neutral"}
-                density="compact"
               />
               <MetricCard
                 label="Meetings Booked"
                 value={kpis.pipelineMeetings.toLocaleString()}
                 trend={kpis.pipelineMeetings > 0 ? "up" : "neutral"}
-                density="compact"
+                featured
               />
-              <MetricCard
-                label="Active Campaigns"
-                value={kpis.campaignsActive.toLocaleString()}
-                trend={kpis.campaignsActive > 0 ? "up" : "neutral"}
-                detail={kpis.campaignsPaused > 0 ? `${kpis.campaignsPaused} paused` : undefined}
-                density="compact"
-              />
-              <Link href="/senders" className="block">
-                <MetricCard
-                  label="Sender Health"
-                  value={`${kpis.sendersHealthy}/${kpis.sendersActiveTotal || kpis.sendersHealthy + unhealthySenders}`}
-                  trend={unhealthySenders > 0 ? "warning" : "up"}
-                  detail={unhealthySenders > 0 ? `${unhealthySenders} need attention` : "All healthy"}
-                  density="compact"
-                />
-              </Link>
-            </>
-          )}
-        </div>
+            </div>
 
-        {/* Secondary KPIs — expandable for deeper drill-down */}
-        {!loading && (
-          <SecondaryKpis kpis={kpis} bounceRate={bounceRate} />
+            {/* 3. Email Performance */}
+            <Card>
+              <CardHeader className="flex-row items-center justify-between">
+                <CardTitle>Email</CardTitle>
+                <ActivityChartLegend />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <MetricCard
+                    label="Reply Rate"
+                    value={replyRate === "—" ? "—" : `${replyRate}%`}
+                    trend={Number(replyRate) > 0 ? "up" : "neutral"}
+                    detail={`${totalReplies.toLocaleString()} replies from ${kpis.emailSent.toLocaleString()} sent`}
+                    density="compact"
+                    featured
+                  />
+                  <MetricCard
+                    label="Emails Sent"
+                    value={kpis.emailSent.toLocaleString()}
+                    trend="neutral"
+                    density="compact"
+                  />
+                  <MetricCard
+                    label="Opened"
+                    value={kpis.emailOpened.toLocaleString()}
+                    trend="neutral"
+                    detail={
+                      kpis.emailSent > 0
+                        ? `${((kpis.emailOpened / kpis.emailSent) * 100).toFixed(1)}% open rate`
+                        : undefined
+                    }
+                    density="compact"
+                  />
+                  <MetricCard
+                    label="Bounces"
+                    value={kpis.emailBounced.toLocaleString()}
+                    trend={kpis.emailBounced > 0 ? "down" : "neutral"}
+                    detail={`${bounceRate}% bounce rate`}
+                    density="compact"
+                  />
+                </div>
+                {error ? (
+                  <div className="h-[240px] flex items-center justify-center text-sm text-muted-foreground">
+                    {error}
+                  </div>
+                ) : timeSeries.length === 0 ? (
+                  <div className="h-[240px] flex items-center justify-center text-sm text-muted-foreground">
+                    No activity data for this period
+                  </div>
+                ) : (
+                  <ActivityChart data={timeSeries} />
+                )}
+              </CardContent>
+            </Card>
+
+            {/* 4. LinkedIn Activity */}
+            <Card>
+              <CardHeader>
+                <CardTitle>LinkedIn</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <MetricCard
+                    label="Profile Views"
+                    value={kpis.linkedinProfileView.toLocaleString()}
+                    trend={kpis.linkedinProfileView > 0 ? "up" : "neutral"}
+                    density="compact"
+                  />
+                  <MetricCard
+                    label="Connections Sent"
+                    value={kpis.linkedinConnect.toLocaleString()}
+                    trend={kpis.linkedinConnect > 0 ? "up" : "neutral"}
+                    detail={`${kpis.linkedinPending} pending`}
+                    density="compact"
+                  />
+                  <MetricCard
+                    label="Messages Sent"
+                    value={kpis.linkedinMessage.toLocaleString()}
+                    trend={kpis.linkedinMessage > 0 ? "up" : "neutral"}
+                    density="compact"
+                  />
+                  <MetricCard
+                    label="Failed Actions"
+                    value={kpis.linkedinFailed.toLocaleString()}
+                    trend={kpis.linkedinFailed > 0 ? "warning" : "neutral"}
+                    density="compact"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 5. System Health */}
+            <Card>
+              <CardHeader>
+                <CardTitle>System Health</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  <Link href="/senders" className="block">
+                    <MetricCard
+                      label="Sender Health"
+                      value={`${kpis.sendersHealthy}/${kpis.sendersActiveTotal || kpis.sendersHealthy + unhealthySenders}`}
+                      trend={unhealthySenders > 0 ? "warning" : "up"}
+                      detail={unhealthySenders > 0 ? `${unhealthySenders} need attention` : "All healthy"}
+                      density="compact"
+                    />
+                  </Link>
+                  <MetricCard
+                    label="Active Campaigns"
+                    value={kpis.campaignsActive.toLocaleString()}
+                    trend={kpis.campaignsActive > 0 ? "up" : "neutral"}
+                    detail={`${kpis.campaignsPaused} paused, ${kpis.campaignsDraft} drafts`}
+                    density="compact"
+                  />
+                  <MetricCard
+                    label="Inboxes"
+                    value={kpis.inboxesConnected.toLocaleString()}
+                    trend={kpis.inboxesDisconnected > 0 ? "warning" : "up"}
+                    detail={kpis.inboxesDisconnected > 0 ? `${kpis.inboxesDisconnected} disconnected` : "All connected"}
+                    density="compact"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </>
         )}
 
-        {/* Activity Chart */}
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle>
-                Email Activity
-              </CardTitle>
-              <ActivityChartLegend />
-            </div>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-[240px] w-full" />
-            ) : error ? (
-              <div className="h-[240px] flex items-center justify-center text-sm text-muted-foreground">
-                {error}
-              </div>
-            ) : timeSeries.length === 0 ? (
-              <div className="h-[240px] flex items-center justify-center text-sm text-muted-foreground">
-                No activity data for this period
-              </div>
-            ) : (
-              <ActivityChart data={timeSeries} />
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Workspace Overview Table */}
+        {/* 6. Workspace Overview — unchanged */}
         <Card>
           <CardHeader>
             <CardTitle>
