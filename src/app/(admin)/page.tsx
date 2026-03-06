@@ -101,8 +101,8 @@ function DashboardSkeleton() {
   return (
     <div className="space-y-6">
       {/* Health row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {Array.from({ length: 4 }).map((_, i) => (
+      <div className="grid grid-cols-3 gap-3">
+        {Array.from({ length: 3 }).map((_, i) => (
           <KpiSkeleton key={i} />
         ))}
       </div>
@@ -211,23 +211,24 @@ export default function DashboardPage() {
         ) : !error ? (
           <>
             {/* Section 1: Health & Alerts */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <Link href="/senders" className="block">
                 <MetricCard
-                  label="Sender Health"
+                  label="Senders"
                   value={`${kpis.sendersHealthy}/${kpis.sendersActiveTotal || kpis.sendersHealthy + unhealthySenders}`}
-                  trend={unhealthySenders > 0 ? "warning" : "up"}
-                  detail={unhealthySenders > 0 ? `${unhealthySenders} need attention` : "All healthy"}
+                  trend={unhealthySenders > 0 || kpis.linkedinAccountsExpired > 0 ? "warning" : "up"}
+                  detail={
+                    unhealthySenders > 0 && kpis.linkedinAccountsExpired > 0
+                      ? `${unhealthySenders} need attention, ${kpis.linkedinAccountsExpired} sessions expired`
+                      : unhealthySenders > 0
+                        ? `${unhealthySenders} need attention`
+                        : kpis.linkedinAccountsExpired > 0
+                          ? `${kpis.linkedinAccountsExpired} sessions expired`
+                          : "All healthy"
+                  }
                   density="compact"
                 />
               </Link>
-              <MetricCard
-                label="LinkedIn Accounts"
-                value={`${kpis.linkedinAccountsActive}/${kpis.linkedinAccountsTotal}`}
-                trend={kpis.linkedinAccountsExpired > 0 ? "warning" : "up"}
-                detail={kpis.linkedinAccountsExpired > 0 ? `${kpis.linkedinAccountsExpired} expired` : "All active"}
-                density="compact"
-              />
               <MetricCard
                 label="Inboxes"
                 value={kpis.inboxesConnected.toLocaleString()}
