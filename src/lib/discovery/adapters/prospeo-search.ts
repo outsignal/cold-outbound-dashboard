@@ -123,7 +123,8 @@ export class ProspeoSearchAdapter implements DiscoveryAdapter {
     }
 
     if (filters.locations?.length) {
-      body.person_location = { include: filters.locations };
+      // Prospeo requires "Country Name #CC" format (e.g., "United Kingdom #GB")
+      body.person_location_search = { include: filters.locations };
     }
 
     if (filters.industries?.length) {
