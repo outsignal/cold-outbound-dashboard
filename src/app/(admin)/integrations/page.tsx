@@ -208,7 +208,7 @@ function IntegrationCard({ provider }: { provider: ProviderStatus }) {
                 )}
               </span>
             </div>
-            {hasTotal && (
+            {hasTotal ? (
               <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                 <div
                   className={cn(
@@ -221,6 +221,17 @@ function IntegrationCard({ provider }: { provider: ProviderStatus }) {
                   style={{
                     width: `${Math.min(100, (provider.credits!.remaining! / provider.credits!.total!) * 100)}%`,
                   }}
+                />
+              </div>
+            ) : (
+              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                <div
+                  className={cn(
+                    "h-full rounded-full transition-all w-full",
+                    provider.credits!.remaining! > 0
+                      ? "bg-emerald-500"
+                      : "bg-red-500",
+                  )}
                 />
               </div>
             )}
