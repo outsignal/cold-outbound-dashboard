@@ -26,7 +26,7 @@ export function MetricCard({ label, value, trend, detail, density = "default", f
       className={className}
       style={{
         borderTopWidth: "2px",
-        borderTopColor: (trend && trendBorderColor[trend]) || "transparent",
+        borderTopColor: (trend && trendBorderColor[trend]) || "oklch(0.85 0 0)",
       }}
     >
       <CardContent className={density === "compact" ? "pt-3" : "pt-6"}>

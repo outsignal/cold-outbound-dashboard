@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createInvoice, listInvoices } from "@/lib/invoices/operations";
 import { requireAdminAuth } from "@/lib/require-admin-auth";
+import { createInvoiceSchema } from "@/lib/validations/invoices";
 
 // GET /api/invoices?workspaceSlug=slug&status=draft — list invoices
 export async function GET(request: Request) {
@@ -35,31 +36,21 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
+    const result = createInvoiceSchema.safeParse(body);
+    if (!result.success) {
+      return NextResponse.json({ error: "Validation failed", details: result.error.flatten().fieldErrors }, { status: 400 });
+    }
     const {
       workspaceSlug,
       lineItems,
       billingPeriodStart,
       billingPeriodEnd,
       issueDate,
-    } = body;
-
-    if (!workspaceSlug || typeof workspaceSlug !== "string") {
-      return NextResponse.json(
-        { error: "workspaceSlug is required" },
-        { status: 400 },
-      );
-    }
-
-    if (!Array.isArray(lineItems) || lineItems.length === 0) {
-      return NextResponse.json(
-        { error: "lineItems must be a non-empty array" },
-        { status: 400 },
-      );
-    }
+    } = result.data;
 
     const invoice = await createInvoice({
       workspaceSlug,
-      lineItems,
+      lineItems: lineItems as { description: string; quantity: number; unitPricePence: number }[],
       billingPeriodStart: billingPeriodStart ? new Date(billingPeriodStart) : undefined,
       billingPeriodEnd: billingPeriodEnd ? new Date(billingPeriodEnd) : undefined,
       issueDate: issueDate ? new Date(issueDate) : undefined,
@@ -68,7 +59,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ invoice }, { status: 201 });
   } catch (err) {
     console.error("[POST /api/invoices] Error:", err);
-    const message = err instanceof Error ? err.message : "Failed to create invoice";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Failed to create invoice" }, { status: 500 });
   }
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateTask, deleteTask } from "@/lib/clients/operations";
 import { requireAdminAuth } from "@/lib/require-admin-auth";
+import { updateTaskSchema } from "@/lib/validations/clients";
 
 // PATCH /api/clients/[id]/tasks/[taskId] — update task (title, status, dueDate, notes)
 export async function PATCH(
@@ -15,8 +16,17 @@ export async function PATCH(
   try {
     const { taskId } = await params;
     const body = await request.json();
+    const result = updateTaskSchema.safeParse(body);
+    if (!result.success) {
+      return NextResponse.json({ error: "Validation failed", details: result.error.flatten().fieldErrors }, { status: 400 });
+    }
 
-    const task = await updateTask(taskId, body);
+    const { dueDate, notes, ...rest } = result.data;
+    const task = await updateTask(taskId, {
+      ...rest,
+      dueDate: dueDate ? new Date(dueDate) : dueDate === null ? null : undefined,
+      notes: notes ?? undefined,
+    });
 
     return NextResponse.json({ task });
   } catch (err) {

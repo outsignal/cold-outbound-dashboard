@@ -48,6 +48,14 @@ export interface TimeSeriesPoint {
   opens: number;
 }
 
+export interface LinkedInTimeSeriesPoint {
+  date: string;
+  connections: number;
+  messages: number;
+  profileViews: number;
+  failed: number;
+}
+
 export interface DashboardAlert {
   type: "flagged_sender" | "failed_agent_run" | "disconnected_inbox";
   title: string;
@@ -64,6 +72,7 @@ export interface WorkspaceOption {
 export interface DashboardStatsResponse {
   kpis: DashboardKPIs;
   timeSeries: TimeSeriesPoint[];
+  linkedInTimeSeries: LinkedInTimeSeriesPoint[];
   alerts: DashboardAlert[];
   workspaces: WorkspaceOption[];
 }
@@ -229,6 +238,46 @@ export async function GET(request: NextRequest) {
       timeSeries.push(timeSeriesMap[dateStr] ?? { date: dateStr, sent: 0, replies: 0, bounces: 0, opens: 0 });
     }
 
+    // 7b. LinkedIn time-series data from LinkedInAction grouped by date
+    const linkedInActions = await prisma.linkedInAction.findMany({
+      where: {
+        ...wsFilterSlug,
+        createdAt: { gte: sinceDate },
+      },
+      select: {
+        createdAt: true,
+        actionType: true,
+        status: true,
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    const linkedInTsMap: Record<string, LinkedInTimeSeriesPoint> = {};
+    for (const action of linkedInActions) {
+      const dateStr = action.createdAt.toISOString().slice(0, 10);
+      if (!linkedInTsMap[dateStr]) {
+        linkedInTsMap[dateStr] = { date: dateStr, connections: 0, messages: 0, profileViews: 0, failed: 0 };
+      }
+      if (action.status === "failed") {
+        linkedInTsMap[dateStr].failed++;
+      } else if (action.actionType === "connect") {
+        linkedInTsMap[dateStr].connections++;
+      } else if (action.actionType === "message") {
+        linkedInTsMap[dateStr].messages++;
+      } else if (action.actionType === "profile_view") {
+        linkedInTsMap[dateStr].profileViews++;
+      }
+    }
+
+    // Fill in all days for LinkedIn
+    const linkedInTimeSeries: LinkedInTimeSeriesPoint[] = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().slice(0, 10);
+      linkedInTimeSeries.push(linkedInTsMap[dateStr] ?? { date: dateStr, connections: 0, messages: 0, profileViews: 0, failed: 0 });
+    }
+
     // 8. Alerts
     const alerts: DashboardAlert[] = [];
 
@@ -328,6 +377,7 @@ export async function GET(request: NextRequest) {
     const response: DashboardStatsResponse = {
       kpis,
       timeSeries,
+      linkedInTimeSeries,
       alerts,
       workspaces,
     };

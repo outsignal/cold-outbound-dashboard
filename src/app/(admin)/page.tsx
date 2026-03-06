@@ -11,6 +11,7 @@ import { Header } from "@/components/layout/header";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { ClientFilter } from "@/components/dashboard/client-filter";
 import { ActivityChart, ActivityChartLegend } from "@/components/dashboard/activity-chart";
+import { LinkedInChart, LinkedInChartLegend } from "@/components/dashboard/linkedin-chart";
 import { AlertsSection } from "@/components/dashboard/alerts-section";
 import {
   OverviewTable,
@@ -20,6 +21,7 @@ import type {
   DashboardStatsResponse,
   DashboardKPIs,
   TimeSeriesPoint,
+  LinkedInTimeSeriesPoint,
   DashboardAlert,
   WorkspaceOption,
 } from "@/app/api/dashboard/stats/route";
@@ -96,7 +98,10 @@ function KpiSkeleton() {
 function DashboardSkeleton() {
   return (
     <div className="space-y-6">
-      {/* Pipeline row */}
+      {/* System Health + Pipeline row */}
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+        {Array.from({ length: 3 }).map((_, i) => <KpiSkeleton key={i} />)}
+      </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)}
       </div>
@@ -113,19 +118,11 @@ function DashboardSkeleton() {
       {/* LinkedIn card */}
       <Card>
         <CardHeader><div className="h-4 w-20 bg-muted rounded animate-pulse" /></CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {Array.from({ length: 4 }).map((_, i) => <KpiSkeleton key={i} />)}
           </div>
-        </CardContent>
-      </Card>
-      {/* System Health card */}
-      <Card>
-        <CardHeader><div className="h-4 w-28 bg-muted rounded animate-pulse" /></CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {Array.from({ length: 3 }).map((_, i) => <KpiSkeleton key={i} />)}
-          </div>
+          <div className="h-[240px] bg-muted rounded animate-pulse" />
         </CardContent>
       </Card>
     </div>
@@ -162,6 +159,7 @@ export default function DashboardPage() {
 
   const kpis = data?.kpis ?? emptyKpis;
   const timeSeries: TimeSeriesPoint[] = data?.timeSeries ?? [];
+  const linkedInTimeSeries: LinkedInTimeSeriesPoint[] = data?.linkedInTimeSeries ?? [];
   const alerts: DashboardAlert[] = data?.alerts ?? [];
   const workspaces: WorkspaceOption[] = data?.workspaces ?? [];
 
@@ -202,6 +200,30 @@ export default function DashboardPage() {
           <DashboardSkeleton />
         ) : (
           <>
+            {/* 1. System Health */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <Link href="/senders" className="block">
+                <MetricCard
+                  label="Sender Health"
+                  value={`${kpis.sendersHealthy}/${kpis.sendersActiveTotal || kpis.sendersHealthy + unhealthySenders}`}
+                  trend={unhealthySenders > 0 ? "warning" : "up"}
+                  detail={unhealthySenders > 0 ? `${unhealthySenders} need attention` : "All healthy"}
+                />
+              </Link>
+              <MetricCard
+                label="Active Campaigns"
+                value={kpis.campaignsActive.toLocaleString()}
+                trend={kpis.campaignsActive > 0 ? "up" : "neutral"}
+                detail={`${kpis.campaignsPaused} paused, ${kpis.campaignsDraft} drafts`}
+              />
+              <MetricCard
+                label="Inboxes"
+                value={kpis.inboxesConnected.toLocaleString()}
+                trend={kpis.inboxesDisconnected > 0 ? "warning" : "up"}
+                detail={kpis.inboxesDisconnected > 0 ? `${kpis.inboxesDisconnected} disconnected` : "All connected"}
+              />
+            </div>
+
             {/* 2. Pipeline Summary */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <MetricCard
@@ -289,10 +311,11 @@ export default function DashboardPage() {
 
             {/* 4. LinkedIn Activity */}
             <Card>
-              <CardHeader>
+              <CardHeader className="flex-row items-center justify-between">
                 <CardTitle>LinkedIn</CardTitle>
+                <LinkedInChartLegend />
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <MetricCard
                     label="Profile Views"
@@ -320,40 +343,13 @@ export default function DashboardPage() {
                     density="compact"
                   />
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* 5. System Health */}
-            <Card>
-              <CardHeader>
-                <CardTitle>System Health</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  <Link href="/senders" className="block">
-                    <MetricCard
-                      label="Sender Health"
-                      value={`${kpis.sendersHealthy}/${kpis.sendersActiveTotal || kpis.sendersHealthy + unhealthySenders}`}
-                      trend={unhealthySenders > 0 ? "warning" : "up"}
-                      detail={unhealthySenders > 0 ? `${unhealthySenders} need attention` : "All healthy"}
-                      density="compact"
-                    />
-                  </Link>
-                  <MetricCard
-                    label="Active Campaigns"
-                    value={kpis.campaignsActive.toLocaleString()}
-                    trend={kpis.campaignsActive > 0 ? "up" : "neutral"}
-                    detail={`${kpis.campaignsPaused} paused, ${kpis.campaignsDraft} drafts`}
-                    density="compact"
-                  />
-                  <MetricCard
-                    label="Inboxes"
-                    value={kpis.inboxesConnected.toLocaleString()}
-                    trend={kpis.inboxesDisconnected > 0 ? "warning" : "up"}
-                    detail={kpis.inboxesDisconnected > 0 ? `${kpis.inboxesDisconnected} disconnected` : "All connected"}
-                    density="compact"
-                  />
-                </div>
+                {linkedInTimeSeries.length === 0 ? (
+                  <div className="h-[240px] flex items-center justify-center text-sm text-muted-foreground">
+                    No LinkedIn activity for this period
+                  </div>
+                ) : (
+                  <LinkedInChart data={linkedInTimeSeries} />
+                )}
               </CardContent>
             </Card>
           </>
