@@ -1,12 +1,18 @@
 import { NextResponse } from "next/server";
 import { publishForReview } from "@/lib/campaigns/operations";
 import { notify } from "@/lib/notify";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 // POST /api/campaigns/[id]/publish — push campaign for client review
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id } = await params;
 

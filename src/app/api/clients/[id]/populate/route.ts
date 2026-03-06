@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { populateClientTasks, getClient } from "@/lib/clients/operations";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 // POST /api/clients/[id]/populate — populate tasks from template
 // Body: { templateType?: "email" | "email_linkedin" | "scale" }
@@ -8,6 +9,11 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id } = await params;
 

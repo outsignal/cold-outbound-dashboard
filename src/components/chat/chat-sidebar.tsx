@@ -92,6 +92,7 @@ export function ChatSidebar({ isOpen, onClose }: ChatSidebarProps) {
           size="sm"
           onClick={onClose}
           className="h-7 w-7 p-0"
+          aria-label="Close chat"
         >
           <X className="h-4 w-4" />
         </Button>
@@ -171,6 +172,7 @@ export function ChatSidebar({ isOpen, onClose }: ChatSidebarProps) {
             size="sm"
             disabled={isLoading || !input.trim()}
             className="h-9 w-9 p-0 shrink-0"
+            aria-label="Send message"
           >
             <Send className="h-4 w-4" />
           </Button>

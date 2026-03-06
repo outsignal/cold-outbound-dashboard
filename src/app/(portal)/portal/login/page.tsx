@@ -31,6 +31,9 @@ function LoginForm() {
         body: JSON.stringify({ email }),
       });
 
+      if (res.status === 429) {
+        throw new Error("Too many attempts. Please wait a minute and try again.");
+      }
       if (!res.ok) {
         throw new Error("Something went wrong. Please try again.");
       }

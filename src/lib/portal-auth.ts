@@ -78,7 +78,7 @@ export function createSessionCookie(session: PortalSession): string {
     `${COOKIE_NAME}=${value}`,
     `Path=/`,
     `HttpOnly`,
-    `SameSite=Lax`,
+    `SameSite=Strict`,
     `Max-Age=${COOKIE_MAX_AGE}`,
   ];
 
@@ -93,7 +93,7 @@ export function createSessionCookie(session: PortalSession): string {
  * Build a Set-Cookie header value that clears the session.
  */
 export function clearSessionCookie(): string {
-  return `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+  return `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0`;
 }
 
 export { COOKIE_NAME };

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/db";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 /**
  * GET /api/senders?workspace=rise
@@ -8,6 +9,11 @@ import { prisma } from "@/lib/db";
  * Accepts optional `workspace` query param to filter by slug.
  */
 export async function GET(request: NextRequest) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const workspaceSlug = request.nextUrl.searchParams.get("workspace");
 
@@ -57,6 +63,11 @@ export async function GET(request: NextRequest) {
  * Creates a new sender. Required: workspaceSlug, name.
  */
 export async function POST(request: NextRequest) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
 

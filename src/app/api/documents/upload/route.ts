@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 // NOTE: This route intentionally uses the default Node.js runtime.
 // Do NOT add `export const runtime = "edge"` — pdf-parse requires Node.js fs.
@@ -129,6 +130,11 @@ function parseFields(text: string): ParsedFields {
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 export async function POST(request: NextRequest) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const contentType = request.headers.get("content-type") ?? "";
 
   // --- Mode 1: PDF file upload (multipart/form-data) ---

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { after } from "next/server";
 import { prisma } from "@/lib/db";
-import { getCampaign, updateCampaignStatus } from "@/lib/campaigns/operations";
+import { getCampaign } from "@/lib/campaigns/operations";
 import { executeDeploy, retryDeployChannel } from "@/lib/campaigns/deploy";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 export const maxDuration = 300; // 5 minutes for background execution
 
@@ -10,6 +11,11 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { id } = await params;
   const url = new URL(request.url);
   const retryChannel = url.searchParams.get("retry") as "email" | "linkedin" | null;
@@ -46,14 +52,6 @@ export async function POST(
     return NextResponse.json({ deployId: latestDeploy.id, status: "retrying", channel: retryChannel });
   }
 
-  // Fresh deploy: validate status
-  if (campaign.status !== "approved") {
-    return NextResponse.json(
-      { error: "Campaign must be in 'approved' status to deploy" },
-      { status: 400 },
-    );
-  }
-
   // Validate both approvals
   if (!campaign.leadsApproved || !campaign.contentApproved) {
     return NextResponse.json(
@@ -64,6 +62,18 @@ export async function POST(
 
   // Parse channels
   const channels: string[] = campaign.channels ?? ["email"];
+
+  // Atomic status transition — prevents double deploy race condition
+  const transitionResult = await prisma.campaign.updateMany({
+    where: { id, status: "approved" },
+    data: { status: "deployed", deployedAt: new Date() },
+  });
+  if (transitionResult.count === 0) {
+    return NextResponse.json(
+      { error: "Campaign is not in approved status (may have already been deployed)" },
+      { status: 409 },
+    );
+  }
 
   // Create CampaignDeploy record
   const deploy = await prisma.campaignDeploy.create({
@@ -77,9 +87,6 @@ export async function POST(
       linkedinStatus: channels.includes("linkedin") ? "pending" : "skipped",
     },
   });
-
-  // Transition campaign to 'deployed' (serves as mutex — prevents double deploy)
-  await updateCampaignStatus(id, "deployed");
 
   // Fire-and-forget — execute deploy in background after response
   after(async () => {

@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { notify } from "@/lib/notify";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
 ) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { slug } = await params;
 
   const workspace = await prisma.workspace.findUnique({ where: { slug } });

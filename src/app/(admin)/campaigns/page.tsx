@@ -88,12 +88,12 @@ export default async function CampaignsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Workspace</TableHead>
+                  <TableHead className="hidden md:table-cell">Workspace</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead>Channels</TableHead>
-                  <TableHead>Target List</TableHead>
-                  <TableHead>Created</TableHead>
+                  <TableHead className="hidden md:table-cell">Channels</TableHead>
+                  <TableHead className="hidden md:table-cell">Target List</TableHead>
+                  <TableHead className="hidden md:table-cell">Created</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -118,7 +118,7 @@ export default async function CampaignsPage() {
                             </p>
                           )}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden md:table-cell">
                           <Link
                             href={`/workspace/${campaign.workspaceSlug}`}
                             className="text-xs text-muted-foreground hover:text-foreground hover:underline"
@@ -144,7 +144,7 @@ export default async function CampaignsPage() {
                             </Badge>
                           )}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden md:table-cell">
                           <div className="flex gap-1">
                             {channels.map((ch) => (
                               <Badge
@@ -158,7 +158,7 @@ export default async function CampaignsPage() {
                             ))}
                           </div>
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="hidden md:table-cell">
                           {campaign.targetList ? (
                             <span className="text-xs text-muted-foreground">
                               {campaign.targetList.name}
@@ -172,7 +172,7 @@ export default async function CampaignsPage() {
                             </span>
                           )}
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
+                        <TableCell className="hidden md:table-cell text-xs text-muted-foreground">
                           {formatDate(campaign.createdAt)}
                         </TableCell>
                       </TableRow>

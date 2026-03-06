@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateTask, deleteTask } from "@/lib/clients/operations";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 // PATCH /api/clients/[id]/tasks/[taskId] — update task (title, status, dueDate, notes)
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string; taskId: string }> },
 ) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { taskId } = await params;
     const body = await request.json();
@@ -27,6 +33,11 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string; taskId: string }> },
 ) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { taskId } = await params;
 

@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 // GET /api/invoice-settings — fetch global sender settings
 export async function GET() {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const settings = await prisma.invoiceSenderSettings.findFirst();
     return NextResponse.json({ settings: settings ?? null });
@@ -17,6 +23,11 @@ export async function GET() {
 
 // PUT /api/invoice-settings — upsert global sender settings
 export async function PUT(request: Request) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { senderName, senderAddress, senderEmail, accountNumber, sortCode } =

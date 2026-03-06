@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 const PAGE_SIZE = 50;
 
@@ -8,6 +9,11 @@ interface RouteContext {
 }
 
 export async function GET(request: Request, context: RouteContext) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id } = await context.params;
     const { searchParams } = new URL(request.url);
@@ -99,6 +105,11 @@ export async function GET(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id } = await context.params;
 

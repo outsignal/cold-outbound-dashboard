@@ -8,8 +8,14 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 export async function GET(request: NextRequest) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { searchParams } = request.nextUrl;
     const workspaceParam = searchParams.get("workspace") ?? "all";

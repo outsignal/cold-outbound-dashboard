@@ -67,6 +67,7 @@ export function CampaignApprovalLeads({
   const paginatedLeads = leads.slice(startIdx, endIdx);
 
   async function handleApprove() {
+    if (!window.confirm(`Approve all ${leads.length} leads for this campaign?`)) return;
     setLoading(true);
     setError(null);
     try {
@@ -175,8 +176,8 @@ export function CampaignApprovalLeads({
                     <TableHead>Name</TableHead>
                     <TableHead>Title</TableHead>
                     <TableHead>Company</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>LinkedIn</TableHead>
+                    <TableHead className="hidden md:table-cell">Location</TableHead>
+                    <TableHead className="hidden md:table-cell">LinkedIn</TableHead>
                     <TableHead className="text-right">ICP Score</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -188,8 +189,8 @@ export function CampaignApprovalLeads({
                       </TableCell>
                       <TableCell>{lead.jobTitle ?? "—"}</TableCell>
                       <TableCell>{lead.company ?? "—"}</TableCell>
-                      <TableCell>{lead.location ?? "—"}</TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">{lead.location ?? "—"}</TableCell>
+                      <TableCell className="hidden md:table-cell">
                         {lead.linkedinUrl ? (
                           <a
                             href={lead.linkedinUrl}

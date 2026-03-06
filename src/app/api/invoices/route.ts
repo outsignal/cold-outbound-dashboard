@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { createInvoice, listInvoices } from "@/lib/invoices/operations";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 // GET /api/invoices?workspaceSlug=slug&status=draft — list invoices
 export async function GET(request: Request) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const workspaceSlug = searchParams.get("workspaceSlug")?.trim() || undefined;
@@ -22,6 +28,11 @@ export async function GET(request: Request) {
 
 // POST /api/invoices — create a new invoice
 export async function POST(request: Request) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const {

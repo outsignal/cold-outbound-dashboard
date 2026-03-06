@@ -2,12 +2,18 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getInvoice, updateInvoiceStatus } from "@/lib/invoices/operations";
 import { sendInvoiceEmail } from "@/lib/invoices/email";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 // POST /api/invoices/[id]/send — email invoice to workspace billing contact
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id } = await params;
 

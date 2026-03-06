@@ -40,6 +40,38 @@ export default async function PortalBillingPage() {
         </p>
       </div>
 
+      {/* Balance Summary */}
+      {invoices.length > 0 && (() => {
+        const unpaid = invoices.filter((inv) => inv.status !== "paid");
+        const totalOutstanding = unpaid.reduce((sum, inv) => sum + inv.totalPence, 0);
+        const overdueCount = invoices.filter((inv) => inv.status === "overdue").length;
+        return (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Outstanding</p>
+                  <p className="text-2xl font-heading font-semibold tabular-nums mt-1">
+                    {formatGBP(totalOutstanding)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Overdue Invoices</p>
+                  <p className={`text-2xl font-heading font-semibold tabular-nums mt-1 ${overdueCount > 0 ? "text-red-600" : ""}`}>
+                    {overdueCount}
+                  </p>
+                </div>
+                <div className="flex items-end">
+                  <p className="text-sm text-muted-foreground">
+                    For payment inquiries, contact your Outsignal account manager.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })()}
+
       {/* Invoice Table */}
       <Card>
         <CardHeader>

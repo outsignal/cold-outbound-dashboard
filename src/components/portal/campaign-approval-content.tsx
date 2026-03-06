@@ -123,6 +123,7 @@ export function CampaignApprovalContent({
   const hasLinkedIn = channels.includes("linkedin") && linkedinSteps.length > 0;
 
   async function handleApprove() {
+    if (!window.confirm("Approve the content for this campaign?")) return;
     setLoading(true);
     setError(null);
     try {

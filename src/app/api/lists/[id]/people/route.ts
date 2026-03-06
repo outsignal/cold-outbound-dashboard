@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
@@ -67,6 +68,11 @@ function buildPeopleWhere(filters: SelectAllFilters): Record<string, unknown> {
 }
 
 export async function POST(request: Request, context: RouteContext) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id } = await context.params;
 
@@ -123,6 +129,11 @@ export async function POST(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(request: Request, context: RouteContext) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id } = await context.params;
     const body = await request.json();

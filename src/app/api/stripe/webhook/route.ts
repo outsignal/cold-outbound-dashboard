@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
       }).catch(() => {});
 
       // Send onboarding link to client
+      const esc = (s: string) => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
       if (proposal.clientEmail) {
         const appUrl =
           process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -76,7 +77,7 @@ export async function POST(request: NextRequest) {
                 <td style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#18181b;padding-bottom:24px;line-height:1.3;">Payment Received</td>
               </tr>
               <tr>
-                <td style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#3f3f46;padding-bottom:24px;line-height:1.7;">Hi ${proposal.clientName}, thank you for your payment. Please complete your onboarding to get started.</td>
+                <td style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#3f3f46;padding-bottom:24px;line-height:1.7;">Hi ${esc(proposal.clientName || "")}, thank you for your payment. Please complete your onboarding to get started.</td>
               </tr>
               <!-- CTA button -->
               <tr>

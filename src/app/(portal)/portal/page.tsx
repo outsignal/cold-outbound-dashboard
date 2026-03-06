@@ -157,7 +157,7 @@ export default async function PortalDashboardPage() {
       {error && <ErrorBanner message={error} />}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           label="Total Sent"
           value={totalSent.toLocaleString()}

@@ -1,11 +1,17 @@
 import { NextResponse } from "next/server";
 import { updateCampaignStatus, getCampaign } from "@/lib/campaigns/operations";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 interface Params {
   params: Promise<{ id: string }>;
 }
 
 export async function PATCH(request: Request, { params }: Params) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id } = await params;
     const body = await request.json();

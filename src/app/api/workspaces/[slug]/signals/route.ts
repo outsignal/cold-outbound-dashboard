@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 const VALID_SIGNAL_TYPES = [
   "job_change",
@@ -29,6 +30,11 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
 ) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { slug } = await params;
 
   const ws = await prisma.workspace.findUnique({ where: { slug } });
@@ -53,6 +59,11 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
 ) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { slug } = await params;
 
   const ws = await prisma.workspace.findUnique({ where: { slug } });

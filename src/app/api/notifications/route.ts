@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 export async function GET(request: NextRequest) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const url = new URL(request.url);
   const type = url.searchParams.get("type");
   const severity = url.searchParams.get("severity");
@@ -29,6 +35,11 @@ export async function GET(request: NextRequest) {
 
 // Mark notifications as read
 export async function PATCH(request: NextRequest) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const body = await request.json();
 
   if (body.markAllRead) {

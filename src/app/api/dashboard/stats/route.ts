@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +69,11 @@ export interface DashboardStatsResponse {
 }
 
 export async function GET(request: NextRequest) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(request.url);
   const workspaceFilter = searchParams.get("workspace") ?? "all";
   const daysParam = parseInt(searchParams.get("days") ?? "7", 10);

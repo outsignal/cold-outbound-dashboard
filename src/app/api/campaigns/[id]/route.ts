@@ -4,12 +4,18 @@ import {
   updateCampaign,
   deleteCampaign,
 } from "@/lib/campaigns/operations";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 // GET /api/campaigns/[id] — campaign detail
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id } = await params;
 
@@ -37,6 +43,11 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -64,6 +75,11 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id } = await params;
 

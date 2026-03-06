@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { updateSubtaskStatus } from "@/lib/clients/operations";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 // PATCH /api/clients/[id]/tasks/[taskId]/subtasks/[subtaskId] — update subtask status
 // Body: { status: "todo" | "in_progress" | "complete" }
@@ -11,6 +12,11 @@ export async function PATCH(
     params: Promise<{ id: string; taskId: string; subtaskId: string }>;
   },
 ) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { subtaskId } = await params;
     const body = await request.json();

@@ -4,8 +4,14 @@ import { generateProposalToken } from "@/lib/tokens";
 import { DEFAULT_PRICING } from "@/lib/proposal-templates";
 import { sendNotificationEmail } from "@/lib/resend";
 import { notify } from "@/lib/notify";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 export async function GET() {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const proposals = await prisma.proposal.findMany({
     orderBy: { createdAt: "desc" },
   });
@@ -13,6 +19,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { clientName, clientEmail, companyOverview, packageType } = body;

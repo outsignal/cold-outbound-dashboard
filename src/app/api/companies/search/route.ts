@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getCompanyEnrichmentStatus } from "@/lib/enrichment/status";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 const PAGE_SIZE = 50;
 
 export async function GET(request: NextRequest) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { searchParams } = request.nextUrl;
 

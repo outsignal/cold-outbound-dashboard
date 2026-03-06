@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { todayUtc } from "@/lib/enrichment/costs";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 const DEFAULT_DAILY_CAP_USD = 10.0;
 
@@ -37,6 +38,11 @@ function daysAgoUtc(n: number): string {
 }
 
 export async function GET(request: NextRequest) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { searchParams } = request.nextUrl;
     const fromStr = searchParams.get("from") ?? daysAgoUtc(30);

@@ -74,7 +74,7 @@ const colors = {
 
 export function LinkedInActivityChart({ data }: Props) {
   return (
-    <ResponsiveContainer width="100%" height={180}>
+    <ResponsiveContainer width="100%" height="100%" className="h-[160px] md:h-[220px]">
       <BarChart
         data={data}
         margin={{ top: 4, right: 4, left: -12, bottom: 0 }}

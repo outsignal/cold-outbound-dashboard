@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { importClayContacts, importClayCompany } from "@/lib/clay/sync";
 import { notify } from "@/lib/notify";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 export async function POST(request: NextRequest) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { contacts, company, workspace, vertical } = body;

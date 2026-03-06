@@ -4,6 +4,7 @@ import {
   orchestratorTools,
   orchestratorConfig,
 } from "@/lib/agents/orchestrator";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 export const maxDuration = 300; // 5 minutes — Leads Agent scoring can take 60-300s for large lists
 
@@ -36,6 +37,11 @@ function trimMessages<T extends { role: string }>(msgs: T[]): T[] {
 }
 
 export async function POST(request: Request) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { messages, context } = await request.json();
 
   const modelMessages = await convertToModelMessages(messages, {

@@ -5,6 +5,7 @@ import {
   updateInvoiceStatus,
 } from "@/lib/invoices/operations";
 import { InvoiceStatus } from "@/lib/invoices/types";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 // GET /api/invoices/[id] — fetch single invoice
 // Also accepts ?token=xxx for portal token-based access
@@ -12,6 +13,11 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id } = await params;
     const { searchParams } = new URL(request.url);
@@ -40,6 +46,11 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id } = await params;
     const body = await request.json();

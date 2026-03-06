@@ -11,12 +11,18 @@
  */
 
 import { generateListCsv } from "@/lib/export/csv";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
 export async function GET(_request: Request, context: RouteContext) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id } = await context.params;
 

@@ -2,6 +2,7 @@ import { getInvoice, getInvoiceByToken } from "@/lib/invoices/operations";
 import { InvoicePdfDocument } from "@/lib/invoices/pdf";
 import { renderToBuffer } from "@react-pdf/renderer";
 import React from "react";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 // GET /api/invoices/[id]/pdf — render and return invoice as PDF
 // Accepts optional ?token=xxx for portal/token-based access
@@ -9,6 +10,11 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { id } = await params;
     const { searchParams } = new URL(request.url);

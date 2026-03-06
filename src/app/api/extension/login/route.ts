@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { validateAdminPassword } from "@/lib/admin-auth";
 import { createExtensionToken, extensionCorsHeaders } from "@/lib/extension-auth";
 import { prisma } from "@/lib/db";
+import { rateLimit } from "@/lib/rate-limit";
+
+const loginLimiter = rateLimit({ windowMs: 60_000, max: 5 });
 
 /**
  * OPTIONS /api/extension/login
@@ -24,6 +27,20 @@ export async function OPTIONS(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   const cors = extensionCorsHeaders(request);
+
+  // Rate limiting — 5 requests per minute per IP
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    request.headers.get("x-real-ip") ??
+    "unknown";
+  const { success: rateLimitOk } = loginLimiter(ip);
+  if (!rateLimitOk) {
+    return NextResponse.json(
+      { error: "Too many requests. Please try again later." },
+      { status: 429, headers: cors },
+    );
+  }
+
   try {
     const body = await request.json();
     const { email, workspaceSlug, password } = body as {

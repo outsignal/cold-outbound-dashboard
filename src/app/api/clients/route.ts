@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listClients, createClient } from "@/lib/clients/operations";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 // GET /api/clients?pipelineStatus=closed_won&search=&hasWorkspace=true&isPipeline=false
 export async function GET(request: NextRequest) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const params = request.nextUrl.searchParams;
   const filters = {
     pipelineStatus: params.get("pipelineStatus") || undefined,
@@ -26,6 +32,11 @@ export async function GET(request: NextRequest) {
 
 // POST /api/clients — body: { name, contactEmail?, ... }
 export async function POST(request: NextRequest) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     if (!body.name) {

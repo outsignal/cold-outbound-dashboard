@@ -3,9 +3,15 @@ import {
   listCampaigns,
   createCampaign,
 } from "@/lib/campaigns/operations";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 // GET /api/campaigns?workspace=slug — list campaigns for workspace
 export async function GET(request: Request) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const workspace = searchParams.get("workspace")?.trim();
@@ -31,6 +37,11 @@ export async function GET(request: Request) {
 
 // POST /api/campaigns — create new campaign
 export async function POST(request: Request) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = await request.json();
     const { name, workspaceSlug, description, channels, targetListId } = body;

@@ -12,6 +12,7 @@
 import { NextResponse } from "next/server";
 import { processSignalCampaigns } from "@/lib/pipeline/signal-campaigns";
 import crypto from "crypto";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 // Route segment config — set max execution time for Vercel Pro.
 // With a daily cap of 20 leads per campaign and per-lead ICP scoring,
@@ -49,6 +50,11 @@ function validatePipelineSecret(request: Request): boolean {
 // ---------------------------------------------------------------------------
 
 export async function POST(request: Request) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   // 1. Authenticate
   if (!validatePipelineSecret(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

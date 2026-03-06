@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { requireAdminAuth } from "@/lib/require-admin-auth";
 
 export interface RevenueMonthPoint {
   month: string; // "YYYY-MM"
@@ -24,6 +25,11 @@ export interface RevenueResponse {
 
 // GET /api/revenue?months=12 — revenue summary for admin dashboard
 export async function GET(request: Request) {
+  const session = await requireAdminAuth();
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const months = Math.max(1, Math.min(24, parseInt(searchParams.get("months") ?? "12") || 12));
