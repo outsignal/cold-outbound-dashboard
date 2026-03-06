@@ -1,16 +1,25 @@
 /**
  * AI Ark Search discovery adapter.
  *
- * Uses the AI Ark People Search API for bulk discovery by role, seniority,
- * department, location, and keywords. This is DISTINCT from aiark-person.ts
- * (which enriches individual people by LinkedIn URL). This adapter uses the
- * same endpoint with search/filter parameters for bulk discovery.
+ * Uses the AI Ark People Search API for bulk discovery by seniority, industry,
+ * location, employee size, and company domain. This is DISTINCT from
+ * aiark-person.ts (which enriches individual people by LinkedIn URL).
  *
  * Rate limits: 5 req/s, 300 req/min. The calling agent controls frequency;
  * this adapter throws { status: 429 } on rate limit for upstream retry.
  *
- * Auth: LOW CONFIDENCE — if 401/403, check docs.ai-ark.com and update
- * AUTH_HEADER_NAME below to match the actual header name.
+ * Auth: HIGH CONFIDENCE — `X-TOKEN` header confirmed via live API testing.
+ *
+ * Filter confidence (based on live API testing 2026-03):
+ *   contact.seniority        — HIGH CONFIDENCE, works correctly
+ *   account.industry          — HIGH CONFIDENCE, works correctly
+ *   account.location          — HIGH CONFIDENCE, filters by company HQ
+ *   account.employeeSize      — HIGH CONFIDENCE, RANGE type works correctly
+ *   account.domain            — HIGH CONFIDENCE, should work (same any/include pattern)
+ *   contact.experience.current.title — HIGH CONFIDENCE, works with {mode,content} format
+ *   contact.department        — BUGGED: returns all records ignoring the filter
+ *   account.keyword           — BROKEN: returns 400 "request not readable"
+ *   contact.keyword           — BROKEN: returns 400 "request not readable"
  */
 
 import { z } from "zod";
@@ -18,11 +27,7 @@ import type { DiscoveredPersonResult, DiscoveryAdapter, DiscoveryFilter, Discove
 
 const AIARK_PEOPLE_ENDPOINT = "https://api.ai-ark.com/api/developer-portal/v1/people";
 
-/**
- * Auth header literal name for AI Ark API.
- * LOW CONFIDENCE — update if you get 401/403 responses.
- * Candidates: "X-TOKEN", "Authorization" (Bearer), "X-API-Key"
- */
+/** Auth header name — confirmed working via live testing. */
 const AUTH_HEADER_NAME = "X-TOKEN";
 
 const REQUEST_TIMEOUT_MS = 15_000;
@@ -35,121 +40,218 @@ function getApiKey(): string {
   return key;
 }
 
-/**
- * Loose validation for a single person record from AI Ark search results.
- * All fields optional — defensive against undocumented API changes.
- * MEDIUM confidence on field names (e.g., `title` vs `job_title`).
- */
-const AiArkSearchPersonSchema = z
+// ---------------------------------------------------------------------------
+// Zod schemas — match the actual nested AI Ark response structure
+// ---------------------------------------------------------------------------
+
+const AiArkPersonSchema = z
   .object({
     id: z.string().optional(),
-    first_name: z.string().optional().nullable(),
-    last_name: z.string().optional().nullable(),
-    title: z.string().optional().nullable(),
-    linkedin_url: z.string().optional().nullable(),
-    email: z.string().optional().nullable(),
-    location: z.string().optional().nullable(),
-    company_name: z.string().optional().nullable(),
-    company_domain: z.string().optional().nullable(),
+    profile: z
+      .object({
+        first_name: z.string().optional().nullable(),
+        last_name: z.string().optional().nullable(),
+        full_name: z.string().optional().nullable(),
+        title: z.string().optional().nullable(),
+        headline: z.string().optional().nullable(),
+      })
+      .passthrough()
+      .optional(),
+    link: z
+      .object({
+        linkedin: z.string().optional().nullable(),
+      })
+      .passthrough()
+      .optional(),
+    location: z
+      .object({
+        country: z.string().optional().nullable(),
+        city: z.string().optional().nullable(),
+        default: z.string().optional().nullable(),
+      })
+      .passthrough()
+      .optional(),
+    department: z
+      .object({
+        seniority: z.string().optional().nullable(),
+        departments: z.array(z.string()).optional().nullable(),
+        functions: z.array(z.string()).optional().nullable(),
+      })
+      .passthrough()
+      .optional(),
+    company: z
+      .object({
+        id: z.string().optional(),
+        summary: z
+          .object({
+            name: z.string().optional().nullable(),
+            industry: z.string().optional().nullable(),
+            staff: z
+              .object({
+                total: z.number().optional().nullable(),
+                range: z
+                  .object({
+                    start: z.number().optional(),
+                    end: z.number().optional(),
+                  })
+                  .optional()
+                  .nullable(),
+              })
+              .passthrough()
+              .optional()
+              .nullable(),
+          })
+          .passthrough()
+          .optional(),
+        link: z
+          .object({
+            domain: z.string().optional().nullable(),
+            linkedin: z.string().optional().nullable(),
+          })
+          .passthrough()
+          .optional(),
+      })
+      .passthrough()
+      .optional(),
   })
   .passthrough();
 
-/**
- * Loose validation for the AI Ark search response envelope.
- * Handles both root-array and data-envelope response shapes.
- */
 const AiArkSearchResponseSchema = z
   .object({
-    data: z.array(AiArkSearchPersonSchema).optional(),
-    totalElements: z.number().optional(),
-    totalPages: z.number().optional(),
-    pageNumber: z.number().optional(),
-    pageSize: z.number().optional(),
+    content: z.array(AiArkPersonSchema).optional().default([]),
+    totalElements: z.number().optional().nullable(),
+    totalPages: z.number().optional().nullable(),
+    numberOfElements: z.number().optional().nullable(),
+    trackId: z.string().optional().nullable(),
+    pageable: z
+      .object({
+        pageNumber: z.number().optional(),
+        pageSize: z.number().optional(),
+      })
+      .passthrough()
+      .optional(),
   })
   .passthrough();
 
-type AiArkSearchPerson = z.infer<typeof AiArkSearchPersonSchema>;
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Parse a company size string like "11-50" or "500+" into a range object
+ * for the account.employeeSize RANGE filter.
+ */
+function parseCompanySizeRange(size: string): { start: number; end: number } {
+  if (size.endsWith("+")) {
+    return { start: parseInt(size, 10), end: 1_000_000 };
+  }
+  const [start, end] = size.split("-").map(Number);
+  return { start: start || 1, end: end || start };
+}
 
 /**
  * Build the AI Ark request body from DiscoveryFilter.
- * Field names are MEDIUM confidence — the mapping below follows the most common
- * REST convention for this API. Only non-empty filter fields are included.
+ *
+ * The API expects nested `contact` and `account` objects with filters using
+ * the `{ any: { include: [...] } }` pattern for most fields.
  */
 function buildRequestBody(
   filters: DiscoveryFilter,
   page: number,
   size: number,
+  extras?: Record<string, unknown>,
 ): Record<string, unknown> {
-  const body: Record<string, unknown> = {
-    page,
-    size,
-  };
+  const body: Record<string, unknown> = { page, size };
+  const contact: Record<string, unknown> = {};
+  const account: Record<string, unknown> = {};
 
+  // jobTitles → contact.experience.current.title (WORKS)
+  // Uses {mode, content} format — SMART mode for fuzzy matching
   if (filters.jobTitles?.length) {
-    // Both `title` and `job_title` are plausible — using `title` to match enrichment adapter pattern
-    body.title = filters.jobTitles;
+    contact.experience = {
+      current: {
+        title: { any: { include: { mode: "SMART", content: filters.jobTitles } } },
+      },
+    };
   }
 
+  // seniority → contact.seniority (WORKS)
   if (filters.seniority?.length) {
-    body.seniority = filters.seniority;
+    contact.seniority = { any: { include: filters.seniority } };
   }
 
+  // locations → account.location (WORKS — filters by company HQ)
   if (filters.locations?.length) {
-    body.location = filters.locations;
+    account.location = { any: { include: filters.locations } };
   }
 
+  // industries → account.industry (WORKS)
   if (filters.industries?.length) {
-    body.industry = filters.industries;
+    account.industry = { any: { include: filters.industries } };
   }
 
+  // companySizes → account.employeeSize (WORKS)
+  // Parse "11-50" → {start: 11, end: 50}, "500+" → {start: 500, end: 1000000}
   if (filters.companySizes?.length) {
-    // Both `company_size` and `employee_count` are plausible field names
-    body.company_size = filters.companySizes;
+    account.employeeSize = {
+      type: "RANGE",
+      range: filters.companySizes.map(parseCompanySizeRange),
+    };
   }
 
-  if (filters.keywords?.length) {
-    // Join keywords into a space-separated string; `keywords` and `q` are both plausible
-    body.keywords = filters.keywords.join(" ");
-  }
-
+  // companyDomains → account.domain (should work — same any/include pattern)
   if (filters.companyDomains?.length) {
-    body.company_domain = filters.companyDomains;
+    account.domain = { any: { include: filters.companyDomains } };
   }
+
+  // keywords → SKIP: both account.keyword and contact.keyword return
+  // 400 "request not readable". Do not send.
+
+  // companyKeywords → SKIP: same issue as keywords above.
+
+  // Merge adapter-specific extras into the contact/account objects
+  if (extras) {
+    const { contact: extraContact, account: extraAccount, ...rest } = extras as Record<string, unknown>;
+    if (extraContact && typeof extraContact === "object") {
+      Object.assign(contact, extraContact);
+    }
+    if (extraAccount && typeof extraAccount === "object") {
+      Object.assign(account, extraAccount);
+    }
+    // Any top-level extras go directly on the body
+    Object.assign(body, rest);
+  }
+
+  if (Object.keys(contact).length) body.contact = contact;
+  if (Object.keys(account).length) body.account = account;
 
   return body;
 }
 
-function mapPerson(person: AiArkSearchPerson): DiscoveredPersonResult {
+/**
+ * Map an AI Ark person record to the common DiscoveredPersonResult shape.
+ */
+function mapPerson(person: z.infer<typeof AiArkPersonSchema>): DiscoveredPersonResult {
   return {
-    firstName: person.first_name ?? undefined,
-    lastName: person.last_name ?? undefined,
-    jobTitle: person.title ?? undefined,
-    linkedinUrl: person.linkedin_url ?? undefined,
-    email: person.email ?? undefined,
-    company: person.company_name ?? undefined,
-    companyDomain: person.company_domain ?? undefined,
-    location: person.location ?? undefined,
+    firstName: person.profile?.first_name ?? undefined,
+    lastName: person.profile?.last_name ?? undefined,
+    jobTitle: person.profile?.title ?? undefined,
+    linkedinUrl: person.link?.linkedin ?? undefined,
+    location: person.location?.default ?? person.location?.country ?? undefined,
+    company: person.company?.summary?.name ?? undefined,
+    companyDomain: person.company?.link?.domain ?? undefined,
     sourceId: person.id,
   };
 }
 
-/**
- * Normalize raw API response to an array of person records.
- * Handles two shapes: root-level array or `{ data: [...] }` envelope.
- */
-function extractPeople(raw: unknown): unknown[] {
-  if (Array.isArray(raw)) return raw;
-  if (raw && typeof raw === "object") {
-    const obj = raw as Record<string, unknown>;
-    if (Array.isArray(obj.data)) return obj.data;
-  }
-  return [];
-}
+// ---------------------------------------------------------------------------
+// Adapter class
+// ---------------------------------------------------------------------------
 
 /**
  * AI Ark Search discovery adapter.
- * Implements DiscoveryAdapter — searches people by role, seniority, location,
- * industry, keywords, and company domains with zero-based pagination.
+ * Implements DiscoveryAdapter — searches people by seniority, location,
+ * industry, employee size, and company domains with zero-based pagination.
  */
 export class AiArkSearchAdapter implements DiscoveryAdapter {
   readonly name = "aiark";
@@ -164,6 +266,7 @@ export class AiArkSearchAdapter implements DiscoveryAdapter {
     filters: DiscoveryFilter,
     limit: number,
     pageToken?: string,
+    extras?: Record<string, unknown>,
   ): Promise<DiscoveryResult> {
     const apiKey = getApiKey();
 
@@ -171,7 +274,7 @@ export class AiArkSearchAdapter implements DiscoveryAdapter {
     const page = pageToken ? parseInt(pageToken, 10) : 0;
     const size = Math.min(limit, 100);
 
-    const requestBody = buildRequestBody(filters, page, size);
+    const requestBody = buildRequestBody(filters, page, size, extras);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -193,8 +296,8 @@ export class AiArkSearchAdapter implements DiscoveryAdapter {
 
       if (response.status === 401 || response.status === 403) {
         console.warn(
-          `AI Ark search auth failed (${response.status}) — verify AUTH_HEADER_NAME in aiark-search.ts. ` +
-            `Currently using "${AUTH_HEADER_NAME}". Check https://docs.ai-ark.com for the correct header name.`,
+          `AI Ark search auth failed (${response.status}) — verify AIARK_API_KEY env var. ` +
+            `Auth header: "${AUTH_HEADER_NAME}".`,
         );
         throw new Error(`AI Ark search auth error: HTTP ${response.status}`);
       }
@@ -217,18 +320,30 @@ export class AiArkSearchAdapter implements DiscoveryAdapter {
       throw err;
     }
 
-    // Extract pagination metadata from envelope (if present)
-    const envelope = AiArkSearchResponseSchema.safeParse(raw);
-    const totalElements = envelope.success ? (envelope.data.totalElements ?? 0) : 0;
+    // Parse the response envelope
+    const parsed = AiArkSearchResponseSchema.safeParse(raw);
+    if (!parsed.success) {
+      console.warn("AI Ark search: response did not match expected schema:", parsed.error.message);
+      return {
+        people: [],
+        totalAvailable: 0,
+        hasMore: false,
+        costUsd: 0.003,
+        rawResponse: raw,
+      };
+    }
 
-    const rawPeople = extractPeople(raw);
-    const people: DiscoveredPersonResult[] = rawPeople.flatMap((item) => {
-      const parsed = AiArkSearchPersonSchema.safeParse(item);
-      if (!parsed.success) {
-        console.warn("AI Ark search: skipping invalid person record:", parsed.error.message);
+    const data = parsed.data;
+    const totalElements = data.totalElements ?? 0;
+
+    // Map each person record from data.content
+    const people: DiscoveredPersonResult[] = data.content.flatMap((item) => {
+      const personParsed = AiArkPersonSchema.safeParse(item);
+      if (!personParsed.success) {
+        console.warn("AI Ark search: skipping invalid person record:", personParsed.error.message);
         return [];
       }
-      return [mapPerson(parsed.data)];
+      return [mapPerson(personParsed.data)];
     });
 
     // Next page exists if we've fetched fewer total records than available
@@ -243,6 +358,7 @@ export class AiArkSearchAdapter implements DiscoveryAdapter {
       nextPageToken,
       // Cost: one credit per API call regardless of results returned
       costUsd: 0.003,
+      // Include trackId in rawResponse for potential email finding later
       rawResponse: raw,
     };
   }
