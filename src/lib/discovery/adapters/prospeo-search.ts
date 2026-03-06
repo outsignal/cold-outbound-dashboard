@@ -148,6 +148,58 @@ export class ProspeoSearchAdapter implements DiscoveryAdapter {
       body.company_keywords = { include: filters.companyKeywords };
     }
 
+    if (filters.revenueMin || filters.revenueMax) {
+      body.company_revenue = {
+        min: filters.revenueMin,
+        max: filters.revenueMax,
+        include_unknown_revenue: false,
+      };
+    }
+
+    if (filters.fundingStages?.length || filters.fundingTotalMin || filters.fundingTotalMax) {
+      body.company_funding = {
+        ...(filters.fundingStages?.length ? { stage: filters.fundingStages } : {}),
+        ...(filters.fundingTotalMin || filters.fundingTotalMax
+          ? { total_funding: { min: filters.fundingTotalMin, max: filters.fundingTotalMax } }
+          : {}),
+      };
+    }
+
+    if (filters.technologies?.length) {
+      body.company_technology = { include: filters.technologies };
+    }
+
+    if (filters.companyType?.length) {
+      body.company_type = filters.companyType[0];
+    }
+
+    if (filters.foundedYearMin || filters.foundedYearMax) {
+      body.company_founded = {
+        min: filters.foundedYearMin,
+        max: filters.foundedYearMax,
+        include_unknown_founded: true,
+      };
+    }
+
+    if (filters.naicsCodes?.length) {
+      body.company_naics = { include: filters.naicsCodes };
+    }
+
+    if (filters.sicCodes?.length) {
+      body.company_sics = { include: filters.sicCodes };
+    }
+
+    if (filters.departments?.length) {
+      body.person_department = { include: filters.departments };
+    }
+
+    if (filters.yearsExperienceMin !== undefined || filters.yearsExperienceMax !== undefined) {
+      body.person_year_of_experience = {
+        min: filters.yearsExperienceMin,
+        max: filters.yearsExperienceMax,
+      };
+    }
+
     // Merge Prospeo-specific extras (e.g., company_funding, person_department)
     if (extras) {
       Object.assign(body, extras);

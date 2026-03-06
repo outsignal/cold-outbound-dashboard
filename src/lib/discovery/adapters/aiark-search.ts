@@ -204,6 +204,30 @@ function parseCompanySizeRange(size: string): { start: number; end: number } {
 }
 
 /**
+ * Parse a revenue string like "1M", "500K", "1B" into a numeric value.
+ * Used for account.revenue and account.funding.totalAmount RANGE filters.
+ */
+function parseRevenueString(val: string): number {
+  const map: Record<string, number> = {
+    "<100K": 0,
+    "100K": 100_000,
+    "500K": 500_000,
+    "1M": 1_000_000,
+    "5M": 5_000_000,
+    "10M": 10_000_000,
+    "25M": 25_000_000,
+    "50M": 50_000_000,
+    "100M": 100_000_000,
+    "250M": 250_000_000,
+    "500M": 500_000_000,
+    "1B": 1_000_000_000,
+    "5B": 5_000_000_000,
+    "10B+": 10_000_000_000,
+  };
+  return map[val] ?? 0;
+}
+
+/**
  * Build the AI Ark request body from DiscoveryFilter.
  *
  * The API expects nested `contact` and `account` objects with filters using
@@ -257,6 +281,68 @@ function buildRequestBody(
   if (filters.companyDomains?.length) {
     account.domain = { any: { include: filters.companyDomains } };
   }
+
+  // revenue → account.revenue (RANGE filter)
+  if (filters.revenueMin || filters.revenueMax) {
+    account.revenue = {
+      type: "RANGE",
+      range: [
+        {
+          start: filters.revenueMin ? parseRevenueString(filters.revenueMin) : 0,
+          end: filters.revenueMax ? parseRevenueString(filters.revenueMax) : 100_000_000_000,
+        },
+      ],
+    };
+  }
+
+  // funding → account.funding (stages + optional totalAmount range)
+  if (filters.fundingStages?.length || filters.fundingTotalMin || filters.fundingTotalMax) {
+    const funding: Record<string, unknown> = {};
+    if (filters.fundingStages?.length) {
+      funding.type = filters.fundingStages;
+    }
+    if (filters.fundingTotalMin || filters.fundingTotalMax) {
+      funding.totalAmount = {
+        start: filters.fundingTotalMin ? parseRevenueString(filters.fundingTotalMin) : 0,
+        end: filters.fundingTotalMax ? parseRevenueString(filters.fundingTotalMax) : 100_000_000_000,
+      };
+    }
+    account.funding = funding;
+  }
+
+  // technologies → account.technology
+  if (filters.technologies?.length) {
+    account.technology = { any: { include: filters.technologies } };
+  }
+
+  // companyType → account.type
+  if (filters.companyType?.length) {
+    account.type = { any: { include: filters.companyType } };
+  }
+
+  // foundedYear → account.foundedYear (RANGE filter)
+  if (filters.foundedYearMin || filters.foundedYearMax) {
+    account.foundedYear = {
+      type: "RANGE",
+      range: {
+        start: filters.foundedYearMin ?? 1900,
+        end: filters.foundedYearMax ?? new Date().getFullYear(),
+      },
+    };
+  }
+
+  // naicsCodes → account.naics
+  if (filters.naicsCodes?.length) {
+    account.naics = { any: { include: filters.naicsCodes } };
+  }
+
+  // BUGGED: AI Ark ignores this filter (returns all records) — included for when they fix it
+  // departments → contact.department
+  if (filters.departments?.length) {
+    contact.department = { any: { include: filters.departments } };
+  }
+
+  // yearsExperience: AI Ark path not confirmed, skipping
 
   // keywords → not sent (contact.keyword returns 400, no workaround)
   // companyKeywords → handled via two-step workaround in search() method

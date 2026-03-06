@@ -22,6 +22,38 @@ export interface DiscoveryFilter {
   companyDomains?: string[];
   /** Company keyword filters (e.g., ["fit-out", "interior design"]) */
   companyKeywords?: string[];
+
+  // --- Company financials & stage ---
+  /** Annual revenue range. Values like "<100K", "1M", "10M", "1B", "10B+" */
+  revenueMin?: string;
+  revenueMax?: string;
+  /** Funding stages: "seed", "series_a", "series_b", "series_c", "series_d", "venture_round", "angel", "ipo", etc. */
+  fundingStages?: string[];
+  /** Minimum total funding amount (e.g., "1M", "5M", "50M") */
+  fundingTotalMin?: string;
+  /** Maximum total funding amount */
+  fundingTotalMax?: string;
+
+  // --- Company characteristics ---
+  /** Technologies/tools the company uses (e.g., ["Salesforce", "AWS", "React"]) */
+  technologies?: string[];
+  /** Company type: "Private", "Public", "Non Profit", "Other" / AI Ark equivalents */
+  companyType?: string[];
+  /** Founded year range */
+  foundedYearMin?: number;
+  foundedYearMax?: number;
+  /** NAICS industry codes */
+  naicsCodes?: string[];
+  /** SIC industry codes */
+  sicCodes?: string[];
+
+  // --- Person characteristics ---
+  /** Department/function: "Sales", "Marketing", "Engineering", etc. */
+  departments?: string[];
+  /** Minimum years of experience */
+  yearsExperienceMin?: number;
+  /** Maximum years of experience */
+  yearsExperienceMax?: number;
 }
 
 export interface DiscoveredPersonResult {
