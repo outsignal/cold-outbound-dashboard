@@ -43,7 +43,7 @@ export interface DashboardKPIs {
   inboxesWarning: number;
   inboxesCritical: number;
   // Worker status
-  workerOnline: boolean;
+  workerStatus: "online" | "paused" | "offline";
   workerLastPollAt: string | null;
 }
 
@@ -263,9 +263,13 @@ export async function GET(request: NextRequest) {
       select: { lastPolledAt: true },
     });
     const workerLastPollAt = latestPoll?.lastPolledAt ?? null;
-    const workerOnline = workerLastPollAt
-      ? Date.now() - new Date(workerLastPollAt).getTime() < 10 * 60 * 1000
-      : false;
+    const msSinceLastPoll = workerLastPollAt
+      ? Date.now() - new Date(workerLastPollAt).getTime()
+      : Infinity;
+    const workerStatus: "online" | "paused" | "offline" =
+      msSinceLastPoll < 10 * 60 * 1000 ? "online"
+      : msSinceLastPoll < 24 * 60 * 60 * 1000 ? "paused"
+      : "offline";
 
     // 7. Time-series data from WebhookEvent grouped by date
     const webhookEvents = await prisma.webhookEvent.findMany({
@@ -457,7 +461,7 @@ export async function GET(request: NextRequest) {
       inboxesHealthy,
       inboxesWarning,
       inboxesCritical,
-      workerOnline,
+      workerStatus,
       workerLastPollAt: workerLastPollAt?.toISOString() ?? null,
     };
 

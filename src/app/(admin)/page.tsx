@@ -60,7 +60,7 @@ const emptyKpis: DashboardKPIs = {
   inboxesHealthy: 0,
   inboxesWarning: 0,
   inboxesCritical: 0,
-  workerOnline: false,
+  workerStatus: "offline" as const,
   workerLastPollAt: null,
 };
 
@@ -244,18 +244,36 @@ export default function DashboardPage() {
                     density="compact"
                     className="h-full"
                   />
-                  <Card className="h-full border-t-2 px-4 py-3" style={{ borderTopColor: kpis.workerOnline ? "#10b981" : "#ef4444" }}>
+                  <Card
+                    className="h-full border-t-2 px-4 py-3"
+                    style={{
+                      borderTopColor:
+                        kpis.workerStatus === "online" ? "#10b981"
+                        : kpis.workerStatus === "paused" ? "#f59e0b"
+                        : "#ef4444",
+                    }}
+                  >
                     <div className="flex items-center justify-between">
                       <p className="text-muted-foreground text-xs font-medium">Worker</p>
                       <span className="relative flex h-3 w-3">
-                        {kpis.workerOnline && (
+                        {kpis.workerStatus === "online" && (
                           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                         )}
-                        <span className={`relative inline-flex h-3 w-3 rounded-full ${kpis.workerOnline ? "bg-emerald-500" : "bg-red-500"}`} />
+                        <span
+                          className={`relative inline-flex h-3 w-3 rounded-full ${
+                            kpis.workerStatus === "online" ? "bg-emerald-500"
+                            : kpis.workerStatus === "paused" ? "bg-amber-500"
+                            : "bg-red-500"
+                          }`}
+                        />
                       </span>
                     </div>
-                    <p className="mt-1 text-lg font-semibold">{kpis.workerOnline ? "Online" : "Offline"}</p>
-                    <p className="text-muted-foreground mt-0.5 text-xs">{workerDetail}</p>
+                    <p className="mt-1 text-lg font-semibold">
+                      {kpis.workerStatus === "online" ? "Online" : kpis.workerStatus === "paused" ? "Paused" : "Offline"}
+                    </p>
+                    <p className="text-muted-foreground mt-0.5 text-xs">
+                      {workerDetail}{kpis.workerStatus === "paused" ? " \u00b7 Outside business hours" : ""}
+                    </p>
                   </Card>
                 </div>
               );
