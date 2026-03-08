@@ -12,6 +12,8 @@ import { updateAcceptanceRate } from "@/lib/linkedin/sender";
 import { recoverStuckActions, expireStaleActions } from "@/lib/linkedin/queue";
 import { prisma } from "@/lib/db";
 
+export const maxDuration = 60;
+
 export async function GET(request: Request) {
   if (!validateCronSecret(request)) {
     console.log(
