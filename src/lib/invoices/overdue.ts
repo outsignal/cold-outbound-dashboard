@@ -169,7 +169,7 @@ export async function markAndNotifyOverdueInvoices(): Promise<number> {
 
       // Alert admin via ops Slack
       await notify({
-        type: "system",
+        type: "overdue_invoice_alert",
         severity: "error",
         title: `Invoice overdue: ${invoice.invoiceNumber}`,
         message: `${invoice.clientCompanyName} (${invoice.workspaceSlug}) — ${formatGBP(invoice.totalPence)} due ${formatInvoiceDate(invoice.dueDate)}`,

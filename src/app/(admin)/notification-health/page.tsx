@@ -36,11 +36,14 @@ interface Summary {
 
 interface TypeRow {
   notificationType: string;
+  label: string;
+  channels: string;
+  audience: string;
   total: number;
   sent: number;
   failed: number;
   lastFiredAt: string | null;
-  status: "green" | "amber" | "red";
+  status: "green" | "amber" | "red" | "neutral";
 }
 
 interface FailureRow {
@@ -83,16 +86,42 @@ function timeAgo(date: string): string {
   return `${days}d ago`;
 }
 
-const STATUS_BADGE_VARIANT: Record<string, "success" | "warning" | "destructive"> = {
-  green: "success",
-  amber: "warning",
-  red: "destructive",
-};
+function StatusDot({ status }: { status: string }) {
+  if (status === "green") {
+    return (
+      <span className="relative flex h-2.5 w-2.5">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+      </span>
+    );
+  }
+  if (status === "red") {
+    return (
+      <span className="relative flex h-2.5 w-2.5">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
+      </span>
+    );
+  }
+  if (status === "amber") {
+    return (
+      <span className="relative flex h-2.5 w-2.5">
+        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-amber-500" />
+      </span>
+    );
+  }
+  return (
+    <span className="relative flex h-2.5 w-2.5">
+      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-zinc-400" />
+    </span>
+  );
+}
 
 const STATUS_SORT_ORDER: Record<string, number> = {
   red: 0,
   amber: 1,
   green: 2,
+  neutral: 3,
 };
 
 type Range = "24h" | "7d" | "30d";
@@ -236,21 +265,31 @@ export default function NotificationHealthPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Type</TableHead>
+                      <TableHead className="w-[220px]">Type</TableHead>
+                      <TableHead>Channels</TableHead>
+                      <TableHead>Audience</TableHead>
                       <TableHead>Last Fired</TableHead>
                       <TableHead className="text-right">Sent</TableHead>
                       <TableHead className="text-right">Failed</TableHead>
-                      <TableHead>Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {data.byType.map((row) => (
                       <TableRow key={row.notificationType}>
                         <TableCell className="font-medium text-sm">
-                          {formatType(row.notificationType)}
+                          <div className="flex items-center gap-2.5">
+                            <StatusDot status={row.status} />
+                            {row.label}
+                          </div>
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
-                          {row.lastFiredAt ? timeAgo(row.lastFiredAt) : "Never"}
+                          {row.channels}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {row.audience}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {row.lastFiredAt ? timeAgo(row.lastFiredAt) : "—"}
                         </TableCell>
                         <TableCell className="text-right tabular-nums">
                           {row.sent.toLocaleString()}
@@ -258,27 +297,8 @@ export default function NotificationHealthPage() {
                         <TableCell className="text-right tabular-nums">
                           {row.failed.toLocaleString()}
                         </TableCell>
-                        <TableCell>
-                          <Badge variant={STATUS_BADGE_VARIANT[row.status]}>
-                            {row.status === "green"
-                              ? "Healthy"
-                              : row.status === "amber"
-                                ? "Warning"
-                                : "Critical"}
-                          </Badge>
-                        </TableCell>
                       </TableRow>
                     ))}
-                    {data.byType.length === 0 && (
-                      <TableRow>
-                        <TableCell
-                          colSpan={5}
-                          className="text-center py-8 text-muted-foreground"
-                        >
-                          No notifications in this time range
-                        </TableCell>
-                      </TableRow>
-                    )}
                   </TableBody>
                 </Table>
               </CardContent>

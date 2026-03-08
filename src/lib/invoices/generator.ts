@@ -179,7 +179,7 @@ export async function alertUnpaidBeforeRenewal(): Promise<number> {
 
     try {
       await notify({
-        type: "system",
+        type: "unpaid_renewal_alert",
         severity: "warning",
         title: `Unpaid invoice before renewal: ${invoice.invoiceNumber}`,
         message: `${ws.name} — invoice ${invoice.invoiceNumber} is unpaid. Renewal in ${hoursUntilRenewal}h.`,

@@ -2,6 +2,25 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminAuth } from "@/lib/require-admin-auth";
 import { prisma } from "@/lib/db";
 
+const ALL_NOTIFICATION_TYPES = [
+  { key: "reply", label: "Reply Received", channels: "Slack + Email", audience: "Client + Admin" },
+  { key: "approval", label: "Campaign Approval", channels: "Slack + Email", audience: "Client" },
+  { key: "deploy", label: "Campaign Deploy", channels: "Slack + Email", audience: "Admin" },
+  { key: "campaign_live", label: "Campaign Live", channels: "Slack + Email", audience: "Client + Admin" },
+  { key: "inbox_disconnect", label: "Inbox Disconnect", channels: "Email + Slack", audience: "Admin" },
+  { key: "sender_health", label: "Sender Health", channels: "Slack + Email", audience: "Admin" },
+  { key: "sender_health_digest", label: "Sender Health Digest", channels: "Slack + Email", audience: "Admin" },
+  { key: "invoice", label: "Invoice Sent", channels: "Email", audience: "Client" },
+  { key: "overdue_reminder", label: "Overdue Reminder", channels: "Email + Slack", audience: "Client + Admin" },
+  { key: "onboarding_invite", label: "Onboarding Invite", channels: "Email", audience: "Client" },
+  { key: "magic_link", label: "Portal Login", channels: "Email", audience: "Client" },
+  { key: "proposal", label: "Proposal Ready", channels: "Email", audience: "Client" },
+  { key: "payment_received", label: "Payment Received", channels: "Email", audience: "Client" },
+  { key: "overdue_invoice_alert", label: "Overdue Invoice Alert", channels: "Slack", audience: "Admin" },
+  { key: "unpaid_renewal_alert", label: "Unpaid Renewal Alert", channels: "Slack", audience: "Admin" },
+  { key: "system", label: "System Events", channels: "Slack", audience: "Admin" },
+] as const;
+
 // GET /api/notification-health?range=24h|7d|30d
 export async function GET(request: NextRequest) {
   const session = await requireAdminAuth();
@@ -48,24 +67,45 @@ export async function GET(request: NextRequest) {
     lastFiredAt: Date | null;
   }>;
 
-  const byTypeFormatted = byType.map((row) => {
-    const t = Number(row.total);
-    const f = Number(row.failed);
+  // Build a lookup from audit data keyed by notification type
+  const auditMap = new Map(
+    byType.map((row) => [
+      row.notificationType,
+      {
+        total: Number(row.total),
+        sent: Number(row.sent),
+        failed: Number(row.failed),
+        lastFiredAt: row.lastFiredAt?.toISOString() ?? null,
+      },
+    ]),
+  );
+
+  // Merge static list with audit data
+  const byTypeFormatted = ALL_NOTIFICATION_TYPES.map((nt) => {
+    const audit = auditMap.get(nt.key);
+    const t = audit?.total ?? 0;
+    const f = audit?.failed ?? 0;
     const rate = t > 0 ? f / t : 0;
-    const hoursSinceLastFired = row.lastFiredAt
-      ? (Date.now() - new Date(row.lastFiredAt).getTime()) / (1000 * 60 * 60)
+    const hoursSinceLastFired = audit?.lastFiredAt
+      ? (Date.now() - new Date(audit.lastFiredAt).getTime()) / (1000 * 60 * 60)
       : Infinity;
 
-    let status: "green" | "amber" | "red" = "green";
-    if (rate > 0.2 || hoursSinceLastFired > 24) status = "red";
-    else if (rate > 0.05 || hoursSinceLastFired > 12) status = "amber";
+    let status: "green" | "amber" | "red" | "neutral" = "neutral";
+    if (t > 0) {
+      status = "green";
+      if (rate > 0.2 || hoursSinceLastFired > 24) status = "red";
+      else if (rate > 0.05 || hoursSinceLastFired > 12) status = "amber";
+    }
 
     return {
-      notificationType: row.notificationType,
+      notificationType: nt.key,
+      label: nt.label,
+      channels: nt.channels,
+      audience: nt.audience,
       total: t,
-      sent: Number(row.sent),
+      sent: audit?.sent ?? 0,
       failed: f,
-      lastFiredAt: row.lastFiredAt?.toISOString() ?? null,
+      lastFiredAt: audit?.lastFiredAt ?? null,
       status,
     };
   });
