@@ -137,10 +137,17 @@ export async function POST(request: NextRequest) {
     const isNonRealReply =
       fromEmail.includes("mailer-daemon") ||
       fromEmail.includes("postmaster") ||
+      fromEmail.includes("noreply") ||
+      fromEmail.includes("no-reply") ||
+      fromEmail.includes("@microsoft.com") ||
+      (fromEmail.includes("@google.com") && (fromEmail.includes("noreply") || fromEmail.includes("no-reply"))) ||
       emailSubject.includes("delivery status notification") ||
       /out of office|automatic reply|auto-reply|autoreply/i.test(subject ?? "") ||
       emailSubject.includes("connection test") ||
-      emailSubject.includes("test email");
+      emailSubject.includes("test email") ||
+      emailSubject.includes("weekly digest") ||
+      emailSubject.includes("service update") ||
+      emailSubject.includes("retention settings");
     const isAutomatedFlag = automatedReply || isNonRealReply;
 
     await prisma.webhookEvent.create({

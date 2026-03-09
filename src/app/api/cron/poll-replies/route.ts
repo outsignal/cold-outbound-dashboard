@@ -52,10 +52,17 @@ export async function GET(request: Request) {
           reply.automated_reply ||
           fromEmail.includes("mailer-daemon") ||
           fromEmail.includes("postmaster") ||
+          fromEmail.includes("noreply") ||
+          fromEmail.includes("no-reply") ||
+          fromEmail.includes("@microsoft.com") ||
+          (fromEmail.includes("@google.com") && (fromEmail.includes("noreply") || fromEmail.includes("no-reply"))) ||
           subj.includes("delivery status notification") ||
           /out of office|automatic reply|auto-reply|autoreply/i.test(reply.subject ?? "") ||
           subj.includes("connection test") ||
-          subj.includes("test email");
+          subj.includes("test email") ||
+          subj.includes("weekly digest") ||
+          subj.includes("service update") ||
+          subj.includes("retention settings");
 
         if (isNonReal) {
           wsResult.skipped++;
@@ -69,7 +76,6 @@ export async function GET(request: Request) {
 
         const existing = await prisma.webhookEvent.findFirst({
           where: {
-            workspace: ws.slug,
             leadEmail: reply.from_email_address,
             eventType: {
               in: ["LEAD_REPLIED", "LEAD_INTERESTED", "UNTRACKED_REPLY_RECEIVED", "POLLED_REPLY"],
