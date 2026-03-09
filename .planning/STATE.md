@@ -23,11 +23,11 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 ## Current Position
 
 Phase: 23 of 28 (Reply Storage & Classification)
-Plan: —
-Status: Ready to plan
-Last activity: 2026-03-09 — Roadmap created for v3.0
+Plan: 2 of 4
+Status: In progress
+Last activity: 2026-03-09 — Completed 23-01 (Reply Model & Classification Foundation)
 
-Progress: [░░░░░░░░░░] 0% (v3.0)
+Progress: [█░░░░░░░░░] 4% (v3.0)
 
 ## Performance Metrics
 
@@ -46,6 +46,9 @@ Progress: [░░░░░░░░░░] 0% (v3.0)
 
 ### Decisions
 
+- [23-01]: Used prisma db push instead of migrate dev due to existing migration drift — no data loss
+- [23-01]: Single LLM call for intent + sentiment + objectionSubtype — cheaper and more consistent than separate calls
+- [23-01]: No FK constraints on Reply model — consistent with project convention for soft links
 - [v3.0 Roadmap]: Data-flows-downhill ordering — Reply -> Classification -> Aggregation -> Copy Analysis -> Benchmarking -> Insights -> Dashboard
 - [v3.0 Roadmap]: Phase 25 (Copy Analysis) and Phase 26 (Benchmarking) can run in parallel — both depend on Phase 24 but not each other
 - [v3.0 Roadmap]: Hub dashboard (Phase 28) is the final integration phase — reads from all pre-computed data, no raw aggregation at request time
@@ -66,5 +69,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: v3.0 roadmap created, ready to plan Phase 23
+Stopped at: Completed 23-01-PLAN.md
 Resume file: None

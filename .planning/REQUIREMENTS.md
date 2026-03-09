@@ -8,9 +8,9 @@
 ### Reply Classification
 
 - [ ] **REPLY-01**: Admin can see every reply stored with full body text, sender, subject, timestamp, and linked campaign
-- [ ] **REPLY-02**: Each reply is automatically classified by intent (interested, meeting_booked, objection, referral, not_now, unsubscribe, out_of_office, auto_reply, not_relevant)
-- [ ] **REPLY-03**: Each reply is automatically scored for sentiment (positive, neutral, negative) alongside intent classification
-- [ ] **REPLY-04**: Objection replies are automatically sub-classified by type (budget, timing, competitor, authority, need, trust)
+- [x] **REPLY-02**: Each reply is automatically classified by intent (interested, meeting_booked, objection, referral, not_now, unsubscribe, out_of_office, auto_reply, not_relevant)
+- [x] **REPLY-03**: Each reply is automatically scored for sentiment (positive, neutral, negative) alongside intent classification
+- [x] **REPLY-04**: Objection replies are automatically sub-classified by type (budget, timing, competitor, authority, need, trust)
 - [ ] **REPLY-05**: Classification runs automatically on webhook receipt and poll-replies cron with no admin action required
 - [ ] **REPLY-06**: Admin can view classification breakdown (intent distribution, sentiment distribution) per campaign and per workspace
 
@@ -82,9 +82,9 @@
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | REPLY-01 | Phase 23 | Pending |
-| REPLY-02 | Phase 23 | Pending |
-| REPLY-03 | Phase 23 | Pending |
-| REPLY-04 | Phase 23 | Pending |
+| REPLY-02 | Phase 23 | Complete |
+| REPLY-03 | Phase 23 | Complete |
+| REPLY-04 | Phase 23 | Complete |
 | REPLY-05 | Phase 23 | Pending |
 | REPLY-06 | Phase 23 | Pending |
 | ANAL-01 | Phase 24 | Pending |
