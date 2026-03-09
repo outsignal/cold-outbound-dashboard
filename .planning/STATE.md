@@ -1,33 +1,33 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: Lead Discovery & Intelligence
-status: unknown
-last_updated: "2026-03-04T23:29:11.724Z"
+milestone: v3.0
+milestone_name: Campaign Intelligence Hub
+status: defining_requirements
+last_updated: "2026-03-09"
 progress:
-  total_phases: 19
-  completed_phases: 17
-  total_plans: 66
-  completed_plans: 67
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-04)
+See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Own the lead data pipeline end-to-end so we never pay for the same lead twice and can cancel the $300+/month Clay subscription.
-**Current focus:** v2.0 Phase 22 — Client Financials & Invoicing (plan 04 of 5 complete)
+**Current focus:** v3.0 Campaign Intelligence Hub — defining requirements
 
 ## Current Position
 
-Phase: 22 of 22 (Client Financials & Invoicing) -- IN PROGRESS
-Plan: 04 of 5 complete
-Status: Phase 22 plan 04 complete — Sidebar Financials group, invoice list page with create form, revenue dashboard with KPI cards + chart + per-client breakdown
-Last activity: 2026-03-04 -- 22-04 complete (src/components/financials/, src/app/(admin)/financials/page.tsx, src/app/(admin)/revenue/page.tsx, src/app/api/revenue/route.ts)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-09 — Milestone v3.0 started
 
-Progress: [######░░░░] ~7% (v2.0)
+Progress: [░░░░░░░░░░] 0% (v3.0)
 
 ## Accumulated Context
 

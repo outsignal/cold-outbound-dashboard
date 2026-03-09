@@ -73,22 +73,25 @@ Own the lead data pipeline end-to-end so we never pay for the same lead twice an
 - StoreLeads — $75-950/mo, Serper.dev covers ecommerce discovery via Google queries
 - Campaign builder UI — all campaign operations through chat (Cmd+J / CLI)
 
-## Current Milestone: v2.0 Lead Discovery & Intelligence
+## Current Milestone: v3.0 Campaign Intelligence Hub
 
-**Goal:** Transform the Leads Agent from a local DB searcher into a full discovery engine that finds leads across millions of contacts, monitors signals for timing, and generates Creative Ideas copy that outperforms generic outreach.
+**Goal:** Close the feedback loop — automatically classify replies, rank campaign performance, benchmark across workspaces, generate AI-powered insights, and present actionable suggestions to the admin via an Intelligence Hub dashboard. The system does the analysis; the admin makes the decisions.
 
 **Target features:**
-- Multi-source lead discovery (Apollo, Prospeo, AI Ark, Exa.ai, Serper.dev, Apify, Firecrawl directories)
-- Evergreen signal campaigns with full auto-pipeline (PredictLeads + social listening)
-- Creative Ideas copy framework (per-client constrained ideas, not generic "congrats on funding")
-- Signal dashboard with long-term data collection
-- CLI orchestrator chat session
+- Reply classification engine (intent, objection type, buying signals, sentiment scoring)
+- Campaign performance analytics (ranking, strategy comparison, sequence step analysis)
+- Cross-workspace benchmarking (vertical averages, pattern identification)
+- ICP score calibration (do high scores actually convert?)
+- AI-powered insight generation (scheduled analysis → actionable cards)
+- Admin action queue (approve/dismiss/defer suggested optimizations)
+- Intelligence Hub dashboard page
+- Optional digest notifications (Slack/email summary of top insights)
 
 ## Current State
 
-**Shipped:** v1.1 Outbound Pipeline (2026-03-03) — 9 phases, 40 plans, 87/87 requirements
-**Previous:** v1.0 Lead Engine (2026-02-27) — 7 phases, 22 plans
-**Current:** v2.0 Lead Discovery & Intelligence — in progress
+**Shipped:** v2.0 Lead Discovery & Intelligence (2026-03-04) — 22 phases, 67 plans
+**Previous:** v1.1 Outbound Pipeline (2026-03-03), v1.0 Lead Engine (2026-02-27)
+**Current:** v3.0 Campaign Intelligence Hub — defining requirements
 
 **Codebase:** ~48,200 LOC TypeScript/TSX across 305 files
 **Stack:** Next.js 16, Prisma 6, PostgreSQL (Neon), Vercel, Railway (LinkedIn worker)
@@ -134,4 +137,4 @@ Own the lead data pipeline end-to-end so we never pay for the same lead twice an
 | Railway for signal monitoring | Vercel Hobby 2-cron limit, Railway already running LinkedIn worker, needs continuous background process | — Pending |
 
 ---
-*Last updated: 2026-03-03 after v2.0 milestone start*
+*Last updated: 2026-03-09 after v3.0 milestone start*
