@@ -48,20 +48,24 @@ export async function getAllWorkspaces(): Promise<WorkspaceListItem[]> {
     hasApiToken: true,
   }));
 
-  const dbWs = await prisma.workspace.findMany({
-    orderBy: { createdAt: "desc" },
-  });
-
-  const dbMapped = dbWs
-    .filter((w) => !envWs.some((e) => e.slug === w.slug))
-    .map((w) => ({
-      slug: w.slug,
-      name: w.name,
-      vertical: w.vertical ?? undefined,
-      source: "db" as const,
-      status: w.status,
-      hasApiToken: !!w.apiToken,
-    }));
+  let dbMapped: WorkspaceListItem[] = [];
+  try {
+    const dbWs = await prisma.workspace.findMany({
+      orderBy: { createdAt: "desc" },
+    });
+    dbMapped = dbWs
+      .filter((w) => !envWs.some((e) => e.slug === w.slug))
+      .map((w) => ({
+        slug: w.slug,
+        name: w.name,
+        vertical: w.vertical ?? undefined,
+        source: "db" as const,
+        status: w.status,
+        hasApiToken: !!w.apiToken,
+      }));
+  } catch (err) {
+    console.error("[workspaces] DB query failed, using env workspaces only:", err);
+  }
 
   return [...envWs, ...dbMapped];
 }
