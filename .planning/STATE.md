@@ -49,6 +49,8 @@ Progress: [█░░░░░░░░░] 4% (v3.0)
 - [23-01]: Used prisma db push instead of migrate dev due to existing migration drift — no data loss
 - [23-01]: Single LLM call for intent + sentiment + objectionSubtype — cheaper and more consistent than separate calls
 - [23-01]: No FK constraints on Reply model — consistent with project convention for soft links
+- [23-02]: Outbound email snapshot: webhook uses sequence step position match, poll uses single-step campaign heuristic
+- [23-02]: WebhookEvent ID captured and linked to Reply record for audit trail
 - [23-03]: Raw SQL ($queryRawUnsafe) for stats distributions — Prisma groupBy cannot COALESCE override columns
 - [23-03]: effectiveIntent/effectiveSentiment computed in API response — keeps UI logic simple
 - [v3.0 Roadmap]: Data-flows-downhill ordering — Reply -> Classification -> Aggregation -> Copy Analysis -> Benchmarking -> Insights -> Dashboard
