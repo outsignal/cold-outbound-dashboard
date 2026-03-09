@@ -16,6 +16,7 @@ model Workspace {
   vertical String?
   apiToken String?
   status   String  @default("onboarding") // onboarding | pending_emailbison | active
+  type     String  @default("client")    // "client" | "internal"
 
   // Notification config
   slackChannelId            String?
