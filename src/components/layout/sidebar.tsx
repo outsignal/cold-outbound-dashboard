@@ -32,6 +32,7 @@ import {
   FileText,
   TrendingUp,
   BookOpen,
+  MessageSquareText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -124,6 +125,7 @@ const STATIC_NAV_GROUPS: NavGroup[] = [
     tier: "secondary",
     items: [
       { href: "/email", label: "Email Health", icon: Mail },
+      { href: "/replies", label: "Replies", icon: MessageSquareText },
       { href: "/webhook-log", label: "Webhook Log", icon: Webhook },
     ],
   },
