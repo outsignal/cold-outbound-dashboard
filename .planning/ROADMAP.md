@@ -96,7 +96,11 @@ Plans:
   2. Admin can view a ranked list of campaigns within a workspace sorted by reply rate, open rate, bounce rate, or interested rate
   3. Admin can see per-step sequence analytics for a campaign showing which email step (1st, 2nd, 3rd, etc.) generates the most replies
   4. Admin can compare aggregate metrics across campaigns grouped by copy strategy (creative-ideas, PVP, one-liner) to see which approach performs best
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 24-01-PLAN.md — CachedMetrics schema evolution, snapshot logic, strategy detection, cron endpoint
+- [ ] 24-02-PLAN.md — API routes for campaign rankings, per-step analytics, and strategy comparison
+- [ ] 24-03-PLAN.md — Admin analytics page with rankings table, expandable step charts, and strategy cards
 
 ### Phase 25: Copy Performance Analysis
 **Goal**: The admin can see which subject lines and email body elements correlate with higher reply rates, filtered by workspace and vertical, so copy decisions are data-driven rather than gut-driven
@@ -157,7 +161,7 @@ v3.0 phases: 23 → 24 → 25 (parallel with 26) → 27 → 28
 | 7-14 | v1.1 | 40/40 | Complete | 2026-03-03 |
 | 15-22 | v2.0 | 26/26 | Complete | 2026-03-04 |
 | 23. Reply Storage & Classification | v3.0 | Complete    | 2026-03-09 | 2026-03-09 |
-| 24. Campaign Analytics Engine | v3.0 | 0/TBD | Not started | - |
+| 24. Campaign Analytics Engine | v3.0 | 0/3 | Not started | - |
 | 25. Copy Performance Analysis | v3.0 | 0/TBD | Not started | - |
 | 26. Cross-Workspace Benchmarking & ICP Calibration | v3.0 | 0/TBD | Not started | - |
 | 27. AI Insights & Action Queue | v3.0 | 0/TBD | Not started | - |
