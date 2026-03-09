@@ -1,191 +1,124 @@
-# Requirements: Outsignal Lead Engine v2.0
+# Requirements: Outsignal Lead Engine v3.0
 
-**Defined:** 2026-03-04
-**Core Value:** Own the lead data pipeline end-to-end so we never pay for the same lead twice and can cancel the $300+/month Clay subscription.
+**Defined:** 2026-03-09
+**Core Value:** Close the feedback loop — automatically classify replies, rank campaign performance, benchmark across workspaces, generate AI-powered insights, and present actionable suggestions to the admin. The system does the analysis; the admin makes the decisions.
 
-## v2.0 Requirements
+## v3.0 Requirements
 
-Requirements for Lead Discovery & Intelligence milestone. Each maps to roadmap phases.
+### Reply Classification
 
-### Discovery
+- [ ] **REPLY-01**: Admin can see every reply stored with full body text, sender, subject, timestamp, and linked campaign
+- [ ] **REPLY-02**: Each reply is automatically classified by intent (interested, meeting_booked, objection, referral, not_now, unsubscribe, out_of_office, auto_reply, not_relevant)
+- [ ] **REPLY-03**: Each reply is automatically scored for sentiment (positive, neutral, negative) alongside intent classification
+- [ ] **REPLY-04**: Objection replies are automatically sub-classified by type (budget, timing, competitor, authority, need, trust)
+- [ ] **REPLY-05**: Classification runs automatically on webhook receipt and poll-replies cron with no admin action required
+- [ ] **REPLY-06**: Admin can view classification breakdown (intent distribution, sentiment distribution) per campaign and per workspace
 
-- [x] **DISC-01**: Leads Agent can search Apollo.io People API (275M contacts, free) by title, seniority, industry, location, company size and return paginated results
-- [x] **DISC-02**: Leads Agent can search Prospeo Search Person API with 20+ filters (title, seniority, department, location, company industry, headcount, funding stage)
-- [x] **DISC-03**: Leads Agent can search AI Ark People Search API by role, seniority, department, location, keywords
-- [x] **DISC-04**: Leads Agent can search Serper.dev for Google web results, Maps results, and social mentions (Reddit/Twitter) via natural language queries
-- [x] **DISC-05**: Leads Agent can scrape custom directories via Firecrawl /extract endpoint with structured JSON schema (association member lists, government databases, etc.)
-- [x] **DISC-06**: Discovery results are written to a DiscoveredPerson staging table (not directly to Person) for dedup before promotion
-- [x] **DISC-07**: Agent deduplicates discovered leads against local Person DB (by LinkedIn URL, email, or name+company match) before enrichment
-- [x] **DISC-08**: Agent automatically selects best discovery sources based on ICP type (enterprise B2B → Apollo/Prospeo, niche → Serper/Firecrawl directories, local/SMB → Serper Maps)
-- [x] **DISC-09**: Per-workspace API keys for Apollo.io (ToS requirement — no shared keys across workspaces)
-- [x] **DISC-10**: Discovery adapter pattern (DiscoveryAdapter interface) so new sources can be added without restructuring
-- [x] **DISC-11**: Agent generates a discovery plan (sources selected, reasoning, estimated cost, estimated lead volume per source) and presents for admin approval before executing searches
-- [x] **DISC-12**: Admin can adjust the discovery plan (add/remove sources, change filters) before approving execution
-- [x] **DISC-13**: Discovery plan shows how campaign lead volume tracks against workspace monthly lead quota (e.g., "500 of 2,000 monthly leads used")
+### Campaign Analytics
 
-### Signal Monitoring
+- [ ] **ANAL-01**: Campaign performance metrics (sent, opened, replied, bounced, interested) are stored locally via daily snapshot cron
+- [ ] **ANAL-02**: Admin can rank and compare campaigns within a workspace by reply rate, open rate, bounce rate, and interested rate
+- [ ] **ANAL-03**: Admin can see per-step sequence analytics showing which email step generates the most replies
+- [ ] **ANAL-04**: Admin can compare copy strategy effectiveness (creative-ideas vs PVP vs one-liner) with aggregate metrics across campaigns
 
-- [x] **SIG-01**: PredictLeads integration detects job changes at ICP-matching companies
-- [x] **SIG-02**: PredictLeads integration detects funding rounds (seed, Series A-D, acquisition) at ICP-matching companies
-- [x] **SIG-03**: PredictLeads integration detects hiring spikes (unusual job posting volume)
-- [x] **SIG-04**: PredictLeads integration detects technology adoption changes
-- [x] **SIG-05**: PredictLeads integration detects company news events (product launches, partnerships, C-level changes)
-- [x] **SIG-06**: Serper.dev social listening detects competitor mentions and frustration signals on Reddit/Twitter
-- [x] **SIG-07**: Signal monitoring runs as Railway background worker (cron every 4-6 hours) — not Vercel
-- [x] **SIG-08**: SignalEvent model stores every detected signal with type, company, workspace, timestamp, metadata for long-term intelligence
-- [x] **SIG-09**: Signal-level budget governor prevents cost explosion from burst events (configurable daily cap per workspace)
-- [x] **SIG-10**: Multi-signal stacking detection (2+ signals on same company = high intent flag)
+### Copy Analysis
 
-### Pipeline
+- [ ] **COPY-01**: Admin can see which subject lines produce the highest open and reply rates across campaigns
+- [ ] **COPY-02**: Each outbound email body is automatically analyzed for structural elements (CTA type, problem statement, value proposition, case study, social proof, personalization)
+- [ ] **COPY-03**: Admin can see which body elements correlate with higher reply rates globally (e.g., "emails with case studies get 2.1x more replies")
+- [ ] **COPY-04**: Admin can filter copy analysis by workspace and vertical to see what works differently per industry (e.g., "case studies get 4x in recruitment but only 0.5x in merchandise")
+- [ ] **COPY-05**: Admin can view top-performing email templates with element breakdown showing what made them work
 
-- [x] **PIPE-01**: Admin can create a signal campaign via chat specifying ICP criteria, signal types to monitor, and channel (email/LinkedIn/both)
-- [x] **PIPE-02**: Signal campaign setup requires content template approval (admin review + client dual approval in portal) before going live
-- [x] **PIPE-03**: When a signal fires on a live campaign, leads at the matching company are auto-enriched via existing waterfall
-- [x] **PIPE-04**: Auto-enriched leads are ICP scored and added to the signal campaign's target list
-- [x] **PIPE-05**: New leads auto-deploy to EmailBison/LinkedIn using the campaign's approved content template
-- [x] **PIPE-06**: Admin receives Slack notification when leads are added to a signal campaign ("3 leads added to Rise Fintech Signals")
-- [x] **PIPE-07**: Signal campaigns have a daily lead cap (configurable per campaign) to prevent burst floods
-- [x] **PIPE-08**: Signal campaigns can be paused/resumed instantly by admin
-- [x] **PIPE-09**: Static campaigns (one-off list build → copy → deploy) continue to work as before alongside signal campaigns
+### Cross-Workspace Intelligence
 
-### Workspace Configuration
+- [ ] **BENCH-01**: Admin can benchmark workspace performance against all other workspaces with industry reference bands
+- [ ] **BENCH-02**: Admin can compare performance grouped by vertical, copy strategy, and time period
+- [ ] **BENCH-03**: Admin can see ICP score calibration — correlation between ICP scores at send time and actual reply/conversion outcomes
+- [ ] **BENCH-04**: Admin can see recommended ICP threshold adjustments based on calibration data with confidence indicators
+- [ ] **BENCH-05**: Admin can see signal-to-conversion tracking showing which signal types (funding, hiring, tech adoption) produce the best reply outcomes
 
-- [x] **CFG-01**: Workspace model has a campaign package config defining allowed campaign types (static email, static LinkedIn, signal email, signal LinkedIn)
-- [x] **CFG-02**: Agent enforces workspace package — cannot create signal campaigns if workspace is not approved for signals
-- [x] **CFG-03**: Monthly campaign allowance tracked per workspace (e.g., 2 static campaigns/month)
-- [x] **CFG-04**: Admin can upgrade/downgrade workspace package via chat or API
-- [x] **CFG-05**: Monthly lead quota per workspace (e.g., 2,000 leads/month) — agent enforces quota across all campaigns (static + signal)
-- [x] **CFG-06**: Lead quota usage visible in agent responses and discovery plans
+### AI Insights
 
-### Copy Strategy
+- [ ] **INSIGHT-01**: System generates AI-powered insights weekly per workspace analyzing reply patterns, campaign performance, and cross-workspace comparisons
+- [ ] **INSIGHT-02**: Each insight includes observation, supporting evidence (data), suggested action, and confidence level
+- [ ] **INSIGHT-03**: Admin can approve, dismiss, or defer (snooze N days) each suggested action via the action queue
+- [ ] **INSIGHT-04**: Approved actions execute the suggestion (pause campaign, update ICP threshold, flag for copy review)
+- [ ] **INSIGHT-05**: Admin can see objection pattern clusters across campaigns (e.g., "42% mention budget, 28% mention timing")
+- [ ] **INSIGHT-06**: Admin receives weekly digest notification (Slack + email) summarizing top insights, best/worst campaigns, and pending action queue items
 
-- [x] **COPY-01**: Writer Agent supports multiple copy strategies (Creative Ideas, PVP, one-liner, custom) and admin/agent selects which to use per campaign
-- [x] **COPY-02**: Creative Ideas strategy generates 3 constrained, personalized ideas per prospect based on company research and client offerings
-- [x] **COPY-03**: Each Creative Idea is constrained to a specific client offering/capability (AI cannot make up services the client doesn't provide)
-- [x] **COPY-04**: Ideas are personalized using prospect's company description, website analysis, and ICP data — not generic
-- [x] **COPY-05**: Writer produces both 3-idea format (full) and one-liner variant ("If I were looking at your business, I'd help by...")
-- [x] **COPY-06**: Per-client copy examples are stored in Knowledge Base with tags (e.g., `creative-ideas-{workspaceSlug}`, `pvp-{workspaceSlug}`) — agent retrieves relevant examples based on selected strategy
-- [x] **COPY-07**: AI generates draft copy examples from Research Agent website analysis of client, admin reviews and refines before ingestion
-- [x] **COPY-08**: Writer validates `groundedIn` field for Creative Ideas — every idea must trace to a real client offering (hallucination prevention)
-- [x] **COPY-09**: Signal-triggered emails use signals for timing only — signals are invisible to the recipient, copy leads with value
-- [x] **COPY-10**: Writer consults full Knowledge Base (46+ docs) for best practices regardless of selected strategy — frameworks, subject lines, follow-up patterns, personalization techniques
-- [x] **COPY-11**: Writer generates multiple strategy variants for the same campaign (e.g., Creative Ideas vs PVP vs one-liner) for A/B split testing
-- [x] **COPY-12**: Campaign tracks which strategy variant each lead receives so performance can be compared per strategy
+### Intelligence Hub
 
-### Signal Dashboard
+- [ ] **HUB-01**: Admin can access a dedicated Intelligence Hub dashboard page showing all intelligence data in one place
+- [ ] **HUB-02**: Intelligence Hub displays campaign rankings with sortable metrics table
+- [ ] **HUB-03**: Intelligence Hub displays reply classification breakdown charts (intent distribution, sentiment, objection types)
+- [ ] **HUB-04**: Intelligence Hub displays cross-workspace benchmarking comparison with reference bands
+- [ ] **HUB-05**: Intelligence Hub displays active insights and action queue with approve/dismiss/defer controls
+- [ ] **HUB-06**: Intelligence Hub displays ICP calibration visualization showing score vs conversion correlation
 
-- [x] **DASH-01**: Admin can view live signal feed showing recent signals across all clients
-- [x] **DASH-02**: Dashboard shows per-client signal breakdown (signals fired, leads generated, cost)
-- [x] **DASH-03**: Dashboard shows signal type distribution (funding, job changes, hiring, tech, news, social)
-- [x] **DASH-04**: Dashboard shows daily/weekly cost tracking for signal monitoring per workspace
-- [x] **DASH-05**: SignalEvent data persists for long-term pattern analysis (signal → conversion correlation over time)
+## Future Requirements
 
-### CLI Orchestrator
+### Advanced Analytics
 
-- [x] **CLI-01**: Admin can start interactive chat session with orchestrator agent from Claude Code terminal
-- [x] **CLI-02**: CLI chat supports all existing orchestrator capabilities (delegate to Research, Leads, Writer, Campaign agents)
-- [x] **CLI-03**: CLI chat maintains conversation context across multiple turns within a session
-
-### Quick Fixes
-
-- [x] **FIX-01**: Research Agent has access to searchKnowledgeBase tool (currently missing — only Writer, Leads, Orchestrator have it)
-- [x] **FIX-02**: Enrichment waterfall reordered to actual cheapest-first: FindyMail ($0.001) → Prospeo ($0.002) → AI Ark ($0.003) → LeadMagic ($0.005)
-
-## v2.1 Requirements
-
-Deferred to next milestone. Tracked but not in current roadmap.
-
-### Advanced Discovery
-
-- **DISC-ADV-01**: Exa.ai Websets integration for semantic company search and lookalike discovery
-- **DISC-ADV-02**: Apify LinkedIn no-cookie actor integration for LinkedIn profile scraping
-- **DISC-ADV-03**: Ocean.io or Disco lookalike list building (if Exa doesn't cover the use case)
-- **DISC-ADV-04**: AI Ark company similarity search (lookalike via AI)
-
-### Advanced Signals
-
-- **SIG-ADV-01**: Website visitor identification (RB2B, Warmly) as first-party intent signal
-- **SIG-ADV-02**: G2/Capterra review monitoring for competitor dissatisfaction signals
-- **SIG-ADV-03**: Signal → conversion analytics (which signal types produce the best reply rates)
+- **ADV-01**: Automated campaign pause recommendations when bounce rate exceeds threshold for N consecutive days
+- **ADV-02**: Predictive reply rate estimation for new campaigns based on historical patterns
+- **ADV-03**: Insight quality scoring based on admin approval/dismiss rates (meta-feedback loop)
 
 ## Out of Scope
 
 | Feature | Reason |
 |---------|--------|
-| FullEnrich | Redundant — we have our own enrichment waterfall |
-| StoreLeads | $75-950/mo — Serper.dev covers ecommerce discovery via Google queries |
-| Campaign builder UI | All campaign operations through chat (Cmd+J / CLI) |
-| First-party website visitor ID | Requires pixel/JS install on client sites — high complexity, v2.1+ |
-| Per-lead approve/reject in portal | Binary list-level approval only — consistent with v1.1 |
-| Replacing EmailBison | EmailBison remains sending infrastructure |
-| Domain infrastructure management | Handled externally (PlusVibe) |
+| ML-trained custom classifier | Not enough data at 6 workspaces / ~200 replies/month. LLM classification is more accurate at low volume. |
+| Real-time classification streaming | 5-20 replies/day doesn't justify WebSocket/SSE infrastructure |
+| Predictive deal scoring | CRM territory — Outsignal is a lead engine, not a CRM |
+| A/B test orchestration | EmailBison handles variant sending. We measure results, not orchestrate tests. |
+| Per-lead intelligence timeline | Vanity data that duplicates EmailBison's lead view. Aggregate stats matter more. |
+| Automated campaign pausing | Must suggest, never act. Admin action queue is the pattern. |
+| Client-facing analytics portal | Intelligence is admin-only. Share via digest when relevant. |
+| Custom dashboard builder | One admin user doesn't need drag-and-drop layouts. Fixed, opinionated layout. |
+| Email thread reconstruction | Complex and brittle. Store latest reply, link to EmailBison inbox for full threads. |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FIX-01 | Phase 15 | Complete |
-| FIX-02 | Phase 15 | Complete |
-| DISC-06 | Phase 15 | Complete |
-| DISC-09 | Phase 15 | Complete |
-| DISC-10 | Phase 15 | Complete |
-| CFG-01 | Phase 15 | Complete |
-| CFG-02 | Phase 15 | Complete |
-| CFG-03 | Phase 15 | Complete |
-| CFG-04 | Phase 15 | Complete |
-| CFG-05 | Phase 15 | Complete |
-| CFG-06 | Phase 15 | Complete |
-| DISC-01 | Phase 16 | Complete |
-| DISC-02 | Phase 16 | Complete |
-| DISC-03 | Phase 16 | Complete |
-| DISC-04 | Phase 16 | Complete |
-| DISC-05 | Phase 16 | Complete |
-| DISC-07 | Phase 17 | Complete |
-| DISC-08 | Phase 17 | Complete |
-| DISC-11 | Phase 17 | Complete |
-| DISC-12 | Phase 17 | Complete |
-| DISC-13 | Phase 17 | Complete |
-| SIG-01 | Phase 18 | Complete |
-| SIG-02 | Phase 18 | Complete |
-| SIG-03 | Phase 18 | Complete |
-| SIG-04 | Phase 18 | Complete |
-| SIG-05 | Phase 18 | Complete |
-| SIG-06 | Phase 18 | Complete |
-| SIG-07 | Phase 18 | Complete |
-| SIG-08 | Phase 18 | Complete |
-| SIG-09 | Phase 18 | Complete |
-| SIG-10 | Phase 18 | Complete |
-| PIPE-01 | Phase 19 | Complete |
-| PIPE-02 | Phase 19 | Complete |
-| PIPE-03 | Phase 19 | Complete |
-| PIPE-04 | Phase 19 | Complete |
-| PIPE-05 | Phase 19 | Complete |
-| PIPE-06 | Phase 19 | Complete |
-| PIPE-07 | Phase 19 | Complete |
-| PIPE-08 | Phase 19 | Complete |
-| PIPE-09 | Phase 19 | Complete |
-| COPY-01 | Phase 20 | Complete |
-| COPY-02 | Phase 20 | Complete |
-| COPY-03 | Phase 20 | Complete |
-| COPY-04 | Phase 20 | Complete |
-| COPY-05 | Phase 20 | Complete |
-| COPY-06 | Phase 20 | Complete |
-| COPY-07 | Phase 20 | Complete |
-| COPY-08 | Phase 20 | Complete |
-| DASH-01 | Phase 21 | Complete |
-| DASH-02 | Phase 21 | Complete |
-| DASH-03 | Phase 21 | Complete |
-| DASH-04 | Phase 21 | Complete |
-| DASH-05 | Phase 21 | Complete |
-| CLI-01 | Phase 21 | Complete |
-| CLI-02 | Phase 21 | Complete |
-| CLI-03 | Phase 21 | Complete |
+| REPLY-01 | — | Pending |
+| REPLY-02 | — | Pending |
+| REPLY-03 | — | Pending |
+| REPLY-04 | — | Pending |
+| REPLY-05 | — | Pending |
+| REPLY-06 | — | Pending |
+| ANAL-01 | — | Pending |
+| ANAL-02 | — | Pending |
+| ANAL-03 | — | Pending |
+| ANAL-04 | — | Pending |
+| COPY-01 | — | Pending |
+| COPY-02 | — | Pending |
+| COPY-03 | — | Pending |
+| COPY-04 | — | Pending |
+| COPY-05 | — | Pending |
+| BENCH-01 | — | Pending |
+| BENCH-02 | — | Pending |
+| BENCH-03 | — | Pending |
+| BENCH-04 | — | Pending |
+| BENCH-05 | — | Pending |
+| INSIGHT-01 | — | Pending |
+| INSIGHT-02 | — | Pending |
+| INSIGHT-03 | — | Pending |
+| INSIGHT-04 | — | Pending |
+| INSIGHT-05 | — | Pending |
+| INSIGHT-06 | — | Pending |
+| HUB-01 | — | Pending |
+| HUB-02 | — | Pending |
+| HUB-03 | — | Pending |
+| HUB-04 | — | Pending |
+| HUB-05 | — | Pending |
+| HUB-06 | — | Pending |
 
 **Coverage:**
-- v2.0 requirements: 56 total
-- Mapped to phases: 56
-- Unmapped: 0 ✓
+- v3.0 requirements: 32 total
+- Mapped to phases: 0
+- Unmapped: 32 ⚠️
 
 ---
-*Requirements defined: 2026-03-04*
-*Last updated: 2026-03-04 after roadmap creation*
+*Requirements defined: 2026-03-09*
+*Last updated: 2026-03-09 after initial definition*
