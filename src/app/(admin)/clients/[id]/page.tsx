@@ -10,6 +10,7 @@ import {
   Trash2,
   ExternalLink,
   Mail,
+  Phone,
   User,
   Calendar,
   ChevronDown,
@@ -434,7 +435,18 @@ export default function ClientDetailPage() {
                       </a>
                     </div>
                   )}
-                  {!client.contactName && !client.contactEmail && (
+                  {client.contactPhone && (
+                    <div className="flex items-center gap-1.5 text-sm">
+                      <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                      <a
+                        href={`tel:${client.contactPhone}`}
+                        className="text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        {client.contactPhone}
+                      </a>
+                    </div>
+                  )}
+                  {!client.contactName && !client.contactEmail && !client.contactPhone && (
                     <span className="text-sm text-muted-foreground">--</span>
                   )}
                 </div>

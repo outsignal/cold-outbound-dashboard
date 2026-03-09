@@ -902,6 +902,7 @@ model Client {
   id              String    @id @default(cuid())
   name            String
   contactEmail    String?
+  contactPhone    String?
   contactName     String?
   website         String?
   companyOverview String?

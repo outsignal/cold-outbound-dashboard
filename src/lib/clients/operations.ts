@@ -54,6 +54,7 @@ export interface ClientSummary {
   workspaceSlug: string | null;
   workspaceType?: string;
   contactEmail: string | null;
+  contactPhone: string | null;
   contactName: string | null;
   stageProgress: StageProgress[];
   outstandingTasks: number;
@@ -88,6 +89,7 @@ export interface ClientDetail extends ClientSummary {
 export interface CreateClientParams {
   name: string;
   contactEmail?: string;
+  contactPhone?: string;
   contactName?: string;
   website?: string;
   companyOverview?: string;
@@ -102,6 +104,7 @@ export interface CreateClientParams {
 export interface UpdateClientParams {
   name?: string;
   contactEmail?: string;
+  contactPhone?: string;
   contactName?: string;
   website?: string;
   companyOverview?: string;
@@ -227,6 +230,7 @@ function formatClientDetail(
     campaignType: string;
     workspaceSlug: string | null;
     contactEmail: string | null;
+    contactPhone: string | null;
     contactName: string | null;
     website: string | null;
     companyOverview: string | null;
@@ -267,6 +271,7 @@ function formatClientDetail(
     campaignType: raw.campaignType,
     workspaceSlug: raw.workspaceSlug,
     contactEmail: raw.contactEmail,
+    contactPhone: raw.contactPhone,
     contactName: raw.contactName,
     stageProgress: computeStageProgress(raw.tasks),
     outstandingTasks: raw.tasks.filter((t) => t.status !== "complete").length,
@@ -381,6 +386,7 @@ export async function listClients(
     workspaceSlug: c.workspaceSlug,
     workspaceType: c.workspaceSlug ? workspaceTypeMap.get(c.workspaceSlug) : undefined,
     contactEmail: c.contactEmail,
+    contactPhone: c.contactPhone,
     contactName: c.contactName,
     stageProgress: computeStageProgress(c.tasks),
     outstandingTasks: c.tasks.filter((t) => t.status !== "complete").length,
@@ -435,6 +441,7 @@ export async function createClient(
     data: {
       name: params.name,
       contactEmail: params.contactEmail ?? null,
+      contactPhone: params.contactPhone ?? null,
       contactName: params.contactName ?? null,
       website: params.website ?? null,
       companyOverview: params.companyOverview ?? null,
@@ -504,6 +511,7 @@ export async function updateClient(
   const data: Record<string, unknown> = {};
   if (params.name !== undefined) data.name = params.name;
   if (params.contactEmail !== undefined) data.contactEmail = params.contactEmail;
+  if (params.contactPhone !== undefined) data.contactPhone = params.contactPhone;
   if (params.contactName !== undefined) data.contactName = params.contactName;
   if (params.website !== undefined) data.website = params.website;
   if (params.companyOverview !== undefined) data.companyOverview = params.companyOverview;
