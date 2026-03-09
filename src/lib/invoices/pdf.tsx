@@ -257,18 +257,36 @@ const styles = StyleSheet.create({
   },
 });
 
+/**
+ * Parse a stored address string into display lines.
+ * Handles both newline-separated (from billing fields) and
+ * comma-separated (legacy manual entries) formats.
+ * Groups: line1 + line2 (optional) → city → postcode
+ */
+function parseAddress(raw: string | null): string[] {
+  if (!raw) return [];
+  if (raw.includes("\n")) return raw.split("\n").filter(Boolean);
+
+  // Legacy comma-separated: "Arkwright House, Parsonage Gardens, Manchester, M3 2LF"
+  // Group into: "Arkwright House, Parsonage Gardens" / "Manchester" / "M3 2LF"
+  const parts = raw.split(", ").filter(Boolean);
+  if (parts.length <= 1) return parts;
+  if (parts.length <= 3) return parts;
+
+  // 4+ parts: join first N-2 as address lines, then city, then postcode
+  const postcode = parts[parts.length - 1];
+  const city = parts[parts.length - 2];
+  const streetLines = parts.slice(0, -2).join(", ");
+  return [streetLines, city, postcode];
+}
+
 interface InvoicePdfDocumentProps {
   invoice: InvoiceWithLineItems;
 }
 
 export function InvoicePdfDocument({ invoice }: InvoicePdfDocumentProps) {
-  const addressLines = invoice.senderAddress
-    ? invoice.senderAddress.split("\n").filter(Boolean)
-    : [];
-
-  const clientLines = invoice.clientAddress
-    ? invoice.clientAddress.split("\n").filter(Boolean)
-    : [];
+  const addressLines = parseAddress(invoice.senderAddress);
+  const clientLines = parseAddress(invoice.clientAddress);
 
   const dueDateLabel = formatInvoiceDate(invoice.dueDate);
   const issueDateLabel = formatInvoiceDate(invoice.issueDate);
