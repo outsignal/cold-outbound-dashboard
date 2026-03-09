@@ -248,6 +248,58 @@ model CachedMetrics {
   @@unique([workspace, metricType])
 }
 
+model Reply {
+  id             String   @id @default(cuid())
+  workspaceSlug  String
+
+  // Core reply data
+  senderEmail    String
+  senderName     String?
+  subject        String?
+  bodyText       String       // Plain text, HTML stripped
+  receivedAt     DateTime
+
+  // EmailBison linkage
+  emailBisonReplyId  Int?    @unique  // EB reply.id for dedup
+  campaignId         String? // Outsignal campaign ID (looked up from EB campaign_id)
+  campaignName       String? // Denormalized for display
+  sequenceStep       Int?    // data.scheduled_email.sequence_step_order
+
+  // Outbound email snapshot (for copy analysis in Phase 25)
+  outboundSubject  String?
+  outboundBody     String?
+
+  // Classification (null = not yet classified or classification failed)
+  intent           String?  // interested|meeting_booked|objection|referral|not_now|unsubscribe|out_of_office|auto_reply|not_relevant
+  sentiment        String?  // positive|neutral|negative
+  objectionSubtype String?  // budget|timing|competitor|authority|need|trust (only when intent=objection)
+  classificationSummary String? // 1-line LLM reasoning
+  classifiedAt     DateTime?
+
+  // Override tracking
+  overrideIntent       String?
+  overrideSentiment    String?
+  overrideObjSubtype   String?
+  overriddenAt         DateTime?
+  overriddenBy         String?  // admin email
+
+  // Source tracking
+  source           String   @default("webhook") // webhook|poll|backfill
+  webhookEventId   String?  // Link to WebhookEvent for audit trail
+  personId         String?  // Link to Person (looked up by email)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([workspaceSlug, receivedAt])
+  @@index([workspaceSlug, intent])
+  @@index([workspaceSlug, sentiment])
+  @@index([campaignId])
+  @@index([senderEmail])
+  @@index([intent])
+  @@index([classifiedAt])  // For retry cron: WHERE classifiedAt IS NULL
+}
+
 model InboxStatusSnapshot {
   id                 String   @id @default(cuid())
   workspaceSlug      String   @unique
