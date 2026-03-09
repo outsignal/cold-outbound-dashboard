@@ -242,10 +242,14 @@ model CachedMetrics {
   id         String   @id @default(cuid())
   workspace  String
   metricType String
+  metricKey  String   @default("")
+  date       String   @default("")  // "YYYY-MM-DD" UTC
   data       String
   computedAt DateTime @default(now())
 
-  @@unique([workspace, metricType])
+  @@unique([workspace, metricType, metricKey, date])
+  @@index([workspace, metricType])
+  @@index([date])
 }
 
 model Reply {
