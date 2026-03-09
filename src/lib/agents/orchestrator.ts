@@ -567,154 +567,6 @@ const dashboardTools = {
   }),
 };
 
-// --- Agent Memory Tools ---
-
-function addInterval(date: Date, interval: string): Date {
-  const d = new Date(date);
-  switch (interval) {
-    case "weekly":
-      d.setDate(d.getDate() + 7);
-      break;
-    case "monthly":
-      d.setMonth(d.getMonth() + 1);
-      break;
-    case "quarterly":
-      d.setMonth(d.getMonth() + 3);
-      break;
-  }
-  return d;
-}
-
-const memoryTools = {
-  saveMemory: tool({
-    description:
-      "Save a persistent memory item (note, reminder, or preference). Upserts by key — use the same key to update an existing item.",
-    inputSchema: z.object({
-      key: z.string().describe("Unique key for this memory item (e.g. 'kb-review-reminder', 'admin-timezone')"),
-      content: z.string().describe("The content to remember"),
-      type: z.enum(["note", "reminder", "preference"]).describe("Type of memory item"),
-      dueAt: z.string().optional().describe("ISO date string for when a reminder is due (reminders only)"),
-      recurring: z.enum(["weekly", "monthly", "quarterly"]).optional().describe("Recurrence interval (reminders only)"),
-    }),
-    execute: async ({ key, content, type, dueAt, recurring }) => {
-      let parsedDueAt: Date | null = null;
-      if (dueAt) {
-        parsedDueAt = new Date(dueAt);
-      } else if (type === "reminder" && recurring) {
-        // If no dueAt provided for a recurring reminder, calculate next occurrence from now
-        parsedDueAt = addInterval(new Date(), recurring);
-      }
-
-      const memory = await prisma.agentMemory.upsert({
-        where: { key },
-        create: {
-          key,
-          content,
-          type,
-          dueAt: parsedDueAt,
-          recurring: recurring ?? null,
-          active: true,
-        },
-        update: {
-          content,
-          type,
-          dueAt: parsedDueAt,
-          recurring: recurring ?? null,
-          active: true,
-        },
-      });
-
-      return {
-        status: "saved",
-        key: memory.key,
-        type: memory.type,
-        dueAt: memory.dueAt?.toISOString() ?? null,
-        recurring: memory.recurring,
-      };
-    },
-  }),
-
-  listMemory: tool({
-    description: "List all active persistent memory items, optionally filtered by type",
-    inputSchema: z.object({
-      type: z.enum(["note", "reminder", "preference"]).optional().describe("Filter by type"),
-    }),
-    execute: async ({ type }) => {
-      const memories = await prisma.agentMemory.findMany({
-        where: {
-          active: true,
-          ...(type ? { type } : {}),
-        },
-        orderBy: { createdAt: "asc" },
-      });
-
-      return memories.map((m) => ({
-        key: m.key,
-        content: m.content,
-        type: m.type,
-        dueAt: m.dueAt?.toISOString() ?? null,
-        recurring: m.recurring,
-        lastShownAt: m.lastShownAt?.toISOString() ?? null,
-        createdAt: m.createdAt.toISOString(),
-      }));
-    },
-  }),
-
-  deleteMemory: tool({
-    description: "Soft-delete a memory item by key (sets active = false)",
-    inputSchema: z.object({
-      key: z.string().describe("Key of the memory item to delete"),
-    }),
-    execute: async ({ key }) => {
-      try {
-        await prisma.agentMemory.update({
-          where: { key },
-          data: { active: false },
-        });
-        return { status: "deleted", key };
-      } catch {
-        return { status: "not_found", key };
-      }
-    },
-  }),
-
-  completeReminder: tool({
-    description:
-      "Mark a reminder as shown. For recurring reminders, bumps dueAt forward by the interval. For non-recurring, deactivates it.",
-    inputSchema: z.object({
-      key: z.string().describe("Key of the reminder to complete"),
-    }),
-    execute: async ({ key }) => {
-      const memory = await prisma.agentMemory.findUnique({ where: { key } });
-      if (!memory) return { status: "not_found", key };
-
-      const now = new Date();
-
-      if (memory.recurring && memory.dueAt) {
-        // Bump forward by recurring interval
-        const nextDue = addInterval(memory.dueAt, memory.recurring);
-        await prisma.agentMemory.update({
-          where: { key },
-          data: { lastShownAt: now, dueAt: nextDue },
-        });
-        return {
-          status: "bumped",
-          key,
-          nextDueAt: nextDue.toISOString(),
-          recurring: memory.recurring,
-        };
-      } else {
-        // Non-recurring — deactivate
-        await prisma.agentMemory.update({
-          where: { key },
-          data: { lastShownAt: now, active: false },
-        });
-        return { status: "completed", key };
-      }
-    },
-  }),
-};
-
 // --- Combined Tools for Orchestrator ---
 
 export const orchestratorTools = {
@@ -727,8 +579,6 @@ export const orchestratorTools = {
   searchKnowledgeBase,
   // Existing dashboard tools (for simple queries)
   ...dashboardTools,
-  // Agent persistent memory tools
-  ...memoryTools,
 };
 
 // --- Orchestrator Configuration ---
@@ -812,16 +662,6 @@ Signal campaigns are evergreen — they run indefinitely, automatically discover
 5. "Resume it" → delegateToCampaign
 
 Signal campaigns skip the client portal approval flow — leads auto-deploy when they pass ICP scoring.
-
-## Persistent Memory
-You have persistent memory that survives across conversations. Use it to:
-- Remember important context the admin tells you
-- Set reminders for recurring tasks (e.g., monthly KB review)
-- Store preferences and notes about clients/campaigns
-
-When you see due reminders in your context, proactively mention them to the admin at the start of the conversation. After surfacing a reminder, use completeReminder to bump it to the next due date.
-
-Tools: saveMemory, listMemory, deleteMemory, completeReminder
 
 ## Guidelines:
 - Be concise and action-oriented
