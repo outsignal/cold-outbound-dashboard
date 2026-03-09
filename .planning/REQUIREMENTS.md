@@ -17,8 +17,8 @@
 ### Campaign Analytics
 
 - [x] **ANAL-01**: Campaign performance metrics (sent, opened, replied, bounced, interested) are stored locally via daily snapshot cron
-- [ ] **ANAL-02**: Admin can rank and compare campaigns within a workspace by reply rate, open rate, bounce rate, and interested rate
-- [ ] **ANAL-03**: Admin can see per-step sequence analytics showing which email step generates the most replies
+- [x] **ANAL-02**: Admin can rank and compare campaigns within a workspace by reply rate, open rate, bounce rate, and interested rate
+- [x] **ANAL-03**: Admin can see per-step sequence analytics showing which email step generates the most replies
 - [x] **ANAL-04**: Admin can compare copy strategy effectiveness (creative-ideas vs PVP vs one-liner) with aggregate metrics across campaigns
 
 ### Copy Analysis
@@ -88,8 +88,8 @@
 | REPLY-05 | Phase 23 | Complete |
 | REPLY-06 | Phase 23 | Complete |
 | ANAL-01 | Phase 24 | Complete |
-| ANAL-02 | Phase 24 | Pending |
-| ANAL-03 | Phase 24 | Pending |
+| ANAL-02 | Phase 24 | Complete |
+| ANAL-03 | Phase 24 | Complete |
 | ANAL-04 | Phase 24 | Complete |
 | COPY-01 | Phase 25 | Pending |
 | COPY-02 | Phase 25 | Pending |

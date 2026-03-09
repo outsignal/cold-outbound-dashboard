@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Campaign Intelligence Hub
 status: unknown
-last_updated: "2026-03-09T19:33:46.037Z"
+last_updated: "2026-03-09T20:36:28.000Z"
 progress:
   total_phases: 20
   completed_phases: 18
   total_plans: 70
-  completed_plans: 71
+  completed_plans: 72
 ---
 
 # Project State
@@ -23,16 +23,16 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 ## Current Position
 
 Phase: 24 of 28 (Campaign Analytics Engine)
-Plan: 1 of 3
-Status: Plan 24-01 complete
-Last activity: 2026-03-09 — Completed 24-01 (Data Foundation)
+Plan: 2 of 3
+Status: Plan 24-02 complete
+Last activity: 2026-03-09 — Completed 24-02 (Analytics API Routes)
 
-Progress: [██░░░░░░░░] 20% (v3.0) -- Phase 24 in progress (1/3 plans)
+Progress: [██░░░░░░░░] 20% (v3.0) -- Phase 24 in progress (2/3 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 93 (v1.0: 22, v1.1: 40, v2.0: 26, v3.0: 5)
+- Total plans completed: 94 (v1.0: 22, v1.1: 40, v2.0: 26, v3.0: 6)
 - Average duration: ~15 min
 - Total execution time: ~22 hours
 
@@ -65,6 +65,9 @@ Progress: [██░░░░░░░░] 20% (v3.0) -- Phase 24 in progress (1
 - [24-01]: CachedMetrics evolved with metricKey+date fields (Option A) — model was unused, safe to modify via db push
 - [24-01]: Default empty strings for metricKey/date for backward compat; rates rounded to 2 decimal places
 - [24-01]: AI SDK generateText does not support maxTokens param — removed, prompt constrains output naturally
+- [24-02]: Latest snapshot per campaign (not sum across days) since EB stats are cumulative
+- [24-02]: Campaigns with <10 sends excluded for statistical significance
+- [24-02]: Intent distribution per step always queried fresh from Reply table
 
 ### Blockers/Concerns
 
@@ -80,5 +83,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-09
-Stopped at: Completed 24-01-PLAN.md
+Stopped at: Completed 24-02-PLAN.md
 Resume file: None
