@@ -61,7 +61,7 @@ Full details: [milestones/v2.0-ROADMAP.md](milestones/v2.0-ROADMAP.md)
 
 **Milestone Goal:** Close the feedback loop — automatically classify replies, rank campaign performance, benchmark across workspaces, generate AI-powered insights, and present actionable suggestions to the admin via an Intelligence Hub dashboard. The system does the analysis; the admin makes the decisions.
 
-- [ ] **Phase 23: Reply Storage & Classification** - Store every reply with full body text and automatically classify by intent, sentiment, and objection type
+- [x] **Phase 23: Reply Storage & Classification** - Store every reply with full body text and automatically classify by intent, sentiment, and objection type
 - [ ] **Phase 24: Campaign Analytics Engine** - Pre-compute campaign performance metrics via cron and enable ranking, comparison, and per-step sequence analysis
 - [ ] **Phase 25: Copy Performance Analysis** - Analyze subject lines and email body structural elements to surface what copy patterns drive the highest reply rates
 - [ ] **Phase 26: Cross-Workspace Benchmarking & ICP Calibration** - Benchmark workspace performance against vertical averages and calibrate ICP scores against actual conversion outcomes
@@ -80,12 +80,12 @@ Full details: [milestones/v2.0-ROADMAP.md](milestones/v2.0-ROADMAP.md)
   3. Each reply automatically shows a sentiment score (positive, neutral, negative) alongside its intent classification
   4. Replies classified as "objection" additionally show an objection subtype (budget, timing, competitor, authority, need, trust)
   5. Admin can view classification breakdown charts showing intent distribution and sentiment distribution filtered per campaign and per workspace
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans executed
 Plans:
-- [ ] 23-01-PLAN.md — Reply model, classification types, classifyReply function, stripHtml utility
-- [ ] 23-02-PLAN.md — Wire reply persistence and classification into webhook handler and poll-replies cron, create retry cron
-- [ ] 23-03-PLAN.md — API routes for replies list, override, and stats aggregation
-- [ ] 23-04-PLAN.md — Admin replies page with filterable table, side panel, classification badges, and charts
+- [x] 23-01-PLAN.md — Reply model, classification types, classifyReply function, stripHtml utility
+- [x] 23-02-PLAN.md — Wire reply persistence and classification into webhook handler and poll-replies cron, create retry cron
+- [x] 23-03-PLAN.md — API routes for replies list, override, and stats aggregation
+- [x] 23-04-PLAN.md — Admin replies page with filterable table, side panel, classification badges, and charts
 
 ### Phase 24: Campaign Analytics Engine
 **Goal**: Campaign performance metrics are captured locally via daily snapshots and pre-computed into CachedMetrics, enabling the admin to rank campaigns, compare performance, and analyze which sequence steps generate the most replies
@@ -156,7 +156,7 @@ v3.0 phases: 23 → 24 → 25 (parallel with 26) → 27 → 28
 | 1-6 | v1.0 | 22/22 | Complete | 2026-02-27 |
 | 7-14 | v1.1 | 40/40 | Complete | 2026-03-03 |
 | 15-22 | v2.0 | 26/26 | Complete | 2026-03-04 |
-| 23. Reply Storage & Classification | 3/4 | In Progress|  | - |
+| 23. Reply Storage & Classification | v3.0 | 4/4 | Complete | 2026-03-09 |
 | 24. Campaign Analytics Engine | v3.0 | 0/TBD | Not started | - |
 | 25. Copy Performance Analysis | v3.0 | 0/TBD | Not started | - |
 | 26. Cross-Workspace Benchmarking & ICP Calibration | v3.0 | 0/TBD | Not started | - |
