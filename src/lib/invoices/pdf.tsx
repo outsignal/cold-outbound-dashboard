@@ -292,7 +292,9 @@ export function InvoicePdfDocument({ invoice }: InvoicePdfDocumentProps) {
   const issueDateLabel = formatInvoiceDate(invoice.issueDate);
 
   const bankDetailsLines = invoice.bankDetails
-    ? invoice.bankDetails.split("\n")
+    ? invoice.bankDetails.includes("\n")
+      ? invoice.bankDetails.split("\n").filter(Boolean)
+      : invoice.bankDetails.split(", ").filter(Boolean)
     : [];
 
   return (
