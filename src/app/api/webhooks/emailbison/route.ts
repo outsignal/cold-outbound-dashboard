@@ -7,6 +7,8 @@ import { enqueueAction, bumpPriority } from "@/lib/linkedin/queue";
 import { assignSenderForPerson } from "@/lib/linkedin/sender";
 import { evaluateSequenceRules } from "@/lib/linkedin/sequencing";
 import { rateLimit } from "@/lib/rate-limit";
+import { classifyReply } from "@/lib/classification/classify-reply";
+import { stripHtml } from "@/lib/classification/strip-html";
 
 export const maxDuration = 60;
 
@@ -150,7 +152,7 @@ export async function POST(request: NextRequest) {
       emailSubject.includes("retention settings");
     const isAutomatedFlag = automatedReply || isNonRealReply;
 
-    await prisma.webhookEvent.create({
+    const webhookEvent = await prisma.webhookEvent.create({
       data: {
         workspace: workspaceSlug,
         eventType,
@@ -326,6 +328,120 @@ export async function POST(request: NextRequest) {
         }
       } catch (err) {
         console.error("LinkedIn fast-track error:", err);
+      }
+    }
+
+    // --- Reply persistence + classification ---
+    const replyEvents = ["LEAD_REPLIED", "LEAD_INTERESTED", "UNTRACKED_REPLY_RECEIVED"];
+    const ebReplyId = data.reply?.id ?? null;
+
+    if (replyEvents.includes(eventType) && !isAutomatedFlag && ebReplyId != null) {
+      try {
+        // Extract reply data
+        const replySenderEmail = data.reply?.from_email_address ?? leadEmail ?? "unknown";
+        const replySenderName = data.reply?.from_name ?? leadName;
+        const replyBodyText = data.reply?.text_body ?? stripHtml(data.reply?.html_body ?? "");
+        const replyReceivedAt = new Date(data.reply?.date_received ?? Date.now());
+        const sequenceStep: number | null = data.scheduled_email?.sequence_step_order ?? null;
+
+        // Look up outbound email snapshot
+        let outboundSubject: string | null = null;
+        let outboundBody: string | null = null;
+        let outsignalCampaignId: string | null = null;
+        let outsignalCampaignName: string | null = null;
+
+        if (campaignId) {
+          try {
+            const campaign = await prisma.campaign.findFirst({
+              where: { emailBisonCampaignId: parseInt(campaignId) },
+              select: { id: true, name: true, emailSequence: true },
+            });
+            if (campaign) {
+              outsignalCampaignId = campaign.id;
+              outsignalCampaignName = campaign.name;
+              if (campaign.emailSequence && sequenceStep != null) {
+                try {
+                  const steps = JSON.parse(campaign.emailSequence) as { position: number; subjectLine?: string; body?: string }[];
+                  const matchedStep = steps.find((s) => s.position === sequenceStep);
+                  if (matchedStep) {
+                    outboundSubject = matchedStep.subjectLine ?? null;
+                    outboundBody = matchedStep.body ?? null;
+                  }
+                } catch {
+                  // JSON parse failure — skip outbound snapshot
+                }
+              }
+            }
+          } catch {
+            // Campaign lookup failure — non-blocking
+          }
+        }
+
+        // Look up personId
+        let personId: string | null = null;
+        try {
+          const person = await prisma.person.findUnique({
+            where: { email: replySenderEmail },
+            select: { id: true },
+          });
+          personId = person?.id ?? null;
+        } catch {
+          // Person lookup failure — non-blocking
+        }
+
+        // Upsert Reply record (dedup by emailBisonReplyId)
+        const reply = await prisma.reply.upsert({
+          where: { emailBisonReplyId: ebReplyId },
+          create: {
+            workspaceSlug,
+            senderEmail: replySenderEmail,
+            senderName: replySenderName,
+            subject,
+            bodyText: replyBodyText,
+            receivedAt: replyReceivedAt,
+            emailBisonReplyId: ebReplyId,
+            campaignId: outsignalCampaignId,
+            campaignName: outsignalCampaignName,
+            sequenceStep,
+            outboundSubject,
+            outboundBody,
+            source: "webhook",
+            webhookEventId: webhookEvent.id,
+            personId,
+          },
+          update: {
+            bodyText: replyBodyText,
+            subject,
+            senderName: replySenderName,
+          },
+        });
+
+        // Classify inline (before notification)
+        try {
+          const classification = await classifyReply({
+            subject,
+            bodyText: reply.bodyText,
+            senderName: reply.senderName,
+            outboundSubject: reply.outboundSubject,
+            outboundBody: reply.outboundBody,
+          });
+          await prisma.reply.update({
+            where: { id: reply.id },
+            data: {
+              intent: classification.intent,
+              sentiment: classification.sentiment,
+              objectionSubtype: classification.objectionSubtype,
+              classificationSummary: classification.summary,
+              classifiedAt: new Date(),
+            },
+          });
+        } catch (err) {
+          console.error("[webhook] Classification failed, will retry:", err);
+          // Reply saved with intent=null — retry cron picks it up
+        }
+      } catch (err) {
+        console.error("[webhook] Reply persistence error:", err);
+        // Non-blocking — continue to notification
       }
     }
 
