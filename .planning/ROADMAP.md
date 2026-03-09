@@ -80,7 +80,7 @@ Full details: [milestones/v2.0-ROADMAP.md](milestones/v2.0-ROADMAP.md)
   3. Each reply automatically shows a sentiment score (positive, neutral, negative) alongside its intent classification
   4. Replies classified as "objection" additionally show an objection subtype (budget, timing, competitor, authority, need, trust)
   5. Admin can view classification breakdown charts showing intent distribution and sentiment distribution filtered per campaign and per workspace
-**Plans:** 4/4 plans executed
+**Plans:** 4/4 plans complete
 Plans:
 - [x] 23-01-PLAN.md — Reply model, classification types, classifyReply function, stripHtml utility
 - [x] 23-02-PLAN.md — Wire reply persistence and classification into webhook handler and poll-replies cron, create retry cron
@@ -156,7 +156,7 @@ v3.0 phases: 23 → 24 → 25 (parallel with 26) → 27 → 28
 | 1-6 | v1.0 | 22/22 | Complete | 2026-02-27 |
 | 7-14 | v1.1 | 40/40 | Complete | 2026-03-03 |
 | 15-22 | v2.0 | 26/26 | Complete | 2026-03-04 |
-| 23. Reply Storage & Classification | v3.0 | 4/4 | Complete | 2026-03-09 |
+| 23. Reply Storage & Classification | v3.0 | Complete    | 2026-03-09 | 2026-03-09 |
 | 24. Campaign Analytics Engine | v3.0 | 0/TBD | Not started | - |
 | 25. Copy Performance Analysis | v3.0 | 0/TBD | Not started | - |
 | 26. Cross-Workspace Benchmarking & ICP Calibration | v3.0 | 0/TBD | Not started | - |
