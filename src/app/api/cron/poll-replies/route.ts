@@ -24,20 +24,24 @@ export async function GET(request: Request) {
     activeWs.map(async (ws) => {
       try {
         const config = await getWorkspaceBySlug(ws.slug);
-        if (!config) return { ws, replies: [] as Reply[] };
+        if (!config) return { ws, replies: [] as Reply[], senderEmailSet: new Set<string>() };
         const client = new EmailBisonClient(config.apiToken);
-        const replies = await client.getRecentReplies(1);
-        return { ws, replies };
+        const [replies, senderEmails] = await Promise.all([
+          client.getRecentReplies(1),
+          client.getSenderEmails(),
+        ]);
+        const senderEmailSet = new Set(senderEmails.map((s) => s.email.toLowerCase()));
+        return { ws, replies, senderEmailSet };
       } catch (err) {
         console.error(`[poll-replies] Failed to fetch replies for ${ws.slug}:`, err);
-        return { ws, replies: [] as Reply[], fetchError: true };
+        return { ws, replies: [] as Reply[], senderEmailSet: new Set<string>(), fetchError: true };
       }
     }),
   );
 
   const results: { workspace: string; processed: number; skipped: number; errors: number }[] = [];
 
-  for (const { ws, replies, fetchError } of wsReplies) {
+  for (const { ws, replies, senderEmailSet, fetchError } of wsReplies) {
     const wsResult = { workspace: ws.slug, processed: 0, skipped: 0, errors: fetchError ? 1 : 0 };
     results.push(wsResult);
 
@@ -65,6 +69,16 @@ export async function GET(request: Request) {
           subj.includes("retention settings");
 
         if (isNonReal) {
+          wsResult.skipped++;
+          continue;
+        }
+
+        // Sender-ownership check: skip replies that don't belong to this workspace
+        const toEmail = (reply.primary_to_email_address ?? "").toLowerCase();
+        if (toEmail && senderEmailSet.size > 0 && !senderEmailSet.has(toEmail)) {
+          console.warn(
+            `[poll-replies] Cross-workspace reply detected in ${ws.slug}: reply to ${toEmail} from ${fromEmail} — skipping`,
+          );
           wsResult.skipped++;
           continue;
         }
