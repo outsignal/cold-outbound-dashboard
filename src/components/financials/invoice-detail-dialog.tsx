@@ -107,7 +107,7 @@ export function InvoiceDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto p-0 bg-zinc-50">
         <DialogHeader className="sr-only">
           <DialogTitle>Invoice {invoice.invoiceNumber}</DialogTitle>
           <DialogDescription>
@@ -115,45 +115,47 @@ export function InvoiceDetailDialog({
           </DialogDescription>
         </DialogHeader>
 
+        {/* A4 paper container */}
+        <div className="mx-auto my-6 bg-white shadow-lg border border-zinc-200 rounded-sm" style={{ width: "595px", minHeight: "842px", aspectRatio: "1 / 1.414" }}>
         {/* Invoice document — matches PDF layout */}
-        <div className="px-10 pt-10 pb-6">
+        <div className="px-12 pt-12 pb-10">
           {/* ── Title: "I N V O I C E" + rule ── */}
-          <div className="flex items-center gap-4 mb-9">
-            <span className="text-sm font-bold text-zinc-900 tracking-[0.45em] uppercase shrink-0">
+          <div className="flex items-center gap-4 mb-10">
+            <span className="text-base font-bold text-zinc-900 tracking-[0.5em] uppercase shrink-0">
               I N V O I C E
             </span>
-            <div className="flex-1 h-[1.5px]" style={{ backgroundColor: "#F0FF7A" }} />
+            <div className="flex-1 h-[2px]" style={{ backgroundColor: "#F0FF7A" }} />
             <InvoiceStatusBadge status={invoice.status} />
           </div>
 
           {/* ── Address: sender left, bill-to right ── */}
-          <div className="flex justify-between mb-8">
+          <div className="flex justify-between mb-10">
             <div>
-              <p className="text-base text-zinc-900 mb-2">
+              <p className="text-xl text-zinc-900 mb-2">
                 {invoice.senderName}
               </p>
               {senderLines.map((line, i) => (
-                <p key={i} className="text-[10px] text-zinc-900 leading-relaxed">
+                <p key={i} className="text-sm text-zinc-900 leading-relaxed">
                   {line}
                 </p>
               ))}
               {invoice.senderEmail && (
-                <p className="text-[10px] text-zinc-900 leading-relaxed">
+                <p className="text-sm text-zinc-900 leading-relaxed">
                   {invoice.senderEmail}
                 </p>
               )}
             </div>
             <div className="text-right">
-              <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider mb-1.5">
+              <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-2">
                 Bill To:
               </p>
               {invoice.clientCompanyName && (
-                <p className="text-[11px] font-bold text-zinc-900 uppercase mb-1">
+                <p className="text-sm font-bold text-zinc-900 uppercase mb-1">
                   {invoice.clientCompanyName}
                 </p>
               )}
               {clientLines.map((line, i) => (
-                <p key={i} className="text-[10px] text-zinc-900 leading-relaxed">
+                <p key={i} className="text-sm text-zinc-900 leading-relaxed">
                   {line}
                 </p>
               ))}
@@ -161,36 +163,36 @@ export function InvoiceDetailDialog({
           </div>
 
           {/* ── Metadata bar (dark) ── */}
-          <div className="flex rounded bg-zinc-900 mb-7 overflow-hidden">
-            <div className="flex-1 px-3.5 py-3">
-              <p className="text-[7px] font-bold text-zinc-500 uppercase tracking-wider mb-0.5">
+          <div className="flex rounded bg-zinc-900 mb-8 overflow-hidden">
+            <div className="flex-1 px-4 py-3.5">
+              <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider mb-1">
                 Invoice #
               </p>
-              <p className="text-[11px] font-bold text-white">
+              <p className="text-sm font-bold text-white">
                 {invoice.invoiceNumber}
               </p>
             </div>
-            <div className="flex-1 px-3.5 py-3">
-              <p className="text-[7px] font-bold text-zinc-500 uppercase tracking-wider mb-0.5">
+            <div className="flex-1 px-4 py-3.5">
+              <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider mb-1">
                 Invoice Date
               </p>
-              <p className="text-[11px] font-bold text-white">
+              <p className="text-sm font-bold text-white">
                 {formatInvoiceDate(new Date(invoice.issueDate))}
               </p>
             </div>
-            <div className="flex-1 px-3.5 py-3">
-              <p className="text-[7px] font-bold text-zinc-500 uppercase tracking-wider mb-0.5">
+            <div className="flex-1 px-4 py-3.5">
+              <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider mb-1">
                 Due Date
               </p>
-              <p className="text-[11px] font-bold text-white">
+              <p className="text-sm font-bold text-white">
                 {formatInvoiceDate(new Date(invoice.dueDate))}
               </p>
             </div>
-            <div className="flex-1 px-3.5 py-3 bg-zinc-800">
-              <p className="text-[7px] font-bold text-zinc-500 uppercase tracking-wider mb-0.5">
+            <div className="flex-1 px-4 py-3.5 bg-zinc-800">
+              <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider mb-1">
                 Amount Due
               </p>
-              <p className="text-[13px] font-bold" style={{ color: "#F0FF7A" }}>
+              <p className="text-base font-bold" style={{ color: "#F0FF7A" }}>
                 {formatGBP(invoice.totalPence)}
               </p>
             </div>
@@ -198,17 +200,17 @@ export function InvoiceDetailDialog({
 
           {/* ── Line items table ── */}
           {/* Header */}
-          <div className="flex px-2.5 py-2.5 border-b-[1.5px] border-zinc-900 mb-0.5">
-            <span className="flex-[3] text-[9px] font-bold text-zinc-900 uppercase tracking-wider">
+          <div className="flex px-3 py-3 border-b-2 border-zinc-900 mb-0.5">
+            <span className="flex-[3] text-xs font-bold text-zinc-900 uppercase tracking-wider">
               Items
             </span>
-            <span className="flex-1 text-[9px] font-bold text-zinc-900 uppercase tracking-wider text-center">
+            <span className="flex-1 text-xs font-bold text-zinc-900 uppercase tracking-wider text-center">
               Quantity
             </span>
-            <span className="flex-[1.5] text-[9px] font-bold text-zinc-900 uppercase tracking-wider text-right">
+            <span className="flex-[1.5] text-xs font-bold text-zinc-900 uppercase tracking-wider text-right">
               Price
             </span>
-            <span className="flex-[1.5] text-[9px] font-bold text-zinc-900 uppercase tracking-wider text-right">
+            <span className="flex-[1.5] text-xs font-bold text-zinc-900 uppercase tracking-wider text-right">
               Amount
             </span>
           </div>
@@ -216,34 +218,34 @@ export function InvoiceDetailDialog({
           {invoice.lineItems.map((item) => (
             <div
               key={item.id}
-              className="flex px-2.5 py-3 border-b border-zinc-200"
+              className="flex px-3 py-4 border-b border-zinc-200"
             >
-              <span className="flex-[3] text-[10px] text-zinc-900">
+              <span className="flex-[3] text-sm text-zinc-900">
                 {item.description}
               </span>
-              <span className="flex-1 text-[10px] text-zinc-900 text-center tabular-nums">
+              <span className="flex-1 text-sm text-zinc-900 text-center tabular-nums">
                 {item.quantity.toFixed(1)}
               </span>
-              <span className="flex-[1.5] text-[10px] text-zinc-900 text-right tabular-nums">
+              <span className="flex-[1.5] text-sm text-zinc-900 text-right tabular-nums">
                 {formatGBP(item.unitPricePence)}
               </span>
-              <span className="flex-[1.5] text-[10px] text-zinc-900 text-right tabular-nums">
+              <span className="flex-[1.5] text-sm text-zinc-900 text-right tabular-nums">
                 {formatGBP(item.amountPence)}
               </span>
             </div>
           ))}
 
           {/* ── Bottom: notes left, totals right ── */}
-          <div className="flex mt-8 border-t-[1.5px] border-zinc-200 pt-5">
+          <div className="flex mt-10 border-t-2 border-zinc-200 pt-6">
             {/* Notes / bank details */}
-            <div className="flex-1 pr-8">
+            <div className="flex-1 pr-10">
               {bankDetailsLines.length > 0 && (
                 <>
-                  <p className="text-[9px] font-bold text-zinc-900 uppercase tracking-wider mb-2">
+                  <p className="text-xs font-bold text-zinc-900 uppercase tracking-wider mb-2">
                     Notes:
                   </p>
                   {bankDetailsLines.map((line, i) => (
-                    <p key={i} className="text-[9px] text-zinc-600 leading-relaxed">
+                    <p key={i} className="text-xs text-zinc-600 leading-relaxed">
                       {line}
                     </p>
                   ))}
@@ -252,42 +254,43 @@ export function InvoiceDetailDialog({
             </div>
 
             {/* Totals */}
-            <div className="w-[220px]">
-              <div className="flex justify-between py-1.5">
-                <span className="text-[10px] text-zinc-600 uppercase tracking-wider">
+            <div className="w-[240px]">
+              <div className="flex justify-between py-2">
+                <span className="text-sm text-zinc-600 uppercase tracking-wider">
                   Sub-Total
                 </span>
-                <span className="text-[10px] text-zinc-900 tabular-nums">
+                <span className="text-sm text-zinc-900 tabular-nums">
                   {formatGBP(invoice.subtotalPence)}
                 </span>
               </div>
-              <div className="flex justify-between py-1.5">
-                <span className="text-[10px] text-zinc-600 uppercase tracking-wider">
+              <div className="flex justify-between py-2">
+                <span className="text-sm text-zinc-600 uppercase tracking-wider">
                   Tax Rate
                 </span>
-                <span className="text-[10px] text-zinc-900 tabular-nums">
+                <span className="text-sm text-zinc-900 tabular-nums">
                   {invoice.taxRate}%
                 </span>
               </div>
-              <div className="flex justify-between py-1.5">
-                <span className="text-[10px] text-zinc-600 uppercase tracking-wider">
+              <div className="flex justify-between py-2">
+                <span className="text-sm text-zinc-600 uppercase tracking-wider">
                   Tax
                 </span>
-                <span className="text-[10px] text-zinc-900 tabular-nums">
+                <span className="text-sm text-zinc-900 tabular-nums">
                   {formatGBP(invoice.taxAmountPence)}
                 </span>
               </div>
-              <div className="h-[1.5px] bg-zinc-900 my-1.5" />
-              <div className="flex justify-between items-center py-1.5">
-                <span className="text-[13px] font-bold text-zinc-900 uppercase">
+              <div className="h-[2px] bg-zinc-900 my-2" />
+              <div className="flex justify-between items-center py-2">
+                <span className="text-base font-bold text-zinc-900 uppercase">
                   Total
                 </span>
-                <span className="text-base font-bold text-zinc-900 tabular-nums">
+                <span className="text-xl font-bold text-zinc-900 tabular-nums">
                   {formatGBP(invoice.totalPence)}
                 </span>
               </div>
             </div>
           </div>
+        </div>
         </div>
 
         {/* Action buttons */}
