@@ -15,177 +15,245 @@ import {
 import { InvoiceWithLineItems } from "./types";
 import { formatGBP, formatInvoiceDate } from "./format";
 
+// Outsignal brand palette
+const BRAND = {
+  primary: "#F0FF7A",       // Yellow-green
+  dark: "#18181b",          // Zinc-900
+  darkMuted: "#27272a",     // Zinc-800
+  text: "#18181b",
+  textMuted: "#52525b",     // Zinc-600
+  textLight: "#71717a",     // Zinc-500
+  border: "#e4e4e7",        // Zinc-200
+  metaBg: "#f4f4f5",        // Zinc-100
+  white: "#ffffff",
+  amountDue: "#dc2626",     // Red-600
+};
+
 const styles = StyleSheet.create({
   page: {
     fontFamily: "Helvetica",
     fontSize: 10,
-    color: "#18181b",
+    color: BRAND.text,
     paddingTop: 48,
     paddingBottom: 48,
     paddingLeft: 48,
     paddingRight: 48,
   },
-  // Header
-  headerRow: {
+
+  // ── Title row: "I N V O I C E" + horizontal rule ──
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 36,
+  },
+  invoiceTitle: {
+    fontSize: 14,
+    fontFamily: "Helvetica-Bold",
+    color: BRAND.dark,
+    letterSpacing: 7,
+    textTransform: "uppercase",
+    marginRight: 16,
+  },
+  titleRule: {
+    flex: 1,
+    height: 1.5,
+    backgroundColor: BRAND.primary,
+  },
+
+  // ── Address section ──
+  addressRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 32,
   },
-  invoiceTitle: {
-    fontSize: 24,
-    fontFamily: "Helvetica-Bold",
-    color: "#18181b",
-    marginBottom: 16,
-  },
   senderBlock: {
     flex: 1,
+  },
+  senderName: {
+    fontSize: 20,
+    fontFamily: "Helvetica",
+    color: BRAND.dark,
+    marginBottom: 8,
+  },
+  senderText: {
+    fontSize: 10,
+    color: BRAND.text,
+    lineHeight: 1.6,
   },
   billToBlock: {
     flex: 1,
     alignItems: "flex-end",
   },
-  blockLabel: {
+  billToLabel: {
     fontSize: 9,
     fontFamily: "Helvetica-Bold",
-    color: "#71717a",
+    color: BRAND.textLight,
     textTransform: "uppercase",
     letterSpacing: 1,
+    marginBottom: 6,
+  },
+  billToCompany: {
+    fontSize: 12,
+    fontFamily: "Helvetica-Bold",
+    color: BRAND.dark,
     marginBottom: 4,
+    textAlign: "right",
   },
-  blockText: {
+  billToText: {
     fontSize: 10,
-    color: "#18181b",
-    lineHeight: 1.5,
+    color: BRAND.text,
+    lineHeight: 1.6,
+    textAlign: "right",
   },
-  // Metadata bar
+
+  // ── Metadata bar ──
   metaBar: {
     flexDirection: "row",
-    backgroundColor: "#f4f4f5",
+    backgroundColor: BRAND.dark,
     borderRadius: 4,
-    padding: 12,
-    marginBottom: 24,
-    gap: 0,
+    marginBottom: 28,
+    overflow: "hidden",
   },
   metaCell: {
     flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  metaCellAmount: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    backgroundColor: BRAND.darkMuted,
   },
   metaLabel: {
-    fontSize: 8,
+    fontSize: 7,
     fontFamily: "Helvetica-Bold",
-    color: "#71717a",
+    color: BRAND.textLight,
     textTransform: "uppercase",
     letterSpacing: 0.5,
-    marginBottom: 2,
+    marginBottom: 3,
   },
   metaValue: {
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: "Helvetica-Bold",
-    color: "#18181b",
+    color: BRAND.white,
   },
-  // Line items table
+  metaValueAmount: {
+    fontSize: 13,
+    fontFamily: "Helvetica-Bold",
+    color: BRAND.primary,
+  },
+
+  // ── Table header ──
   tableHeader: {
     flexDirection: "row",
-    backgroundColor: "#18181b",
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 10,
-    borderRadius: 3,
-    marginBottom: 4,
+    borderBottomWidth: 1.5,
+    borderBottomColor: BRAND.dark,
+    marginBottom: 2,
   },
   tableHeaderCell: {
-    fontSize: 8,
+    fontSize: 9,
     fontFamily: "Helvetica-Bold",
-    color: "#ffffff",
+    color: BRAND.dark,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
   },
+
+  // ── Table rows ──
   tableRow: {
     flexDirection: "row",
-    paddingVertical: 7,
+    paddingVertical: 12,
     paddingHorizontal: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e4e4e7",
-  },
-  tableRowAlt: {
-    backgroundColor: "#fafafa",
+    borderBottomWidth: 0.5,
+    borderBottomColor: BRAND.border,
   },
   colDescription: { flex: 3 },
-  colQuantity: { flex: 1, textAlign: "right" },
+  colQuantity: { flex: 1, textAlign: "center" },
   colUnitPrice: { flex: 1.5, textAlign: "right" },
   colAmount: { flex: 1.5, textAlign: "right" },
   rowText: {
     fontSize: 10,
-    color: "#18181b",
+    color: BRAND.text,
+  },
+  rowTextCenter: {
+    fontSize: 10,
+    color: BRAND.text,
+    textAlign: "center",
   },
   rowTextRight: {
     fontSize: 10,
-    color: "#18181b",
+    color: BRAND.text,
     textAlign: "right",
   },
-  // Totals section
-  totalsSection: {
+
+  // ── Bottom section: notes left, totals right ──
+  bottomSection: {
     flexDirection: "row",
-    justifyContent: "flex-end",
-    marginTop: 16,
-    marginBottom: 24,
+    marginTop: 32,
+    borderTopWidth: 1.5,
+    borderTopColor: BRAND.border,
+    paddingTop: 20,
   },
-  totalsTable: {
-    width: 240,
+  notesBlock: {
+    flex: 1,
+    paddingRight: 32,
+  },
+  notesLabel: {
+    fontSize: 9,
+    fontFamily: "Helvetica-Bold",
+    color: BRAND.dark,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  notesText: {
+    fontSize: 9,
+    color: BRAND.textMuted,
+    lineHeight: 1.7,
+  },
+  totalsBlock: {
+    width: 220,
   },
   totalsRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e4e4e7",
-  },
-  totalsRowBold: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: 6,
-    backgroundColor: "#18181b",
-    paddingHorizontal: 8,
-    borderRadius: 3,
-    marginTop: 4,
+    paddingVertical: 5,
   },
   totalsLabel: {
     fontSize: 10,
-    color: "#52525b",
+    color: BRAND.textMuted,
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
   },
   totalsValue: {
     fontSize: 10,
-    color: "#18181b",
+    color: BRAND.text,
     textAlign: "right",
   },
-  totalsBoldLabel: {
-    fontSize: 10,
-    fontFamily: "Helvetica-Bold",
-    color: "#ffffff",
+  totalsDivider: {
+    height: 1.5,
+    backgroundColor: BRAND.dark,
+    marginVertical: 6,
   },
-  totalsBoldValue: {
-    fontSize: 10,
-    fontFamily: "Helvetica-Bold",
-    color: "#F0FF7A",
-    textAlign: "right",
+  totalFinalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 6,
   },
-  // Notes section
-  notesSection: {
-    marginTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: "#e4e4e7",
-    paddingTop: 16,
-  },
-  notesLabel: {
-    fontSize: 8,
+  totalFinalLabel: {
+    fontSize: 13,
     fontFamily: "Helvetica-Bold",
-    color: "#71717a",
+    color: BRAND.dark,
     textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 6,
   },
-  notesText: {
-    fontSize: 9,
-    color: "#52525b",
-    lineHeight: 1.6,
+  totalFinalValue: {
+    fontSize: 16,
+    fontFamily: "Helvetica-Bold",
+    color: BRAND.dark,
+    textAlign: "right",
   },
 });
 
@@ -194,16 +262,13 @@ interface InvoicePdfDocumentProps {
 }
 
 export function InvoicePdfDocument({ invoice }: InvoicePdfDocumentProps) {
-  const senderLines = [
-    invoice.senderName,
-    ...(invoice.senderAddress ? invoice.senderAddress.split("\n") : []),
-    invoice.senderEmail,
-  ].filter(Boolean);
+  const addressLines = invoice.senderAddress
+    ? invoice.senderAddress.split("\n").filter(Boolean)
+    : [];
 
-  const clientLines = [
-    invoice.clientCompanyName,
-    ...(invoice.clientAddress ? invoice.clientAddress.split("\n") : []),
-  ].filter(Boolean);
+  const clientLines = invoice.clientAddress
+    ? invoice.clientAddress.split("\n").filter(Boolean)
+    : [];
 
   const dueDateLabel = formatInvoiceDate(invoice.dueDate);
   const issueDateLabel = formatInvoiceDate(invoice.issueDate);
@@ -215,75 +280,97 @@ export function InvoicePdfDocument({ invoice }: InvoicePdfDocumentProps) {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Title */}
-        <Text style={styles.invoiceTitle}>INVOICE</Text>
+        {/* ── Title: "I N V O I C E" + rule ── */}
+        <View style={styles.titleRow}>
+          <Text style={styles.invoiceTitle}>I N V O I C E</Text>
+          <View style={styles.titleRule} />
+        </View>
 
-        {/* Two-column header: sender left, bill-to right */}
-        <View style={styles.headerRow}>
+        {/* ── Address: sender left, bill-to right ── */}
+        <View style={styles.addressRow}>
           <View style={styles.senderBlock}>
-            <Text style={styles.blockLabel}>From</Text>
-            {senderLines.map((line, i) => (
-              <Text key={i} style={styles.blockText}>
+            <Text style={styles.senderName}>{invoice.senderName}</Text>
+            {addressLines.map((line, i) => (
+              <Text key={i} style={styles.senderText}>
                 {line}
               </Text>
             ))}
+            {invoice.senderEmail && (
+              <Text style={styles.senderText}>{invoice.senderEmail}</Text>
+            )}
           </View>
           <View style={styles.billToBlock}>
-            <Text style={styles.blockLabel}>Bill To</Text>
+            <Text style={styles.billToLabel}>Bill To:</Text>
+            {invoice.clientCompanyName && (
+              <Text style={styles.billToCompany}>
+                {invoice.clientCompanyName}
+              </Text>
+            )}
             {clientLines.map((line, i) => (
-              <Text key={i} style={styles.blockText}>
+              <Text key={i} style={styles.billToText}>
                 {line}
               </Text>
             ))}
           </View>
         </View>
 
-        {/* Metadata bar: Invoice #, Date, Due Date, Amount Due */}
+        {/* ── Metadata bar ── */}
         <View style={styles.metaBar}>
           <View style={styles.metaCell}>
             <Text style={styles.metaLabel}>Invoice #</Text>
             <Text style={styles.metaValue}>{invoice.invoiceNumber}</Text>
           </View>
           <View style={styles.metaCell}>
-            <Text style={styles.metaLabel}>Date</Text>
+            <Text style={styles.metaLabel}>Invoice Date</Text>
             <Text style={styles.metaValue}>{issueDateLabel}</Text>
           </View>
           <View style={styles.metaCell}>
             <Text style={styles.metaLabel}>Due Date</Text>
             <Text style={styles.metaValue}>{dueDateLabel}</Text>
           </View>
-          <View style={styles.metaCell}>
+          <View style={styles.metaCellAmount}>
             <Text style={styles.metaLabel}>Amount Due</Text>
-            <Text style={styles.metaValue}>{formatGBP(invoice.totalPence)}</Text>
+            <Text style={styles.metaValueAmount}>
+              {formatGBP(invoice.totalPence)}
+            </Text>
           </View>
         </View>
 
-        {/* Line items table */}
+        {/* ── Line items table ── */}
         <View style={styles.tableHeader}>
           <Text style={[styles.tableHeaderCell, styles.colDescription]}>
-            Description
+            Items
           </Text>
           <Text style={[styles.tableHeaderCell, styles.colQuantity]}>
-            Qty
+            Quantity
           </Text>
-          <Text style={[styles.tableHeaderCell, styles.colUnitPrice]}>
-            Unit Price
+          <Text
+            style={[
+              styles.tableHeaderCell,
+              styles.colUnitPrice,
+              { textAlign: "right" },
+            ]}
+          >
+            Price
           </Text>
-          <Text style={[styles.tableHeaderCell, styles.colAmount]}>
+          <Text
+            style={[
+              styles.tableHeaderCell,
+              styles.colAmount,
+              { textAlign: "right" },
+            ]}
+          >
             Amount
           </Text>
         </View>
 
-        {invoice.lineItems.map((item, index) => (
-          <View
-            key={item.id}
-            style={[styles.tableRow, index % 2 !== 0 ? styles.tableRowAlt : {}]}
-          >
+        {invoice.lineItems.map((item) => (
+          <View key={item.id} style={styles.tableRow}>
             <Text style={[styles.rowText, styles.colDescription]}>
               {item.description}
             </Text>
-            <Text style={[styles.rowTextRight, styles.colQuantity]}>
-              {item.quantity}
+            <Text style={[styles.rowTextCenter, styles.colQuantity]}>
+              {item.quantity.toFixed(1)}
             </Text>
             <Text style={[styles.rowTextRight, styles.colUnitPrice]}>
               {formatGBP(item.unitPricePence)}
@@ -294,43 +381,49 @@ export function InvoicePdfDocument({ invoice }: InvoicePdfDocumentProps) {
           </View>
         ))}
 
-        {/* Totals section */}
-        <View style={styles.totalsSection}>
-          <View style={styles.totalsTable}>
+        {/* ── Bottom: notes left, totals right ── */}
+        <View style={styles.bottomSection}>
+          {/* Notes / bank details */}
+          <View style={styles.notesBlock}>
+            {bankDetailsLines.length > 0 && (
+              <>
+                <Text style={styles.notesLabel}>Notes:</Text>
+                {bankDetailsLines.map((line, i) => (
+                  <Text key={i} style={styles.notesText}>
+                    {line}
+                  </Text>
+                ))}
+              </>
+            )}
+          </View>
+
+          {/* Totals */}
+          <View style={styles.totalsBlock}>
             <View style={styles.totalsRow}>
-              <Text style={styles.totalsLabel}>Subtotal</Text>
+              <Text style={styles.totalsLabel}>Sub-Total</Text>
               <Text style={styles.totalsValue}>
                 {formatGBP(invoice.subtotalPence)}
               </Text>
             </View>
             <View style={styles.totalsRow}>
-              <Text style={styles.totalsLabel}>
-                Tax ({invoice.taxRate}%)
-              </Text>
+              <Text style={styles.totalsLabel}>Tax Rate</Text>
+              <Text style={styles.totalsValue}>{invoice.taxRate}%</Text>
+            </View>
+            <View style={styles.totalsRow}>
+              <Text style={styles.totalsLabel}>Tax</Text>
               <Text style={styles.totalsValue}>
                 {formatGBP(invoice.taxAmountPence)}
               </Text>
             </View>
-            <View style={styles.totalsRowBold}>
-              <Text style={styles.totalsBoldLabel}>Total</Text>
-              <Text style={styles.totalsBoldValue}>
+            <View style={styles.totalsDivider} />
+            <View style={styles.totalFinalRow}>
+              <Text style={styles.totalFinalLabel}>Total</Text>
+              <Text style={styles.totalFinalValue}>
                 {formatGBP(invoice.totalPence)}
               </Text>
             </View>
           </View>
         </View>
-
-        {/* Notes / Bank details */}
-        {bankDetailsLines.length > 0 && (
-          <View style={styles.notesSection}>
-            <Text style={styles.notesLabel}>Notes</Text>
-            {bankDetailsLines.map((line, i) => (
-              <Text key={i} style={styles.notesText}>
-                {line}
-              </Text>
-            ))}
-          </View>
-        )}
       </Page>
     </Document>
   );
