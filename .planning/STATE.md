@@ -23,16 +23,16 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 ## Current Position
 
 Phase: 27 of 28 (AI Insights & Action Queue)
-Plan: 1 of 3 -- COMPLETE
-Status: Phase 27 in progress (1/3 plans)
-Last activity: 2026-03-10 — Completed 27-01 (Insight Model & AI Generation Pipeline)
+Plan: 2 of 3 -- COMPLETE
+Status: Phase 27 in progress (2/3 plans)
+Last activity: 2026-03-10 — Completed 27-02 (Insights API, Action Executors & Weekly Digest)
 
-Progress: [████░░░░░░] 46% (v3.0) -- Phase 27 plan 1/3 complete
+Progress: [█████░░░░░] 50% (v3.0) -- Phase 27 plan 2/3 complete
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 101 (v1.0: 22, v1.1: 40, v2.0: 26, v3.0: 13)
+- Total plans completed: 102 (v1.0: 22, v1.1: 40, v2.0: 26, v3.0: 14)
 - Average duration: ~15 min
 - Total execution time: ~22 hours
 
@@ -96,6 +96,12 @@ Progress: [████░░░░░░] 46% (v3.0) -- Phase 27 plan 1/3 compl
 - [27-01]: Latest snapshot per campaign for week-over-week averages (EB stats cumulative per decision 24-02)
 - [27-01]: Dedup key pattern: category:actionType:entityId for deterministic 2-week dismissed window
 
+- [27-02]: All 4 action types execute on approve (admin confirms in UI before calling PATCH)
+- [27-02]: pause_campaign updates local campaign status only -- EmailBison API pause not available
+- [27-02]: ICP threshold and signal targeting are recommendation-only actions (no auto-modify)
+- [27-02]: copy_review_flag persisted as CachedMetrics entry for cross-feature visibility
+- [27-02]: Weekly digest sent from cron endpoint after each workspace's insight generation
+
 ### Blockers/Concerns
 
 - CachedMetrics model exists in schema but has zero usage — need to verify upsert behavior and unique constraints work as expected
@@ -110,5 +116,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Completed 27-01-PLAN.md
+Stopped at: Completed 27-02-PLAN.md
 Resume file: None

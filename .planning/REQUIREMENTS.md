@@ -41,10 +41,10 @@
 
 - [x] **INSIGHT-01**: System generates AI-powered insights weekly per workspace analyzing reply patterns, campaign performance, and cross-workspace comparisons
 - [x] **INSIGHT-02**: Each insight includes observation, supporting evidence (data), suggested action, and confidence level
-- [ ] **INSIGHT-03**: Admin can approve, dismiss, or defer (snooze N days) each suggested action via the action queue
-- [ ] **INSIGHT-04**: Approved actions execute the suggestion (pause campaign, update ICP threshold, flag for copy review)
+- [x] **INSIGHT-03**: Admin can approve, dismiss, or defer (snooze N days) each suggested action via the action queue
+- [x] **INSIGHT-04**: Approved actions execute the suggestion (pause campaign, update ICP threshold, flag for copy review)
 - [ ] **INSIGHT-05**: Admin can see objection pattern clusters across campaigns (e.g., "42% mention budget, 28% mention timing")
-- [ ] **INSIGHT-06**: Admin receives weekly digest notification (Slack + email) summarizing top insights, best/worst campaigns, and pending action queue items
+- [x] **INSIGHT-06**: Admin receives weekly digest notification (Slack + email) summarizing top insights, best/worst campaigns, and pending action queue items
 
 ### Intelligence Hub
 
@@ -103,10 +103,10 @@
 | BENCH-05 | Phase 26 | Complete |
 | INSIGHT-01 | Phase 27 | Complete |
 | INSIGHT-02 | Phase 27 | Complete |
-| INSIGHT-03 | Phase 27 | Pending |
-| INSIGHT-04 | Phase 27 | Pending |
+| INSIGHT-03 | Phase 27 | Complete |
+| INSIGHT-04 | Phase 27 | Complete |
 | INSIGHT-05 | Phase 27 | Pending |
-| INSIGHT-06 | Phase 27 | Pending |
+| INSIGHT-06 | Phase 27 | Complete |
 | HUB-01 | Phase 28 | Pending |
 | HUB-02 | Phase 28 | Pending |
 | HUB-03 | Phase 28 | Pending |
