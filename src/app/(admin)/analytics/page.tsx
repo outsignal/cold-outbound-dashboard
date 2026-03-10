@@ -15,6 +15,7 @@ import {
   type CampaignData,
 } from "@/components/analytics/campaign-rankings-table";
 import { CopyTab } from "@/components/analytics/copy-tab";
+import { BenchmarksTab } from "@/components/analytics/benchmarks-tab";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -110,7 +111,10 @@ export default function AnalyticsPage() {
   const [campaignsError, setCampaignsError] = useState<string | null>(null);
   const [strategiesError, setStrategiesError] = useState<string | null>(null);
 
-  const isPerformanceTab = params.tab !== "copy";
+  const activeTab = params.tab || "performance";
+  const isPerformanceTab = activeTab === "performance";
+  const isCopyTab = activeTab === "copy";
+  const isBenchmarksTab = activeTab === "benchmarks";
 
   // ─── Fetch campaigns ────────────────────────────────────────────────────
   const fetchCampaigns = useCallback(async () => {
@@ -207,7 +211,7 @@ export default function AnalyticsPage() {
     <div className="flex flex-col h-full">
       <Header
         title="Campaign Analytics"
-        description="Performance rankings, sequence analysis, and copy strategy comparison"
+        description="Performance rankings, copy analysis, and cross-workspace benchmarks"
       />
 
       <div className="flex-1 overflow-auto p-6 space-y-6">
@@ -219,7 +223,7 @@ export default function AnalyticsPage() {
           onPeriodChange={handlePeriodChange}
           vertical={params.vertical || null}
           onVerticalChange={handleVerticalChange}
-          showVertical={!isPerformanceTab}
+          showVertical={isCopyTab}
         />
 
         {/* Tab toggle */}
@@ -231,8 +235,13 @@ export default function AnalyticsPage() {
           />
           <TabChip
             label="Copy"
-            active={!isPerformanceTab}
+            active={isCopyTab}
             onClick={() => handleTabChange("copy")}
+          />
+          <TabChip
+            label="Benchmarks"
+            active={isBenchmarksTab}
+            onClick={() => handleTabChange("benchmarks")}
           />
         </div>
 
@@ -295,12 +304,17 @@ export default function AnalyticsPage() {
         )}
 
         {/* Copy tab content */}
-        {!isPerformanceTab && (
+        {isCopyTab && (
           <CopyTab
             workspace={params.workspace || null}
             period={params.period}
             vertical={params.vertical || null}
           />
+        )}
+
+        {/* Benchmarks tab content */}
+        {isBenchmarksTab && (
+          <BenchmarksTab workspace={params.workspace || null} />
         )}
       </div>
     </div>
