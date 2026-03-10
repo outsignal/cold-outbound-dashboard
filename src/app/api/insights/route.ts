@@ -14,17 +14,15 @@ export async function GET(request: Request) {
   const status = url.searchParams.get("status") ?? "active";
   const category = url.searchParams.get("category");
 
-  if (!workspace) {
-    return NextResponse.json(
-      { error: "workspace query param is required" },
-      { status: 400 },
-    );
-  }
-
   try {
     // Build where clause
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = { workspaceSlug: workspace };
+    const where: any = {};
+
+    // If workspace param provided, filter to that workspace; otherwise return all
+    if (workspace) {
+      where.workspaceSlug = workspace;
+    }
 
     if (status === "active") {
       // Include active insights AND snoozed insights that have expired
