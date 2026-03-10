@@ -101,10 +101,10 @@ export async function checkDkim(domain: string): Promise<DkimResult> {
 
   const passedSelectors = checks
     .filter(
-      (r): r is PromiseFulfilledResult<string> =>
+      (r): r is PromiseFulfilledResult<NonNullable<(typeof checks)[number] extends PromiseSettledResult<infer V> ? V : never>> =>
         r.status === "fulfilled" && r.value !== null
     )
-    .map((r) => r.value);
+    .map((r) => r.value as string);
 
   if (passedSelectors.length === 0) {
     return { status: "missing", passedSelectors: [] };
