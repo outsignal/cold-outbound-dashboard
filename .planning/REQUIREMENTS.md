@@ -43,7 +43,7 @@
 - [x] **INSIGHT-02**: Each insight includes observation, supporting evidence (data), suggested action, and confidence level
 - [x] **INSIGHT-03**: Admin can approve, dismiss, or defer (snooze N days) each suggested action via the action queue
 - [x] **INSIGHT-04**: Approved actions execute the suggestion (pause campaign, update ICP threshold, flag for copy review)
-- [ ] **INSIGHT-05**: Admin can see objection pattern clusters across campaigns (e.g., "42% mention budget, 28% mention timing")
+- [x] **INSIGHT-05**: Admin can see objection pattern clusters across campaigns (e.g., "42% mention budget, 28% mention timing")
 - [x] **INSIGHT-06**: Admin receives weekly digest notification (Slack + email) summarizing top insights, best/worst campaigns, and pending action queue items
 
 ### Intelligence Hub
@@ -105,7 +105,7 @@
 | INSIGHT-02 | Phase 27 | Complete |
 | INSIGHT-03 | Phase 27 | Complete |
 | INSIGHT-04 | Phase 27 | Complete |
-| INSIGHT-05 | Phase 27 | Pending |
+| INSIGHT-05 | Phase 27 | Complete |
 | INSIGHT-06 | Phase 27 | Complete |
 | HUB-01 | Phase 28 | Pending |
 | HUB-02 | Phase 28 | Pending |
