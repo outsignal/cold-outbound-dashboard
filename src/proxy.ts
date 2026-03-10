@@ -24,6 +24,7 @@ const PUBLIC_API_PREFIXES = [
   "/api/pipeline/",        // Railway worker (PIPELINE_INTERNAL_SECRET)
   "/api/people/enrich",    // Clay webhook (x-api-key)
   "/api/companies/enrich", // Clay webhook (x-api-key)
+  "/api/exclusions",       // Clay webhook (x-api-key)
   "/api/stripe/",          // Stripe webhook (signature verification)
   "/api/onboard",          // Public onboarding form (has own x-api-key check)
 ];
