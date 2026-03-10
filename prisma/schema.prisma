@@ -304,6 +304,44 @@ model Reply {
   @@index([classifiedAt])  // For retry cron: WHERE classifiedAt IS NULL
 }
 
+model Insight {
+  id            String   @id @default(cuid())
+  workspaceSlug String
+
+  // Content
+  category      String   // "performance" | "copy" | "objections" | "icp"
+  observation   String   // Data-first finding text
+  evidence      String   // JSON array of { metric, value, change }
+  confidence    String   // "high" | "medium" | "low"
+  priority      Int      @default(5) // 1-10, lower = higher priority
+
+  // Suggested action
+  actionType        String   // "pause_campaign" | "update_icp_threshold" | "flag_copy_review" | "adjust_signal_targeting"
+  actionDescription String
+  actionParams      String?  // JSON: { campaignId, newThreshold, etc. }
+
+  // Lifecycle
+  status        String   @default("active") // "active" | "approved" | "dismissed" | "snoozed" | "executed" | "failed"
+  snoozedUntil  DateTime?
+  resolvedAt    DateTime?
+  resolvedBy    String?  // admin email
+
+  // Audit trail (populated on approve/execute)
+  executionResult String? // JSON: { before, after, outcome }
+
+  // Deduplication
+  dedupKey      String   // Deterministic key for 2-week dedup window
+
+  // Timestamps
+  generatedAt   DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([workspaceSlug, status])
+  @@index([workspaceSlug, generatedAt])
+  @@index([dedupKey, status])
+}
+
 model InboxStatusSnapshot {
   id                 String   @id @default(cuid())
   workspaceSlug      String   @unique
