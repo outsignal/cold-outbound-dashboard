@@ -66,7 +66,7 @@ Full details: [milestones/v2.0-ROADMAP.md](milestones/v2.0-ROADMAP.md)
 - [x] **Phase 25: Copy Performance Analysis** - Analyze subject lines and email body structural elements to surface what copy patterns drive the highest reply rates (completed 2026-03-10)
 - [x] **Phase 26: Cross-Workspace Benchmarking & ICP Calibration** - Benchmark workspace performance against vertical averages and calibrate ICP scores against actual conversion outcomes (completed 2026-03-10)
 - [x] **Phase 27: AI Insights & Action Queue** - Generate weekly AI-powered insights per workspace and let admin approve, dismiss, or defer suggested optimizations (completed 2026-03-10)
-- [ ] **Phase 28: Intelligence Hub Dashboard** - Unified dashboard page displaying all intelligence data with campaign rankings, classification charts, benchmarks, insights, and ICP calibration
+- [x] **Phase 28: Intelligence Hub Dashboard** - Unified dashboard page displaying all intelligence data with campaign rankings, classification charts, benchmarks, insights, and ICP calibration (completed 2026-03-10)
 
 ## Phase Details
 
@@ -179,4 +179,4 @@ v3.0 phases: 23 → 24 → 25 (parallel with 26) → 27 → 28
 | 25. Copy Performance Analysis | 3/3 | Complete    | 2026-03-10 | - |
 | 26. Cross-Workspace Benchmarking & ICP Calibration | 2/2 | Complete    | 2026-03-10 | - |
 | 27. AI Insights & Action Queue | 3/3 | Complete   | 2026-03-10 | - |
-| 28. Intelligence Hub Dashboard | 1/2 | In Progress|  | - |
+| 28. Intelligence Hub Dashboard | 2/2 | Complete   | 2026-03-10 | - |

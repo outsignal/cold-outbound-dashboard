@@ -49,11 +49,11 @@
 ### Intelligence Hub
 
 - [x] **HUB-01**: Admin can access a dedicated Intelligence Hub dashboard page showing all intelligence data in one place
-- [ ] **HUB-02**: Intelligence Hub displays campaign rankings with sortable metrics table
-- [ ] **HUB-03**: Intelligence Hub displays reply classification breakdown charts (intent distribution, sentiment, objection types)
-- [ ] **HUB-04**: Intelligence Hub displays cross-workspace benchmarking comparison with reference bands
-- [ ] **HUB-05**: Intelligence Hub displays active insights and action queue with approve/dismiss/defer controls
-- [ ] **HUB-06**: Intelligence Hub displays ICP calibration visualization showing score vs conversion correlation
+- [x] **HUB-02**: Intelligence Hub displays campaign rankings with sortable metrics table
+- [x] **HUB-03**: Intelligence Hub displays reply classification breakdown charts (intent distribution, sentiment, objection types)
+- [x] **HUB-04**: Intelligence Hub displays cross-workspace benchmarking comparison with reference bands
+- [x] **HUB-05**: Intelligence Hub displays active insights and action queue with approve/dismiss/defer controls
+- [x] **HUB-06**: Intelligence Hub displays ICP calibration visualization showing score vs conversion correlation
 
 ## Future Requirements
 
@@ -108,11 +108,11 @@
 | INSIGHT-05 | Phase 27 | Complete |
 | INSIGHT-06 | Phase 27 | Complete |
 | HUB-01 | Phase 28 | Complete |
-| HUB-02 | Phase 28 | Pending |
-| HUB-03 | Phase 28 | Pending |
-| HUB-04 | Phase 28 | Pending |
-| HUB-05 | Phase 28 | Pending |
-| HUB-06 | Phase 28 | Pending |
+| HUB-02 | Phase 28 | Complete |
+| HUB-03 | Phase 28 | Complete |
+| HUB-04 | Phase 28 | Complete |
+| HUB-05 | Phase 28 | Complete |
+| HUB-06 | Phase 28 | Complete |
 
 **Coverage:**
 - v3.0 requirements: 32 total
