@@ -19,11 +19,15 @@ interface AnalyticsFiltersProps {
   period: string;
   onWorkspaceChange: (w: string | null) => void;
   onPeriodChange: (p: string) => void;
+  vertical?: string | null;
+  onVerticalChange?: (v: string | null) => void;
+  showVertical?: boolean;
 }
 
 interface WorkspaceOption {
   slug: string;
   name: string;
+  vertical?: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -74,8 +78,12 @@ export function AnalyticsFilters({
   period,
   onWorkspaceChange,
   onPeriodChange,
+  vertical,
+  onVerticalChange,
+  showVertical = false,
 }: AnalyticsFiltersProps) {
   const [workspaces, setWorkspaces] = useState<WorkspaceOption[]>([]);
+  const [verticals, setVerticals] = useState<string[]>([]);
 
   useEffect(() => {
     fetch("/api/workspaces")
@@ -83,6 +91,16 @@ export function AnalyticsFilters({
       .then((data: WorkspaceOption[] | { workspaces: WorkspaceOption[] }) => {
         const list = Array.isArray(data) ? data : data.workspaces ?? [];
         setWorkspaces(list);
+
+        // Extract unique verticals from workspace data
+        const uniqueVerticals = Array.from(
+          new Set(
+            list
+              .map((ws) => ws.vertical)
+              .filter((v): v is string => v != null && v !== ""),
+          ),
+        ).sort();
+        setVerticals(uniqueVerticals);
       })
       .catch(() => setWorkspaces([]));
   }, []);
@@ -106,6 +124,28 @@ export function AnalyticsFilters({
           ))}
         </SelectContent>
       </Select>
+
+      {/* Vertical selector (only shown on Copy tab) */}
+      {showVertical && onVerticalChange && (
+        <Select
+          value={vertical || "all"}
+          onValueChange={(val) =>
+            onVerticalChange(val === "all" ? null : val)
+          }
+        >
+          <SelectTrigger size="sm" className="w-52">
+            <SelectValue placeholder="All verticals" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All verticals</SelectItem>
+            {verticals.map((v) => (
+              <SelectItem key={v} value={v}>
+                {v}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
 
       {/* Time period chips */}
       <div className="flex items-center gap-2 ml-auto">

@@ -15,6 +15,7 @@ export async function GET() {
       select: {
         slug: true,
         name: true,
+        vertical: true,
         status: true,
         billingRetainerPence: true,
         billingPlatformFeePence: true,

@@ -14,6 +14,8 @@ import {
   CampaignRankingsTable,
   type CampaignData,
 } from "@/components/analytics/campaign-rankings-table";
+import { CopyTab } from "@/components/analytics/copy-tab";
+import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -57,6 +59,34 @@ function CardsSkeleton() {
 }
 
 // ---------------------------------------------------------------------------
+// Tab chip
+// ---------------------------------------------------------------------------
+
+function TabChip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "inline-flex items-center rounded-full border px-4 py-1.5 text-sm font-medium transition-colors focus:outline-none",
+        active
+          ? "bg-brand text-brand-foreground border-brand-strong"
+          : "bg-secondary text-muted-foreground border-border hover:bg-muted hover:text-foreground",
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main page
 // ---------------------------------------------------------------------------
 
@@ -66,6 +96,8 @@ export default function AnalyticsPage() {
     period: parseAsString.withDefault("30d"),
     sort: parseAsString.withDefault("replyRate"),
     order: parseAsString.withDefault("desc"),
+    tab: parseAsString.withDefault("performance"),
+    vertical: parseAsString.withDefault(""),
   });
 
   // Data states
@@ -77,6 +109,8 @@ export default function AnalyticsPage() {
   const [strategiesLoading, setStrategiesLoading] = useState(true);
   const [campaignsError, setCampaignsError] = useState<string | null>(null);
   const [strategiesError, setStrategiesError] = useState<string | null>(null);
+
+  const isPerformanceTab = params.tab !== "copy";
 
   // ─── Fetch campaigns ────────────────────────────────────────────────────
   const fetchCampaigns = useCallback(async () => {
@@ -137,12 +171,16 @@ export default function AnalyticsPage() {
   }, [params.workspace, params.period]);
 
   useEffect(() => {
-    void fetchCampaigns();
-  }, [fetchCampaigns]);
+    if (isPerformanceTab) {
+      void fetchCampaigns();
+    }
+  }, [fetchCampaigns, isPerformanceTab]);
 
   useEffect(() => {
-    void fetchStrategies();
-  }, [fetchStrategies]);
+    if (isPerformanceTab) {
+      void fetchStrategies();
+    }
+  }, [fetchStrategies, isPerformanceTab]);
 
   // ─── Handlers ──────────────────────────────────────────────────────────
   function handleWorkspaceChange(w: string | null) {
@@ -155,6 +193,14 @@ export default function AnalyticsPage() {
 
   function handleSortChange(sort: string, order: string) {
     void setParams({ sort, order });
+  }
+
+  function handleVerticalChange(v: string | null) {
+    void setParams({ vertical: v ?? "" });
+  }
+
+  function handleTabChange(tab: string) {
+    void setParams({ tab });
   }
 
   return (
@@ -171,58 +217,91 @@ export default function AnalyticsPage() {
           period={params.period}
           onWorkspaceChange={handleWorkspaceChange}
           onPeriodChange={handlePeriodChange}
+          vertical={params.vertical || null}
+          onVerticalChange={handleVerticalChange}
+          showVertical={!isPerformanceTab}
         />
 
-        {/* Strategy comparison section */}
-        <section className="space-y-3">
-          <h2 className="text-lg font-semibold">Copy Strategy Comparison</h2>
-          {strategiesError && (
-            <ErrorBanner
-              message={`Failed to load strategies: ${strategiesError}`}
-              onRetry={() => void fetchStrategies()}
-            />
-          )}
-          {strategiesLoading ? (
-            <CardsSkeleton />
-          ) : (
-            strategiesData && (
-              <StrategyComparisonCards
-                strategies={strategiesData.strategies}
-              />
-            )
-          )}
-        </section>
+        {/* Tab toggle */}
+        <div className="flex items-center gap-2">
+          <TabChip
+            label="Performance"
+            active={isPerformanceTab}
+            onClick={() => handleTabChange("performance")}
+          />
+          <TabChip
+            label="Copy"
+            active={!isPerformanceTab}
+            onClick={() => handleTabChange("copy")}
+          />
+        </div>
 
-        {/* Campaign rankings section */}
-        <section className="space-y-3">
-          <div className="flex items-center gap-3">
-            <h2 className="text-lg font-semibold">Campaign Rankings</h2>
-            {campaignsData && !campaignsLoading && (
-              <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-                {campaignsData.total} campaign
-                {campaignsData.total !== 1 ? "s" : ""}
-              </span>
-            )}
-          </div>
-          {campaignsError && (
-            <ErrorBanner
-              message={`Failed to load campaigns: ${campaignsError}`}
-              onRetry={() => void fetchCampaigns()}
-            />
-          )}
-          {campaignsLoading ? (
-            <TableSkeleton />
-          ) : (
-            campaignsData && (
-              <CampaignRankingsTable
-                campaigns={campaignsData.campaigns}
-                sort={params.sort}
-                order={params.order}
-                onSortChange={handleSortChange}
-              />
-            )
-          )}
-        </section>
+        {/* Performance tab content */}
+        {isPerformanceTab && (
+          <>
+            {/* Strategy comparison section */}
+            <section className="space-y-3">
+              <h2 className="text-lg font-semibold">
+                Copy Strategy Comparison
+              </h2>
+              {strategiesError && (
+                <ErrorBanner
+                  message={`Failed to load strategies: ${strategiesError}`}
+                  onRetry={() => void fetchStrategies()}
+                />
+              )}
+              {strategiesLoading ? (
+                <CardsSkeleton />
+              ) : (
+                strategiesData && (
+                  <StrategyComparisonCards
+                    strategies={strategiesData.strategies}
+                  />
+                )
+              )}
+            </section>
+
+            {/* Campaign rankings section */}
+            <section className="space-y-3">
+              <div className="flex items-center gap-3">
+                <h2 className="text-lg font-semibold">Campaign Rankings</h2>
+                {campaignsData && !campaignsLoading && (
+                  <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                    {campaignsData.total} campaign
+                    {campaignsData.total !== 1 ? "s" : ""}
+                  </span>
+                )}
+              </div>
+              {campaignsError && (
+                <ErrorBanner
+                  message={`Failed to load campaigns: ${campaignsError}`}
+                  onRetry={() => void fetchCampaigns()}
+                />
+              )}
+              {campaignsLoading ? (
+                <TableSkeleton />
+              ) : (
+                campaignsData && (
+                  <CampaignRankingsTable
+                    campaigns={campaignsData.campaigns}
+                    sort={params.sort}
+                    order={params.order}
+                    onSortChange={handleSortChange}
+                  />
+                )
+              )}
+            </section>
+          </>
+        )}
+
+        {/* Copy tab content */}
+        {!isPerformanceTab && (
+          <CopyTab
+            workspace={params.workspace || null}
+            period={params.period}
+            vertical={params.vertical || null}
+          />
+        )}
       </div>
     </div>
   );
