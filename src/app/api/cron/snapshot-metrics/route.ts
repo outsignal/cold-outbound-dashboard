@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { validateCronSecret } from "@/lib/cron-auth";
 import { snapshotWorkspaceCampaigns } from "@/lib/analytics/snapshot";
 import { backfillCopyStrategies } from "@/lib/analytics/strategy-detect";
+import { classifyWorkspaceBodyElements } from "@/lib/analytics/body-elements";
 
 export const maxDuration = 60;
 
@@ -31,11 +32,28 @@ export async function GET(request: Request) {
       );
     }
 
+    let elementsClassified = 0;
+    let elementsSkipped = 0;
+    try {
+      const result = await classifyWorkspaceBodyElements(workspace);
+      elementsClassified = result.classified;
+      elementsSkipped = result.skipped;
+      if (result.errors.length > 0) {
+        errors.push(...result.errors);
+      }
+    } catch (err) {
+      errors.push(
+        `Body element classification failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+
     return NextResponse.json({
       ok: true,
       workspace,
       campaignsProcessed,
       strategiesBackfilled,
+      elementsClassified,
+      elementsSkipped,
       errors: errors.length > 0 ? errors : undefined,
       timestamp: new Date().toISOString(),
     });
