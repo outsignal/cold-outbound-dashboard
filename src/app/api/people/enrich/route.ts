@@ -18,6 +18,8 @@ interface EnrichmentPayload {
   company?: string;
   vertical?: string;
   industry?: string; // alias for vertical
+  workspace?: string; // workspace slug — links person to workspace
+  targetListId?: string; // target list ID — adds person to list
   [key: string]: unknown;
 }
 
@@ -33,6 +35,8 @@ const KNOWN_FIELDS = [
   "company",
   "vertical",
   "industry",
+  "workspace",
+  "targetListId",
 ];
 
 // Map snake_case / alternate field names from Clay to our camelCase fields
@@ -47,6 +51,8 @@ const FIELD_ALIASES: Record<string, string> = {
   companydomain: "companyDomain",
   job_title: "jobTitle",
   jobtitle: "jobTitle",
+  target_list_id: "targetListId",
+  targetlistid: "targetListId",
 };
 
 function normalizePayload(raw: Record<string, unknown>): EnrichmentPayload {
@@ -61,9 +67,80 @@ function normalizePayload(raw: Record<string, unknown>): EnrichmentPayload {
   return normalized as EnrichmentPayload;
 }
 
+async function linkPersonToWorkspaceAndList(
+  personId: string,
+  payload: EnrichmentPayload,
+  vertical?: string | null,
+): Promise<{ workspaceLinked?: boolean; listAdded?: boolean }> {
+  const result: { workspaceLinked?: boolean; listAdded?: boolean } = {};
+
+  if (payload.workspace) {
+    // Validate workspace exists
+    const ws = await prisma.workspace.findUnique({
+      where: { slug: payload.workspace },
+    });
+    if (!ws) {
+      return result; // silently skip — workspace doesn't exist
+    }
+
+    await prisma.personWorkspace.upsert({
+      where: {
+        personId_workspace: {
+          personId,
+          workspace: payload.workspace,
+        },
+      },
+      create: {
+        personId,
+        workspace: payload.workspace,
+        vertical: vertical ?? undefined,
+      },
+      update: {},
+    });
+    result.workspaceLinked = true;
+  }
+
+  if (payload.targetListId) {
+    // Validate target list exists
+    const list = await prisma.targetList.findUnique({
+      where: { id: payload.targetListId },
+    });
+    if (!list) {
+      return result; // silently skip — list doesn't exist
+    }
+
+    // Check if already in list to avoid duplicate error
+    const existing = await prisma.targetListPerson.findUnique({
+      where: {
+        listId_personId: {
+          listId: payload.targetListId,
+          personId,
+        },
+      },
+    });
+    if (!existing) {
+      await prisma.targetListPerson.create({
+        data: {
+          listId: payload.targetListId,
+          personId,
+        },
+      });
+    }
+    result.listAdded = true;
+  }
+
+  return result;
+}
+
 async function enrichPerson(
   payload: EnrichmentPayload,
-): Promise<{ created: boolean; updated: boolean; error?: string }> {
+): Promise<{
+  created: boolean;
+  updated: boolean;
+  workspaceLinked?: boolean;
+  listAdded?: boolean;
+  error?: string;
+}> {
   const { email } = payload;
 
   if (!email || typeof email !== "string") {
@@ -149,7 +226,11 @@ async function enrichPerson(
       }
     }
 
-    return { created: true, updated: false };
+    // Link to workspace and target list
+    const person = await prisma.person.findUnique({ where: { email: normalizedEmail } });
+    const linkResult = await linkPersonToWorkspaceAndList(person!.id, payload, vertical);
+
+    return { created: true, updated: false, ...linkResult };
   }
 
   // Update existing person
@@ -205,7 +286,10 @@ async function enrichPerson(
     }
   }
 
-  return { created: false, updated: Object.keys(updateData).length > 0 };
+  // Link to workspace and target list
+  const linkResult = await linkPersonToWorkspaceAndList(existing.id, payload, vertical);
+
+  return { created: false, updated: Object.keys(updateData).length > 0, ...linkResult };
 }
 
 export async function POST(request: NextRequest) {
@@ -267,6 +351,8 @@ export async function POST(request: NextRequest) {
         email: string;
         created: boolean;
         updated: boolean;
+        workspaceLinked?: boolean;
+        listAdded?: boolean;
         error?: string;
       }[] = [];
       let totalCreated = 0;
@@ -274,6 +360,47 @@ export async function POST(request: NextRequest) {
 
       for (const item of body) {
         const result = await enrichPerson(normalizePayload(item));
+        results.push({ email: item.email ?? "(missing)", ...result });
+        if (result.created) totalCreated++;
+        if (result.updated) totalUpdated++;
+      }
+
+      return NextResponse.json({
+        created: totalCreated,
+        updated: totalUpdated,
+        results,
+      });
+    }
+
+    // Object with items array — batch mode with top-level defaults
+    if (body.items && Array.isArray(body.items)) {
+      if (body.items.length > 500) {
+        return NextResponse.json(
+          { error: "Batch size exceeds maximum of 500 items" },
+          { status: 400 },
+        );
+      }
+
+      const defaults: Record<string, unknown> = {};
+      if (body.workspace) defaults.workspace = body.workspace;
+      if (body.targetListId ?? body.target_list_id) {
+        defaults.targetListId = body.targetListId ?? body.target_list_id;
+      }
+
+      const results: {
+        email: string;
+        created: boolean;
+        updated: boolean;
+        workspaceLinked?: boolean;
+        listAdded?: boolean;
+        error?: string;
+      }[] = [];
+      let totalCreated = 0;
+      let totalUpdated = 0;
+
+      for (const item of body.items) {
+        const merged = { ...defaults, ...item };
+        const result = await enrichPerson(normalizePayload(merged));
         results.push({ email: item.email ?? "(missing)", ...result });
         if (result.created) totalCreated++;
         if (result.updated) totalUpdated++;
