@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Campaign Intelligence Hub
 status: unknown
-last_updated: "2026-03-10T10:30:08.437Z"
+last_updated: "2026-03-10T12:30:00Z"
 progress:
   total_phases: 23
   completed_phases: 21
   total_plans: 78
-  completed_plans: 79
+  completed_plans: 80
 ---
 
 # Project State
@@ -18,21 +18,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Own the lead data pipeline end-to-end so we never pay for the same lead twice and can cancel the $300+/month Clay subscription.
-**Current focus:** v3.0 Campaign Intelligence Hub — Phase 26 complete, Phase 27 next
+**Current focus:** v3.0 Campaign Intelligence Hub — Phase 27 in progress
 
 ## Current Position
 
-Phase: 26 of 28 (Benchmarking) -- COMPLETE
-Plan: 2 of 2 -- COMPLETE
-Status: Phase 26 complete (2/2 plans)
-Last activity: 2026-03-10 — Completed 26-02 (Benchmarks Tab UI)
+Phase: 27 of 28 (AI Insights & Action Queue)
+Plan: 1 of 3 -- COMPLETE
+Status: Phase 27 in progress (1/3 plans)
+Last activity: 2026-03-10 — Completed 27-01 (Insight Model & AI Generation Pipeline)
 
-Progress: [████░░░░░░] 43% (v3.0) -- Phase 26 complete (2/2 plans)
+Progress: [████░░░░░░] 46% (v3.0) -- Phase 27 plan 1/3 complete
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 100 (v1.0: 22, v1.1: 40, v2.0: 26, v3.0: 12)
+- Total plans completed: 101 (v1.0: 22, v1.1: 40, v2.0: 26, v3.0: 13)
 - Average duration: ~15 min
 - Total execution time: ~22 hours
 
@@ -92,6 +92,10 @@ Progress: [████░░░░░░] 43% (v3.0) -- Phase 26 complete (2/2 
 - [26-02]: Global toggle triggers re-fetch rather than client-side filtering for accurate server-computed aggregations
 - [26-02]: Analytics page tab logic changed from binary (performance vs copy) to explicit activeTab state for 3 tabs
 
+- [27-01]: No maxTokens param on generateObject -- AI SDK limitation per decision 24-01
+- [27-01]: Latest snapshot per campaign for week-over-week averages (EB stats cumulative per decision 24-02)
+- [27-01]: Dedup key pattern: category:actionType:entityId for deterministic 2-week dismissed window
+
 ### Blockers/Concerns
 
 - CachedMetrics model exists in schema but has zero usage — need to verify upsert behavior and unique constraints work as expected
@@ -106,5 +110,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Completed 26-02-PLAN.md (Phase 26 complete)
+Stopped at: Completed 27-01-PLAN.md
 Resume file: None

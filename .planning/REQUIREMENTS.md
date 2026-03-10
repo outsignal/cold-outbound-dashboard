@@ -39,8 +39,8 @@
 
 ### AI Insights
 
-- [ ] **INSIGHT-01**: System generates AI-powered insights weekly per workspace analyzing reply patterns, campaign performance, and cross-workspace comparisons
-- [ ] **INSIGHT-02**: Each insight includes observation, supporting evidence (data), suggested action, and confidence level
+- [x] **INSIGHT-01**: System generates AI-powered insights weekly per workspace analyzing reply patterns, campaign performance, and cross-workspace comparisons
+- [x] **INSIGHT-02**: Each insight includes observation, supporting evidence (data), suggested action, and confidence level
 - [ ] **INSIGHT-03**: Admin can approve, dismiss, or defer (snooze N days) each suggested action via the action queue
 - [ ] **INSIGHT-04**: Approved actions execute the suggestion (pause campaign, update ICP threshold, flag for copy review)
 - [ ] **INSIGHT-05**: Admin can see objection pattern clusters across campaigns (e.g., "42% mention budget, 28% mention timing")
@@ -101,8 +101,8 @@
 | BENCH-03 | Phase 26 | Complete |
 | BENCH-04 | Phase 26 | Complete |
 | BENCH-05 | Phase 26 | Complete |
-| INSIGHT-01 | Phase 27 | Pending |
-| INSIGHT-02 | Phase 27 | Pending |
+| INSIGHT-01 | Phase 27 | Complete |
+| INSIGHT-02 | Phase 27 | Complete |
 | INSIGHT-03 | Phase 27 | Pending |
 | INSIGHT-04 | Phase 27 | Pending |
 | INSIGHT-05 | Phase 27 | Pending |
