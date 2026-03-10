@@ -9,11 +9,11 @@ Requirements for Email Deliverability & Domain Infrastructure Monitoring. Each m
 
 ### Domain Health
 
-- [ ] **DOMAIN-01**: System validates SPF records for all sending domains via DNS lookup
-- [ ] **DOMAIN-02**: System validates DKIM records for all sending domains (google, default, selector1, selector2 selectors)
-- [ ] **DOMAIN-03**: System validates DMARC records and extracts policy for all sending domains
+- [x] **DOMAIN-01**: System validates SPF records for all sending domains via DNS lookup
+- [x] **DOMAIN-02**: System validates DKIM records for all sending domains (google, default, selector1, selector2 selectors)
+- [x] **DOMAIN-03**: System validates DMARC records and extracts policy for all sending domains
 - [ ] **DOMAIN-04**: System checks ~50 major DNSBLs for domain/IP blacklist status (targeted: >3% bounce or 7+ days since last check)
-- [ ] **DOMAIN-05**: DomainHealth model stores per-domain DNS status, blacklist hits, and overall health rating
+- [x] **DOMAIN-05**: DomainHealth model stores per-domain DNS status, blacklist hits, and overall health rating
 - [ ] **DOMAIN-06**: Admin receives Slack + email notification when a domain is found on any blacklist
 - [ ] **DOMAIN-07**: Admin receives warning notification when SPF/DKIM/DMARC validation fails
 
@@ -91,11 +91,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DOMAIN-01 | Phase 29 | Pending |
-| DOMAIN-02 | Phase 29 | Pending |
-| DOMAIN-03 | Phase 29 | Pending |
+| DOMAIN-01 | Phase 29 | Complete |
+| DOMAIN-02 | Phase 29 | Complete |
+| DOMAIN-03 | Phase 29 | Complete |
 | DOMAIN-04 | Phase 29 | Pending |
-| DOMAIN-05 | Phase 29 | Pending |
+| DOMAIN-05 | Phase 29 | Complete |
 | DOMAIN-06 | Phase 29 | Pending |
 | DOMAIN-07 | Phase 29 | Pending |
 | BOUNCE-01 | Phase 29 | Pending |

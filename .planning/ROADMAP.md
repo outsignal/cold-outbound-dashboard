@@ -93,7 +93,7 @@ Full details: [milestones/v3.0-ROADMAP.md](milestones/v3.0-ROADMAP.md)
   3. Per-domain aggregate bounce metrics roll up correctly from sender-level snapshots
   4. Admin receives a Slack notification when a domain appears on any DNSBL blacklist
   5. Admin receives a warning notification when SPF, DKIM, or DMARC validation fails for any sending domain
-**Plans:** 3 plans
+**Plans:** 2/3 plans executed
 Plans:
 - [ ] 29-01-PLAN.md — DomainHealth model + DNS validation library (SPF/DKIM/DMARC)
 - [ ] 29-02-PLAN.md — BounceSnapshot model + snapshot capture + warmup API + daily cron
@@ -168,7 +168,7 @@ Plans:
 | 26. Cross-Workspace Benchmarking & ICP Calibration | v3.0 | 2/2 | Complete | 2026-03-10 |
 | 27. AI Insights & Action Queue | v3.0 | 3/3 | Complete | 2026-03-10 |
 | 28. Intelligence Hub Dashboard | v3.0 | 2/2 | Complete | 2026-03-10 |
-| 29. Domain Health Foundation | v4.0 | 0/3 | In progress | - |
+| 29. Domain Health Foundation | 2/3 | In Progress|  | - |
 | 30. Inbox Placement Testing | v4.0 | 0/TBD | Not started | - |
 | 31. Auto-Rotation Engine | v4.0 | 0/TBD | Not started | - |
 | 32. Deliverability Dashboard & Reporting | v4.0 | 0/TBD | Not started | - |
