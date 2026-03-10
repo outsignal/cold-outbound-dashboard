@@ -31,11 +31,11 @@
 
 ### Cross-Workspace Intelligence
 
-- [ ] **BENCH-01**: Admin can benchmark workspace performance against all other workspaces with industry reference bands
-- [ ] **BENCH-02**: Admin can compare performance grouped by vertical, copy strategy, and time period
-- [ ] **BENCH-03**: Admin can see ICP score calibration — correlation between ICP scores at send time and actual reply/conversion outcomes
-- [ ] **BENCH-04**: Admin can see recommended ICP threshold adjustments based on calibration data with confidence indicators
-- [ ] **BENCH-05**: Admin can see signal-to-conversion tracking showing which signal types (funding, hiring, tech adoption) produce the best reply outcomes
+- [x] **BENCH-01**: Admin can benchmark workspace performance against all other workspaces with industry reference bands
+- [x] **BENCH-02**: Admin can compare performance grouped by vertical, copy strategy, and time period
+- [x] **BENCH-03**: Admin can see ICP score calibration — correlation between ICP scores at send time and actual reply/conversion outcomes
+- [x] **BENCH-04**: Admin can see recommended ICP threshold adjustments based on calibration data with confidence indicators
+- [x] **BENCH-05**: Admin can see signal-to-conversion tracking showing which signal types (funding, hiring, tech adoption) produce the best reply outcomes
 
 ### AI Insights
 
@@ -96,11 +96,11 @@
 | COPY-03 | Phase 25 | Complete |
 | COPY-04 | Phase 25 | Complete |
 | COPY-05 | Phase 25 | Complete |
-| BENCH-01 | Phase 26 | Pending |
-| BENCH-02 | Phase 26 | Pending |
-| BENCH-03 | Phase 26 | Pending |
-| BENCH-04 | Phase 26 | Pending |
-| BENCH-05 | Phase 26 | Pending |
+| BENCH-01 | Phase 26 | Complete |
+| BENCH-02 | Phase 26 | Complete |
+| BENCH-03 | Phase 26 | Complete |
+| BENCH-04 | Phase 26 | Complete |
+| BENCH-05 | Phase 26 | Complete |
 | INSIGHT-01 | Phase 27 | Pending |
 | INSIGHT-02 | Phase 27 | Pending |
 | INSIGHT-03 | Phase 27 | Pending |

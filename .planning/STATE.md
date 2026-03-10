@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Campaign Intelligence Hub
 status: unknown
-last_updated: "2026-03-10T09:42:07.793Z"
+last_updated: "2026-03-10T10:19:46Z"
 progress:
   total_phases: 22
   completed_phases: 20
   total_plans: 76
-  completed_plans: 77
+  completed_plans: 78
 ---
 
 # Project State
@@ -23,16 +23,16 @@ See: .planning/PROJECT.md (updated 2026-03-09)
 ## Current Position
 
 Phase: 26 of 28 (Benchmarking)
-Plan: 1 of 3
-Status: Phase 25 complete, starting Phase 26
-Last activity: 2026-03-10 — Completed 25-03 (Copy Tab UI)
+Plan: 2 of 2
+Status: Phase 26 in progress (1/2 plans complete)
+Last activity: 2026-03-10 — Completed 26-01 (Benchmarking Data Layer)
 
-Progress: [████░░░░░░] 35% (v3.0) -- Phase 25 complete (3/3 plans)
+Progress: [████░░░░░░] 39% (v3.0) -- Phase 26 plan 1 complete (1/2 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 98 (v1.0: 22, v1.1: 40, v2.0: 26, v3.0: 10)
+- Total plans completed: 99 (v1.0: 22, v1.1: 40, v2.0: 26, v3.0: 11)
 - Average duration: ~15 min
 - Total execution time: ~22 hours
 
@@ -84,6 +84,10 @@ Progress: [████░░░░░░] 35% (v3.0) -- Phase 25 complete (3/3 
 - [25-03]: Performance tab data only fetched when active (lazy loading)
 - [25-03]: Template detail panel uses translate-x slide-out pattern consistent with replies side panel
 
+- [26-01]: Raw SQL ($queryRawUnsafe) for ICP calibration -- Prisma cannot express cross-model JOIN on email+workspace for grouped bucket aggregation
+- [26-01]: Interested count sourced from Reply table intent field rather than CachedMetrics snapshot -- more accurate for per-signal-type breakdown
+- [26-01]: Bounce rate treated as normal metric in reference bands -- UI handles inverted display
+
 ### Blockers/Concerns
 
 - CachedMetrics model exists in schema but has zero usage — need to verify upsert behavior and unique constraints work as expected
@@ -98,5 +102,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Completed 25-03-PLAN.md
+Stopped at: Completed 26-01-PLAN.md
 Resume file: None
