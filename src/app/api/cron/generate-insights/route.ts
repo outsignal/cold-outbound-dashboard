@@ -66,12 +66,32 @@ async function sendDigestForWorkspace(workspaceSlug: string): Promise<void> {
       where: { workspaceSlug, status: "active" },
     });
 
+    // Reply count for the past 7 days
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const replyCount = await prisma.reply.count({
+      where: {
+        workspaceSlug,
+        createdAt: { gte: sevenDaysAgo },
+      },
+    });
+
+    // Compute avg reply rate from campaigns
+    let avgReplyRate: number | undefined;
+    if (campaigns.length > 0) {
+      const totalRate = campaigns.reduce((sum, c) => sum + c.replyRate, 0);
+      avgReplyRate = Math.round((totalRate / campaigns.length) * 10) / 10;
+    }
+
     await notifyWeeklyDigest({
       workspaceSlug,
       topInsights,
       bestCampaign,
       worstCampaign,
       pendingActions,
+      replyCount,
+      avgReplyRate,
+      insightCount: pendingActions,
     });
   } catch (err) {
     console.error(

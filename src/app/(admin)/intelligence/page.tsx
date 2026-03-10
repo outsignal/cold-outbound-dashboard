@@ -2,29 +2,20 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useQueryStates, parseAsString } from "nuqs";
-import Link from "next/link";
-import {
-  Lightbulb,
-  BarChart3,
-  PieChart,
-  Gauge,
-  UserCheck,
-  ArrowRight,
-} from "lucide-react";
 import { Header } from "@/components/layout/header";
 import { AnalyticsFilters } from "@/components/analytics/analytics-filters";
 import { KpiRow } from "@/components/intelligence/kpi-row";
+import { InsightsSummary, type InsightData } from "@/components/intelligence/insights-summary";
+import { CampaignSummary } from "@/components/intelligence/campaign-summary";
+import { ClassificationDonuts } from "@/components/intelligence/classification-donuts";
+import { BenchmarksSummary } from "@/components/intelligence/benchmarks-summary";
+import { IcpSummary } from "@/components/intelligence/icp-summary";
+import type { CampaignData } from "@/components/analytics/campaign-rankings-table";
+import type { IndustryBenchmark } from "@/lib/analytics/industry-benchmarks";
 
 // ---------------------------------------------------------------------------
-// Types
+// API response types
 // ---------------------------------------------------------------------------
-
-interface CampaignData {
-  campaignName: string;
-  workspaceSlug: string;
-  replyRate: number;
-  interestedRate?: number;
-}
 
 interface CampaignsResponse {
   campaigns: CampaignData[];
@@ -33,51 +24,20 @@ interface CampaignsResponse {
 interface ReplyStatsResponse {
   totalReplies: number;
   intentDistribution: { intent: string; count: number }[];
+  sentimentDistribution: { sentiment: string; count: number }[];
 }
 
-// ---------------------------------------------------------------------------
-// Bento section config
-// ---------------------------------------------------------------------------
-
-interface BentoSection {
-  title: string;
-  icon: React.ComponentType<{ className?: string }>;
-  colSpan: string;
-  href: string;
+interface BenchmarksResponse {
+  workspace: string;
+  metrics: Record<string, number>;
+  globalAvg: Record<string, number>;
+  industry: Record<string, IndustryBenchmark>;
 }
 
-const BENTO_SECTIONS: BentoSection[] = [
-  {
-    title: "Active Insights",
-    icon: Lightbulb,
-    colSpan: "md:col-span-2",
-    href: "/analytics?tab=insights",
-  },
-  {
-    title: "Campaign Rankings",
-    icon: BarChart3,
-    colSpan: "md:col-span-2",
-    href: "/analytics?tab=performance",
-  },
-  {
-    title: "Reply Classification",
-    icon: PieChart,
-    colSpan: "md:col-span-1 lg:col-span-2",
-    href: "/analytics",
-  },
-  {
-    title: "Benchmarks",
-    icon: Gauge,
-    colSpan: "md:col-span-1",
-    href: "/analytics?tab=benchmarks",
-  },
-  {
-    title: "ICP Calibration",
-    icon: UserCheck,
-    colSpan: "md:col-span-1",
-    href: "/analytics?tab=benchmarks",
-  },
-];
+interface IcpResponse {
+  buckets: { bucket: string; totalSent: number; replyRate: number; interestedRate: number }[];
+  recommendation: { current: number; suggested: number; confidence: string; reason: string } | null;
+}
 
 // ---------------------------------------------------------------------------
 // Main page
@@ -92,13 +52,26 @@ export default function IntelligenceHubPage() {
   // KPI state
   const [repliesCount, setRepliesCount] = useState<number | null>(null);
   const [avgReplyRate, setAvgReplyRate] = useState<number | null>(null);
-  const [activeInsights, setActiveInsights] = useState<number | null>(null);
+  const [activeInsightsCount, setActiveInsightsCount] = useState<number | null>(null);
   const [topWorkspace, setTopWorkspace] = useState<string | null>(null);
   const [interestedRate, setInterestedRate] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  // ─── Fetch KPI data ──────────────────────────────────────────────────
-  const fetchKpis = useCallback(async () => {
+  // Section data state
+  const [campaigns, setCampaigns] = useState<CampaignData[] | null>(null);
+  const [intentData, setIntentData] = useState<{ intent: string; count: number }[] | null>(null);
+  const [sentimentData, setSentimentData] = useState<{ sentiment: string; count: number }[] | null>(null);
+  const [benchmarksData, setBenchmarksData] = useState<BenchmarksResponse | null>(null);
+  const [icpBuckets, setIcpBuckets] = useState<IcpResponse["buckets"] | null>(null);
+  const [icpRecommendation, setIcpRecommendation] = useState<IcpResponse["recommendation"]>(null);
+  const [insights, setInsights] = useState<InsightData[] | null>(null);
+
+  // Loading states
+  const [loading, setLoading] = useState(true);
+  const [benchmarksLoading, setBenchmarksLoading] = useState(false);
+  const [icpLoading, setIcpLoading] = useState(false);
+
+  // ─── Fetch all data ────────────────────────────────────────────────────
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       // Build params for campaigns
@@ -127,29 +100,24 @@ export default function IntelligenceHubPage() {
 
       // Process campaigns data
       if (campaignsRes.ok) {
-        const campaignsJson =
-          (await campaignsRes.json()) as CampaignsResponse;
-        const campaigns = campaignsJson.campaigns ?? [];
-        if (campaigns.length > 0) {
-          const totalRate = campaigns.reduce(
+        const campaignsJson = (await campaignsRes.json()) as CampaignsResponse;
+        const campaignList = campaignsJson.campaigns ?? [];
+        setCampaigns(campaignList);
+
+        if (campaignList.length > 0) {
+          const totalRate = campaignList.reduce(
             (sum, c) => sum + (c.replyRate ?? 0),
             0,
           );
-          setAvgReplyRate(totalRate / campaigns.length);
+          setAvgReplyRate(totalRate / campaignList.length);
 
           // Find top workspace by reply rate
-          const byWorkspace = new Map<
-            string,
-            { totalRate: number; count: number }
-          >();
-          for (const c of campaigns) {
-            const existing = byWorkspace.get(c.workspaceSlug) ?? {
-              totalRate: 0,
-              count: 0,
-            };
+          const byWorkspace = new Map<string, { totalRate: number; count: number }>();
+          for (const c of campaignList) {
+            const existing = byWorkspace.get(c.workspace) ?? { totalRate: 0, count: 0 };
             existing.totalRate += c.replyRate ?? 0;
             existing.count += 1;
-            byWorkspace.set(c.workspaceSlug, existing);
+            byWorkspace.set(c.workspace, existing);
           }
           let bestWorkspace = "";
           let bestRate = -1;
@@ -163,9 +131,7 @@ export default function IntelligenceHubPage() {
           setTopWorkspace(bestWorkspace);
 
           // Interested rate from campaigns
-          const withInterested = campaigns.filter(
-            (c) => c.interestedRate != null,
-          );
+          const withInterested = campaignList.filter((c) => c.interestedRate != null);
           if (withInterested.length > 0) {
             const totalInterested = withInterested.reduce(
               (sum, c) => sum + (c.interestedRate ?? 0),
@@ -186,27 +152,100 @@ export default function IntelligenceHubPage() {
       if (repliesRes.ok) {
         const repliesJson = (await repliesRes.json()) as ReplyStatsResponse;
         setRepliesCount(repliesJson.totalReplies ?? 0);
+        setIntentData(repliesJson.intentDistribution ?? null);
+        setSentimentData(repliesJson.sentimentDistribution ?? null);
       } else {
         setRepliesCount(null);
+        setIntentData(null);
+        setSentimentData(null);
       }
 
       // Process insights data
       if (insightsRes.ok) {
-        const insightsJson = (await insightsRes.json()) as unknown[];
-        setActiveInsights(Array.isArray(insightsJson) ? insightsJson.length : 0);
+        const insightsJson = (await insightsRes.json()) as InsightData[];
+        if (Array.isArray(insightsJson)) {
+          setInsights(insightsJson);
+          setActiveInsightsCount(insightsJson.length);
+        } else {
+          setInsights(null);
+          setActiveInsightsCount(0);
+        }
       } else {
-        setActiveInsights(null);
+        setInsights(null);
+        setActiveInsightsCount(null);
       }
     } catch (err) {
-      console.error("[intelligence] Failed to fetch KPIs:", err);
+      console.error("[intelligence] Failed to fetch data:", err);
     } finally {
       setLoading(false);
     }
   }, [params.workspace, params.period]);
 
+  // ─── Fetch benchmarks (workspace-specific, all-time) ───────────────────
+  const fetchBenchmarks = useCallback(async () => {
+    if (!params.workspace) {
+      setBenchmarksData(null);
+      return;
+    }
+    setBenchmarksLoading(true);
+    try {
+      const res = await fetch(
+        `/api/analytics/benchmarks/reference-bands?workspace=${encodeURIComponent(params.workspace)}`,
+      );
+      if (res.ok) {
+        const json = (await res.json()) as BenchmarksResponse;
+        setBenchmarksData(json);
+      } else {
+        setBenchmarksData(null);
+      }
+    } catch {
+      setBenchmarksData(null);
+    } finally {
+      setBenchmarksLoading(false);
+    }
+  }, [params.workspace]);
+
+  // ─── Fetch ICP calibration ─────────────────────────────────────────────
+  const fetchIcp = useCallback(async () => {
+    setIcpLoading(true);
+    try {
+      const icpParams = new URLSearchParams();
+      if (params.workspace) {
+        icpParams.set("workspace", params.workspace);
+      } else {
+        icpParams.set("global", "true");
+      }
+      const res = await fetch(
+        `/api/analytics/benchmarks/icp-calibration?${icpParams.toString()}`,
+      );
+      if (res.ok) {
+        const json = (await res.json()) as IcpResponse;
+        setIcpBuckets(json.buckets ?? null);
+        setIcpRecommendation(json.recommendation ?? null);
+      } else {
+        setIcpBuckets(null);
+        setIcpRecommendation(null);
+      }
+    } catch {
+      setIcpBuckets(null);
+      setIcpRecommendation(null);
+    } finally {
+      setIcpLoading(false);
+    }
+  }, [params.workspace]);
+
+  // ─── Effects ───────────────────────────────────────────────────────────
   useEffect(() => {
-    void fetchKpis();
-  }, [fetchKpis]);
+    void fetchData();
+  }, [fetchData]);
+
+  useEffect(() => {
+    void fetchBenchmarks();
+  }, [fetchBenchmarks]);
+
+  useEffect(() => {
+    void fetchIcp();
+  }, [fetchIcp]);
 
   // ─── Handlers ──────────────────────────────────────────────────────────
   function handleWorkspaceChange(w: string | null) {
@@ -215,6 +254,10 @@ export default function IntelligenceHubPage() {
 
   function handlePeriodChange(p: string) {
     void setParams({ period: p });
+  }
+
+  function handleInsightRefresh() {
+    void fetchData();
   }
 
   return (
@@ -237,7 +280,7 @@ export default function IntelligenceHubPage() {
         <KpiRow
           repliesCount={repliesCount}
           avgReplyRate={avgReplyRate}
-          activeInsights={activeInsights}
+          activeInsights={activeInsightsCount}
           topWorkspace={topWorkspace}
           interestedRate={interestedRate}
           loading={loading}
@@ -245,32 +288,46 @@ export default function IntelligenceHubPage() {
 
         {/* Bento Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {BENTO_SECTIONS.map((section) => {
-            const Icon = section.icon;
-            return (
-              <div
-                key={section.title}
-                className={`rounded-lg border bg-card/50 p-6 space-y-4 ${section.colSpan}`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Icon className="h-5 w-5 text-muted-foreground" />
-                    <h3 className="font-semibold">{section.title}</h3>
-                  </div>
-                  <Link
-                    href={section.href}
-                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    View details
-                    <ArrowRight className="h-3 w-3" />
-                  </Link>
-                </div>
-                <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
-                  Coming soon
-                </div>
-              </div>
-            );
-          })}
+          {/* Active Insights — hero span */}
+          <div className="md:col-span-2">
+            <InsightsSummary
+              insights={insights}
+              loading={loading}
+              onRefresh={handleInsightRefresh}
+            />
+          </div>
+
+          {/* Campaign Rankings — hero span */}
+          <div className="md:col-span-2">
+            <CampaignSummary campaigns={campaigns} loading={loading} />
+          </div>
+
+          {/* Reply Classification — wider */}
+          <div className="md:col-span-1 lg:col-span-2">
+            <ClassificationDonuts
+              intentData={intentData}
+              sentimentData={sentimentData}
+              loading={loading}
+            />
+          </div>
+
+          {/* Benchmarks */}
+          <div className="md:col-span-1">
+            <BenchmarksSummary
+              data={benchmarksData}
+              loading={benchmarksLoading}
+              hasWorkspace={!!params.workspace}
+            />
+          </div>
+
+          {/* ICP Calibration */}
+          <div className="md:col-span-1">
+            <IcpSummary
+              buckets={icpBuckets}
+              recommendation={icpRecommendation}
+              loading={icpLoading}
+            />
+          </div>
         </div>
       </div>
     </div>

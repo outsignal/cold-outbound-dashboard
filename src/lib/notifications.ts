@@ -1639,6 +1639,9 @@ export async function notifyWeeklyDigest(params: {
   bestCampaign: { name: string; replyRate: number } | null;
   worstCampaign: { name: string; replyRate: number } | null;
   pendingActions: number;
+  replyCount?: number;
+  avgReplyRate?: number;
+  insightCount?: number;
 }): Promise<void> {
   const workspace = await prisma.workspace.findUnique({
     where: { slug: params.workspaceSlug },
@@ -1648,7 +1651,7 @@ export async function notifyWeeklyDigest(params: {
 
   const adminBaseUrl =
     process.env.NEXT_PUBLIC_APP_URL ?? "https://admin.outsignal.ai";
-  const insightsUrl = `${adminBaseUrl}/analytics?tab=insights`;
+  const insightsUrl = `${adminBaseUrl}/intelligence`;
 
   const categoryEmoji: Record<string, string> = {
     performance: "chart_with_upwards_trend",
@@ -1656,6 +1659,13 @@ export async function notifyWeeklyDigest(params: {
     objections: "speech_balloon",
     icp: "dart",
   };
+
+  // Build optional KPI summary line (used in both Slack and email)
+  const kpiParts: string[] = [];
+  if (params.replyCount != null) kpiParts.push(`${params.replyCount} replies`);
+  if (params.avgReplyRate != null) kpiParts.push(`${params.avgReplyRate.toFixed(1)}% avg reply rate`);
+  if (params.insightCount != null) kpiParts.push(`${params.insightCount} insights pending`);
+  const kpiLine = kpiParts.length > 0 ? kpiParts.join(" | ") : null;
 
   // ---------- Slack ----------
 
@@ -1701,6 +1711,17 @@ export async function notifyWeeklyDigest(params: {
               text: `[${workspace.name}] Weekly Intelligence Digest`,
             },
           },
+          ...(kpiLine
+            ? [
+                {
+                  type: "section" as const,
+                  text: {
+                    type: "mrkdwn" as const,
+                    text: `*This week:* ${kpiLine}`,
+                  },
+                },
+              ]
+            : []),
           {
             type: "section",
             text: {
@@ -1864,6 +1885,18 @@ export async function notifyWeeklyDigest(params: {
               <tr>
                 <td style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#71717a;padding-bottom:24px;line-height:1.5;">${workspace.name}</td>
               </tr>
+${kpiLine ? `              <!-- KPI Summary -->
+              <tr>
+                <td style="padding-bottom:24px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr>
+                      <td style="background-color:#f0f9ff;border-radius:8px;padding:16px 20px;">
+                        <p style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0c4a6e;margin:0;font-weight:600;">This week: ${kpiLine}</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>` : ""}
 ${campaignHtml}
               <!-- Insights list -->
               <tr>
