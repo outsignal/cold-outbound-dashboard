@@ -44,10 +44,16 @@ Own the lead data pipeline end-to-end so we never pay for the same lead twice an
 - ✓ LinkedIn Voyager API — HTTP-based LinkedIn automation — v1.1
 - ✓ Automated sender health — detection, rotation, reassignment, notifications — v1.1
 - ✓ Chrome extension — one-click LinkedIn cookie capture with expiry detection — v1.1
+- ✓ Reply storage with full body text, AI classification (9-intent taxonomy + sentiment + objection subtype) — v3.0
+- ✓ Campaign analytics engine with daily snapshot cron, rankings, per-step analysis, strategy comparison — v3.0
+- ✓ Copy performance analysis with AI body element classification, subject line rankings, element correlation multipliers — v3.0
+- ✓ Cross-workspace benchmarking with industry reference bands, ICP calibration, signal effectiveness ranking — v3.0
+- ✓ AI insight generation (weekly per workspace, 3-5 actionable cards, approve/dismiss/snooze queue) — v3.0
+- ✓ Intelligence Hub dashboard with bento grid, KPI row, donut charts, mini gauges, enhanced weekly digest — v3.0
 
 ### Active
 
-<!-- Current milestone: v2.0 Lead Discovery & Intelligence -->
+<!-- Next milestone TBD -->
 
 - [ ] Multi-source lead discovery (Apollo, Prospeo Search, AI Ark Search, Exa.ai, Serper.dev, Apify LinkedIn)
 - [ ] Agent-driven source selection based on ICP type (enterprise vs niche vs local vs ultra-niche)
@@ -73,27 +79,13 @@ Own the lead data pipeline end-to-end so we never pay for the same lead twice an
 - StoreLeads — $75-950/mo, Serper.dev covers ecommerce discovery via Google queries
 - Campaign builder UI — all campaign operations through chat (Cmd+J / CLI)
 
-## Current Milestone: v3.0 Campaign Intelligence Hub
-
-**Goal:** Close the feedback loop — automatically classify replies, rank campaign performance, benchmark across workspaces, generate AI-powered insights, and present actionable suggestions to the admin via an Intelligence Hub dashboard. The system does the analysis; the admin makes the decisions.
-
-**Target features:**
-- Reply classification engine (intent, objection type, buying signals, sentiment scoring)
-- Campaign performance analytics (ranking, strategy comparison, sequence step analysis)
-- Cross-workspace benchmarking (vertical averages, pattern identification)
-- ICP score calibration (do high scores actually convert?)
-- AI-powered insight generation (scheduled analysis → actionable cards)
-- Admin action queue (approve/dismiss/defer suggested optimizations)
-- Intelligence Hub dashboard page
-- Optional digest notifications (Slack/email summary of top insights)
-
 ## Current State
 
-**Shipped:** v2.0 Lead Discovery & Intelligence (2026-03-04) — 22 phases, 67 plans
-**Previous:** v1.1 Outbound Pipeline (2026-03-03), v1.0 Lead Engine (2026-02-27)
-**Current:** v3.0 Campaign Intelligence Hub — defining requirements
+**Shipped:** v3.0 Campaign Intelligence Hub (2026-03-10) — 6 phases, 17 plans, 78 commits
+**Previous:** v2.0 Lead Discovery & Intelligence (2026-03-04), v1.1 Outbound Pipeline (2026-03-03), v1.0 Lead Engine (2026-02-27)
+**Current:** Planning next milestone
 
-**Codebase:** ~48,200 LOC TypeScript/TSX across 305 files
+**Codebase:** ~81,280 LOC TypeScript/TSX across 420+ files
 **Stack:** Next.js 16, Prisma 6, PostgreSQL (Neon), Vercel, Railway (LinkedIn worker)
 **Data:** 14,563 people, 16,941 companies, 6 client workspaces
 **Chrome extension:** Manifest V3, vanilla JS, 3 files
@@ -128,6 +120,11 @@ Own the lead data pipeline end-to-end so we never pay for the same lead twice an
 | Voyager API over browser automation | HTTP calls safer than headless Chrome for LinkedIn | ✓ Good — lower detection risk |
 | Chrome extension for cookie capture | One-click LinkedIn connect, no DevTools needed | ✓ Good — reduces friction for clients |
 
+| Daily CachedMetrics snapshots over real-time queries | Pre-compute avoids slow analytics queries, 60s cron on Vercel | ✓ Good — fast dashboard loads |
+| AI classification via Haiku (generateObject + Zod) | Structured output, cheap, type-safe, consistent | ✓ Good — reply + body element + insight classification all use this |
+| Bento grid Intelligence Hub as separate page | Executive summary page linking to analytics tabs for detail | ✓ Good — clean separation of overview vs deep-dive |
+| Hardcoded industry benchmarks per vertical | Only 1 workspace per vertical, not enough data for computed averages | ✓ Good — easy to update later with real data |
+| Insight dedup with 2-week window | Prevents spamming admin with same insight, but allows recurrence | ✓ Good — balances freshness with noise reduction |
 | Multi-source discovery over single-provider | No single provider has all leads — agent picks best source per ICP type | — Pending |
 | Exa.ai for semantic company search | Replaces Disco/Ocean.io lookalikes, more flexible, API-first, MCP server | — Pending |
 | Signals for timing not hooks | Everyone sends "congrats on funding" — use signals invisibly for targeting, not as email hook | — Pending |
@@ -137,4 +134,4 @@ Own the lead data pipeline end-to-end so we never pay for the same lead twice an
 | Railway for signal monitoring | Vercel Hobby 2-cron limit, Railway already running LinkedIn worker, needs continuous background process | — Pending |
 
 ---
-*Last updated: 2026-03-09 after v3.0 milestone start*
+*Last updated: 2026-03-10 after v3.0 milestone completion*
