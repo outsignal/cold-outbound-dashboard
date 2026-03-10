@@ -1194,6 +1194,80 @@ model Page {
   @@index([slug])
 }
 
+// --- Domain Health Monitoring (v4.0 Phase 29) ---
+
+model DomainHealth {
+  id        String   @id @default(cuid())
+  domain    String   @unique  // e.g. "outsignal.ai"
+
+  // SPF validation
+  spfStatus   String?   // "pass" | "fail" | "missing"
+  spfRecord   String?   // Raw SPF record text
+
+  // DKIM validation
+  dkimStatus    String?   // "pass" | "partial" | "fail" | "missing"
+  dkimSelectors String?   // JSON array of passing selectors, e.g. '["google","default"]'
+
+  // DMARC validation
+  dmarcStatus String?   // "pass" | "fail" | "missing"
+  dmarcPolicy String?   // "none" | "quarantine" | "reject"
+  dmarcRecord String?   // Raw DMARC record text
+
+  // Blacklist status (populated by Plan 03)
+  blacklistHits     String?   // JSON array of DNSBL names where listed
+  blacklistSeverity String?   // "none" | "warning" | "critical"
+  lastBlacklistCheck DateTime?
+
+  // Overall health
+  overallHealth String   @default("unknown") // "healthy" | "warning" | "critical" | "unknown"
+
+  // Timestamps
+  lastDnsCheck DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([overallHealth])
+  @@index([lastDnsCheck])
+}
+
+// --- Bounce Snapshot (v4.0 Phase 29) ---
+
+model BounceSnapshot {
+  id        String   @id @default(cuid())
+
+  // Identity
+  workspaceSlug   String
+  senderEmail     String   // e.g. "john@outsignal.ai"
+  senderDomain    String   // e.g. "outsignal.ai" — derived from senderEmail
+
+  // Cumulative metrics from EmailBison (raw snapshot)
+  emailsSent      Int
+  bounced         Int
+  replied         Int
+  opened          Int
+
+  // Daily deltas (computed from previous snapshot)
+  deltaSent       Int?     // null on first snapshot
+  deltaBounced    Int?
+  deltaReplied    Int?
+
+  // Bounce rate (computed: deltaBounced / deltaSent or cumulative)
+  bounceRate      Float?   // null if insufficient data (<20 sends)
+
+  // Warmup data (from EmailBison warmup API)
+  warmupEnabled   Boolean?
+  warmupData      String?  // JSON blob from warmup API response
+
+  // Snapshot date
+  snapshotDate    DateTime // Truncated to date (no time), e.g. 2026-03-10T00:00:00Z
+  createdAt       DateTime @default(now())
+
+  @@unique([senderEmail, snapshotDate])
+  @@index([workspaceSlug, snapshotDate])
+  @@index([senderDomain, snapshotDate])
+  @@index([snapshotDate])
+}
+
 // --- Audit Logging ---
 
 model AuditLog {

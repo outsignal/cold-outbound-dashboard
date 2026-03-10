@@ -1,0 +1,54 @@
+/**
+ * Type definitions for DNS validation results and domain health data.
+ * Used by the DNS validation library (dns.ts) and Prisma model (DomainHealth).
+ */
+
+/** DKIM selectors to check — covers Gmail (google) and Outlook (selector1, selector2) senders */
+export const DKIM_SELECTORS = ["google", "default", "selector1", "selector2"] as const;
+
+export type DkimSelector = typeof DKIM_SELECTORS[number];
+
+/** Result of an SPF TXT record lookup */
+export interface SpfResult {
+  /** "pass" if valid SPF record found, "fail" if malformed, "missing" if absent */
+  status: "pass" | "fail" | "missing";
+  /** Raw SPF record text, or null if not found */
+  record: string | null;
+}
+
+/** Result of DKIM TXT record lookups across all selectors */
+export interface DkimResult {
+  /** "pass" if all selectors found, "partial" if some found, "missing" if none found, "fail" if lookup errors */
+  status: "pass" | "partial" | "fail" | "missing";
+  /** Array of selector names that had valid DKIM records */
+  passedSelectors: string[];
+}
+
+/** Result of a DMARC TXT record lookup */
+export interface DmarcResult {
+  /** "pass" if DMARC record found, "fail" if malformed, "missing" if absent */
+  status: "pass" | "fail" | "missing";
+  /** DMARC policy directive, or null if record not found */
+  policy: "none" | "quarantine" | "reject" | null;
+  /** Raw DMARC record text, or null if not found */
+  record: string | null;
+}
+
+/** Combined DNS check results for all three record types */
+export interface DnsCheckResult {
+  spf: SpfResult;
+  dkim: DkimResult;
+  dmarc: DmarcResult;
+}
+
+/** Full domain health summary combining DNS and blacklist data */
+export interface DomainHealthSummary {
+  domain: string;
+  /** Computed overall health: "healthy" | "warning" | "critical" | "unknown" */
+  overallHealth: "healthy" | "warning" | "critical" | "unknown";
+  dns: DnsCheckResult;
+  /** Array of DNSBL names where the domain/IP is listed */
+  blacklistHits: string[];
+  /** When DNS was last checked, or null if never */
+  lastChecked: Date | null;
+}
