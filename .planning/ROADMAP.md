@@ -112,7 +112,7 @@ Plans:
   3. Admin can see correlation data showing which body elements drive higher reply rates globally (e.g., "emails with case studies get 2.1x more replies")
   4. Admin can filter copy analysis by workspace and vertical to see element effectiveness per industry
   5. Admin can view top-performing email templates with a breakdown of which structural elements they contain
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 Plans:
 - [ ] 25-01-PLAN.md — Body element AI classification module and snapshot cron integration
 - [ ] 25-02-PLAN.md — Copy analysis API routes (subject lines, correlations, top templates)
@@ -166,7 +166,7 @@ v3.0 phases: 23 → 24 → 25 (parallel with 26) → 27 → 28
 | 15-22 | v2.0 | 26/26 | Complete | 2026-03-04 |
 | 23. Reply Storage & Classification | v3.0 | Complete    | 2026-03-09 | 2026-03-09 |
 | 24. Campaign Analytics Engine | 3/3 | Complete    | 2026-03-09 | - |
-| 25. Copy Performance Analysis | 1/3 | In Progress|  | - |
+| 25. Copy Performance Analysis | 2/3 | In Progress|  | - |
 | 26. Cross-Workspace Benchmarking & ICP Calibration | v3.0 | 0/TBD | Not started | - |
 | 27. AI Insights & Action Queue | v3.0 | 0/TBD | Not started | - |
 | 28. Intelligence Hub Dashboard | v3.0 | 0/TBD | Not started | - |

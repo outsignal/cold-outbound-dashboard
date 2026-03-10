@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Campaign Intelligence Hub
 status: unknown
-last_updated: "2026-03-10T09:24:26Z"
+last_updated: "2026-03-10T09:30:02Z"
 progress:
   total_phases: 21
   completed_phases: 19
   total_plans: 73
-  completed_plans: 74
+  completed_plans: 75
 ---
 
 # Project State
@@ -18,21 +18,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-09)
 
 **Core value:** Own the lead data pipeline end-to-end so we never pay for the same lead twice and can cancel the $300+/month Clay subscription.
-**Current focus:** v3.0 Campaign Intelligence Hub — Phase 25 in progress (1/3 plans)
+**Current focus:** v3.0 Campaign Intelligence Hub — Phase 25 in progress (2/3 plans)
 
 ## Current Position
 
 Phase: 25 of 28 (Copy Performance Analysis)
-Plan: 1 of 3
-Status: Plan 25-01 complete
-Last activity: 2026-03-10 — Completed 25-01 (Body Element Classification)
+Plan: 2 of 3
+Status: Plan 25-02 complete
+Last activity: 2026-03-10 — Completed 25-02 (Copy Analysis API Routes)
 
-Progress: [███░░░░░░░] 30% (v3.0) -- Phase 25 in progress (1/3 plans)
+Progress: [███░░░░░░░] 30% (v3.0) -- Phase 25 in progress (2/3 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 96 (v1.0: 22, v1.1: 40, v2.0: 26, v3.0: 8)
+- Total plans completed: 97 (v1.0: 22, v1.1: 40, v2.0: 26, v3.0: 9)
 - Average duration: ~15 min
 - Total execution time: ~22 hours
 
@@ -74,6 +74,11 @@ Progress: [███░░░░░░░] 30% (v3.0) -- Phase 25 in progress (1
 - [25-01]: Content hash (MD5) stored alongside body element flags in CachedMetrics for change detection
 - [25-01]: Empty date string for body_elements metric type since elements are content-dependent not time-dependent
 
+- [25-02]: Campaign-level emailsSent used as denominator for step-level reply rates (step-level sent not available)
+- [25-02]: Global view deduplicates subject lines case-insensitively with weighted-average aggregation
+- [25-02]: Composite score formula: (interestedRate * 0.6) + (replyRate * 0.4) for template ranking
+- [25-02]: Low confidence threshold set at 20 total samples (with + without)
+
 ### Blockers/Concerns
 
 - CachedMetrics model exists in schema but has zero usage — need to verify upsert behavior and unique constraints work as expected
@@ -88,5 +93,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-10
-Stopped at: Completed 25-01-PLAN.md
+Stopped at: Completed 25-02-PLAN.md
 Resume file: None

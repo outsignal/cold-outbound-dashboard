@@ -23,11 +23,11 @@
 
 ### Copy Analysis
 
-- [ ] **COPY-01**: Admin can see which subject lines produce the highest open and reply rates across campaigns
+- [x] **COPY-01**: Admin can see which subject lines produce the highest open and reply rates across campaigns
 - [x] **COPY-02**: Each outbound email body is automatically analyzed for structural elements (CTA type, problem statement, value proposition, case study, social proof, personalization)
-- [ ] **COPY-03**: Admin can see which body elements correlate with higher reply rates globally (e.g., "emails with case studies get 2.1x more replies")
-- [ ] **COPY-04**: Admin can filter copy analysis by workspace and vertical to see what works differently per industry (e.g., "case studies get 4x in recruitment but only 0.5x in merchandise")
-- [ ] **COPY-05**: Admin can view top-performing email templates with element breakdown showing what made them work
+- [x] **COPY-03**: Admin can see which body elements correlate with higher reply rates globally (e.g., "emails with case studies get 2.1x more replies")
+- [x] **COPY-04**: Admin can filter copy analysis by workspace and vertical to see what works differently per industry (e.g., "case studies get 4x in recruitment but only 0.5x in merchandise")
+- [x] **COPY-05**: Admin can view top-performing email templates with element breakdown showing what made them work
 
 ### Cross-Workspace Intelligence
 
@@ -91,11 +91,11 @@
 | ANAL-02 | Phase 24 | Complete |
 | ANAL-03 | Phase 24 | Complete |
 | ANAL-04 | Phase 24 | Complete |
-| COPY-01 | Phase 25 | Pending |
+| COPY-01 | Phase 25 | Complete |
 | COPY-02 | Phase 25 | Complete |
-| COPY-03 | Phase 25 | Pending |
-| COPY-04 | Phase 25 | Pending |
-| COPY-05 | Phase 25 | Pending |
+| COPY-03 | Phase 25 | Complete |
+| COPY-04 | Phase 25 | Complete |
+| COPY-05 | Phase 25 | Complete |
 | BENCH-01 | Phase 26 | Pending |
 | BENCH-02 | Phase 26 | Pending |
 | BENCH-03 | Phase 26 | Pending |
