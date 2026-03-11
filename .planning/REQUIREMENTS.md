@@ -58,6 +58,60 @@ Requirements for Email Deliverability & Domain Infrastructure Monitoring. Each m
 
 - [ ] **PORTAL-01**: Client portal email-health page shows per-sender bounce rates and domain health badges
 
+## v5.0 Requirements
+
+Requirements for Client Portal Inbox. Each maps to roadmap phases.
+
+### API Foundation
+
+- [ ] **API-01**: EmailBison sendReply endpoint validated via live spike test
+- [ ] **API-02**: EmailBison client extended with sendReply(), getReply(), getRepliesPage() methods
+- [ ] **API-03**: LinkedIn Voyager client extended with fetchConversations() and fetchMessages() methods
+- [ ] **API-04**: Worker exposes GET /sessions/{senderId}/conversations endpoint
+
+### LinkedIn Data
+
+- [ ] **LI-01**: LinkedInConversation model stores conversation metadata with participant info
+- [ ] **LI-02**: LinkedInMessage model stores messages with outbound/inbound flag
+- [ ] **LI-03**: LinkedIn sync API triggers async worker fetch with 5-min cache
+- [ ] **LI-04**: Sync matches participants to Person records by LinkedIn URL
+
+### Email Inbox
+
+- [ ] **EMAIL-01**: Email thread list API groups replies by parent_id chain into threads
+- [ ] **EMAIL-02**: Email thread detail API returns chronological messages with outbound context
+- [ ] **EMAIL-03**: Client can send email reply from portal with sender selection
+- [ ] **EMAIL-04**: AI suggested reply displayed as "Use this" prefill option
+
+### LinkedIn Inbox
+
+- [ ] **LIIN-01**: LinkedIn conversation list shows recent conversations from DB
+- [ ] **LIIN-02**: LinkedIn conversation detail shows full message history
+- [ ] **LIIN-03**: Client can queue LinkedIn reply from portal (priority 1 LinkedInAction)
+- [ ] **LIIN-04**: Manual refresh triggers re-sync from Voyager API
+
+### Inbox UI
+
+- [ ] **UI-01**: Two-panel layout (thread list left, conversation right)
+- [ ] **UI-02**: Channel tabs (All / Email / LinkedIn) based on workspace package
+- [ ] **UI-03**: Unread indicators on threads with unread count in nav
+- [ ] **UI-04**: Message bubbles (inbound left, outbound right) with intent/sentiment badges
+- [ ] **UI-05**: Reply composer with email mode (Send) and LinkedIn mode (Queue Message)
+- [ ] **UI-06**: Mobile single-panel layout with back navigation
+- [ ] **UI-07**: Cross-channel indicator when same person active on both email + LinkedIn
+
+### Admin Inbox
+
+- [ ] **ADMIN-01**: Master inbox page on admin dashboard showing all workspaces
+- [ ] **ADMIN-02**: Workspace filter dropdown (default: All, can select specific workspace)
+- [ ] **ADMIN-03**: Same two-panel UI reused from portal inbox components
+- [ ] **ADMIN-04**: Admin can reply on behalf of any workspace (email + LinkedIn)
+
+### Navigation
+
+- [ ] **NAV-01**: Portal sidebar replaces "Replies" with "Inbox"
+- [ ] **NAV-02**: Admin sidebar adds "Inbox" nav item
+
 ## Future Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
@@ -84,6 +138,12 @@ Deferred to future release. Tracked but not in current roadmap.
 | Inbox placement testing with seed networks (GlockApps/Mailreach) | $49-125/mo, using mail-tester.com on-demand instead |
 | Real-time bounce detection (sub-minute) | 4-hour monitoring sufficient, EmailBison webhooks cover immediate events |
 | Per-email content spam scoring | Deferred — would require Claude calls per email, cost concern |
+| WebSockets/SSE for real-time inbox | Vercel serverless has no persistent connections — polling sufficient at current volume |
+| Rich text editor (Tiptap/ProseMirror) | HTML emails hurt cold outbound deliverability — plain text replies only |
+| Bulk reply from inbox | Mass replying to cold outbound is dangerous — each reply needs individual attention |
+| Attachment sending | Attachments in cold outbound replies hurt deliverability — text-only |
+| Unified cross-channel thread merging | Email + LinkedIn threading models incompatible — keep separate with cross-channel indicator |
+| Draft auto-save | At ~5-20 replies/day, drafts are over-engineering — composer state lives in React state |
 
 ## Traceability
 
