@@ -27,9 +27,9 @@ Requirements for Email Deliverability & Domain Infrastructure Monitoring. Each m
 ### Placement Testing
 
 - [x] **PLACE-01**: Dashboard shows "Recommended for testing" badge on senders with >3% bounce rate
-- [ ] **PLACE-02**: Admin can trigger placement test flow from dashboard (generates mail-tester.com address)
+- [x] **PLACE-02**: Admin can trigger placement test flow from dashboard (generates mail-tester.com address)
 - [x] **PLACE-03**: System fetches test results via mail-tester.com JSON API and stores in PlacementTest model
-- [ ] **PLACE-04**: Historical placement test results displayed per sender on dashboard
+- [x] **PLACE-04**: Historical placement test results displayed per sender on dashboard
 
 ### Auto-Rotation
 
@@ -103,9 +103,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BOUNCE-03 | Phase 29 | Complete |
 | BOUNCE-04 | Phase 29 | Complete |
 | PLACE-01 | Phase 30 | Complete |
-| PLACE-02 | Phase 30 | Pending |
+| PLACE-02 | Phase 30 | Complete |
 | PLACE-03 | Phase 30 | Complete |
-| PLACE-04 | Phase 30 | Pending |
+| PLACE-04 | Phase 30 | Complete |
 | ROTATE-01 | Phase 31 | Pending |
 | ROTATE-02 | Phase 31 | Pending |
 | ROTATE-03 | Phase 31 | Pending |

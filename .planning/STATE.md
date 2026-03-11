@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Email Deliverability & Domain Infrastructure Monitoring
 status: unknown
-last_updated: "2026-03-10T21:01:39.588Z"
+last_updated: "2026-03-11T10:12:08Z"
 progress:
   total_phases: 26
   completed_phases: 24
@@ -23,16 +23,16 @@ See: .planning/PROJECT.md (updated 2026-03-10)
 ## Current Position
 
 Phase: 30 of 32 (Inbox Placement Testing)
-Plan: 1 of 3 in current phase (30-01 complete)
+Plan: 2 of 3 in current phase (30-02 complete)
 Status: In progress
-Last activity: 2026-03-11 — Executed 30-01 (PlacementTest + EmailSenderHealth models, mail-tester.com client, recommended-for-testing query)
+Last activity: 2026-03-11 — Executed 30-02 (POST + GET /api/placement-tests endpoints, sendTestEmail via EmailBison dedi, notifyPlacementResult)
 
 Progress: [████████████████████░░░░░░░░░░] ~65% (28/32 phases complete across all milestones)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 107 (v1.0: 22, v1.1: 40, v2.0: 26, v3.0: 16, v4.0: 3)
+- Total plans completed: 108 (v1.0: 22, v1.1: 40, v2.0: 26, v3.0: 16, v4.0: 4)
 - Average duration: ~15 min
 - Total execution time: ~22 hours
 
@@ -66,6 +66,10 @@ Progress: [████████████████████░░░
 - [30-01]: PlacementTest and EmailSenderHealth use email-based soft links (no FK to Sender) — consistent with BounceSnapshot pattern
 - [30-01]: pollForResults uses setTimeout loop (not setInterval) — Vercel-safe, no overlapping calls
 - [30-01]: Recommended-for-testing uses JS deduplication of BounceSnapshot rows (not raw SQL GROUP BY) — correct for ~100 senders
+- [30-02]: notifyPlacementResult suppresses good scores (>=7) — only warning + critical trigger alerts
+- [30-02]: POST returns 202 (not 500) when results still pending after 60s polling — caller re-fetches via GET ?refetch=true
+- [30-02]: testId extracted from testAddress string for re-fetch in GET handler (only testAddress is persisted)
+- [30-02]: dedi.emailbison.com used for test send — dedicated IPs reflect real campaign reputation
 
 ### Blockers/Concerns
 
@@ -81,5 +85,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: Completed 30-01-PLAN.md (PlacementTest + EmailSenderHealth models, mail-tester.com client, recommended-for-testing query)
+Stopped at: Completed 30-02-PLAN.md (POST + GET /api/placement-tests endpoints, sendTestEmail, notifyPlacementResult)
 Resume file: None

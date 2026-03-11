@@ -77,7 +77,7 @@ Full details: [milestones/v3.0-ROADMAP.md](milestones/v3.0-ROADMAP.md)
 **Milestone Goal:** Full-stack deliverability visibility — DNS health, bounce trends, placement testing, auto-rotation, and client-facing reporting — so every sender's health is observable and actionable before problems become crises.
 
 - [x] **Phase 29: Domain Health Foundation** — Schema, DNS validation library, bounce snapshots, and daily cron; everything downstream depends on this data layer (completed 2026-03-10)
-- [ ] **Phase 30: Inbox Placement Testing** — On-demand mail-tester.com integration with "recommended for testing" badges on at-risk senders
+- [x] **Phase 30: Inbox Placement Testing** — On-demand mail-tester.com integration with "recommended for testing" badges on at-risk senders (completed 2026-03-11)
 - [ ] **Phase 31: Auto-Rotation Engine** — Graduated status escalation, 4-hour bounce monitor cron, audit trail, notifications, and EmailBison API investigation
 - [ ] **Phase 32: Deliverability Dashboard & Reporting** — Admin deliverability page, Intelligence Hub bento section, weekly digest, and client portal health summary
 
@@ -108,7 +108,7 @@ Plans:
   2. Admin can click a button to initiate a placement test, which returns a mail-tester.com test address
   3. After sending to the test address, the system fetches and stores the placement score via the mail-tester.com JSON API
   4. Admin can view a timeline of past placement test scores for any sender
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [ ] 30-01-PLAN.md — PlacementTest model + mail-tester.com client + recommended badge query
 - [ ] 30-02-PLAN.md — API endpoints (POST trigger + GET history) + auto-send + alerting
@@ -172,6 +172,6 @@ Plans:
 | 27. AI Insights & Action Queue | v3.0 | 3/3 | Complete | 2026-03-10 |
 | 28. Intelligence Hub Dashboard | v3.0 | 2/2 | Complete | 2026-03-10 |
 | 29. Domain Health Foundation | v4.0 | 3/3 | Complete | 2026-03-10 |
-| 30. Inbox Placement Testing | 1/2 | In Progress|  | - |
+| 30. Inbox Placement Testing | 2/2 | Complete   | 2026-03-11 | - |
 | 31. Auto-Rotation Engine | v4.0 | 0/TBD | Not started | - |
 | 32. Deliverability Dashboard & Reporting | v4.0 | 0/TBD | Not started | - |
