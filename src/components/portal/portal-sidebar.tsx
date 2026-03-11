@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Megaphone,
   MessageSquare,
+  Inbox,
   LinkedinIcon,
   Mail,
   Zap,
@@ -42,6 +43,7 @@ const STORAGE_KEY = "portal-sidebar-collapsed";
 const navItems: NavItem[] = [
   { href: "/portal", label: "Dashboard", icon: LayoutDashboard },
   { href: "/portal/campaigns", label: "Campaigns", icon: Megaphone },
+  { href: "/portal/inbox", label: "Inbox", icon: Inbox },
   { href: "/portal/replies", label: "Replies", icon: MessageSquare },
   { href: "/portal/linkedin", label: "LinkedIn", icon: LinkedinIcon },
   { href: "/portal/email-health", label: "Email Health", icon: Mail },
