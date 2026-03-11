@@ -13,7 +13,10 @@ import type {
   CreateLeadResult,
   CampaignCreateResult,
   PatchSenderEmailParams,
+  SendReplyParams,
+  SendReplyResponse,
 } from "./types";
+import { EmailBisonError } from "./types";
 
 class EmailBisonApiError extends Error {
   constructor(
@@ -277,5 +280,59 @@ export class EmailBisonClient {
       },
     );
     return res.data;
+  }
+
+  /**
+   * Fetch a single reply by ID.
+   */
+  async getReply(replyId: number): Promise<Reply> {
+    const res = await this.request<{ data: Reply }>(`/replies/${replyId}`, {
+      revalidate: 0,
+    });
+    return res.data;
+  }
+
+  /**
+   * Fetch one page of replies for inbox pagination.
+   * Unlike getReplies()/getRecentReplies(), this returns a single page so callers control pagination.
+   */
+  async getRepliesPage(page: number = 1): Promise<PaginatedResponse<Reply>> {
+    return this.request<PaginatedResponse<Reply>>(`/replies?page=${page}`, {
+      revalidate: 0,
+    });
+  }
+
+  /**
+   * Send a reply to an existing reply thread.
+   * Validated against live API on 2026-03-11.
+   *
+   * @param replyId - ID of the reply to respond to (the parent reply)
+   * @param params - Must include sender_email_id and either message/reply_template_id
+   *                 and either to_emails or reply_all:true
+   * @throws EmailBisonError with code "UNEXPECTED_RESPONSE" if response shape is unexpected
+   */
+  async sendReply(replyId: number, params: SendReplyParams): Promise<SendReplyResponse> {
+    const response = await this.request<SendReplyResponse>(
+      `/replies/${replyId}/reply`,
+      {
+        method: 'POST',
+        body: JSON.stringify(params),
+        revalidate: 0,
+      },
+    );
+
+    // Validate response shape — fail loud on API drift
+    if (
+      typeof response?.data?.success !== "boolean" ||
+      typeof response?.data?.message !== "string"
+    ) {
+      throw new EmailBisonError(
+        "UNEXPECTED_RESPONSE",
+        200,
+        JSON.stringify(response),
+      );
+    }
+
+    return response;
   }
 }

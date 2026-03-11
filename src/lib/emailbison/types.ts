@@ -79,17 +79,19 @@ export interface Lead {
 
 export interface ReplyRecipient {
   name: string | null;
-  email: string;
+  address: string;
 }
 
 export interface Reply {
   id: number;
   uuid: string;
-  folder: "Inbox" | "Bounced";
-  type: "Tracked Reply" | "Bounced" | string;
+  folder: "Inbox" | "Bounced" | "Sent" | string;
+  type: "Tracked Reply" | "Bounced" | "Outgoing Email" | string;
   subject: string | null;
   text_body: string | null;
   html_body: string | null;
+  raw_body: string | null;
+  headers: string | null;
   from_name: string | null;
   from_email_address: string;
   primary_to_email_address: string;
@@ -105,6 +107,8 @@ export interface Reply {
   lead_id: number;
   sender_email_id: number;
   scheduled_email_id: number | null;
+  raw_message_id: string | null;
+  parent_id: number | null;
   attachments: unknown[];
   created_at: string;
   updated_at: string;
@@ -209,4 +213,55 @@ export interface WebhookPayload {
   data: Record<string, unknown>;
   workspace_id?: number;
   timestamp: string;
+}
+
+/**
+ * Params for sending a reply to an existing reply thread.
+ * Validated via live spike test on 2026-03-11.
+ *
+ * Either to_emails or reply_all must be provided.
+ * Either message or reply_template_id must be provided.
+ */
+export interface SendReplyParams {
+  /** Plain text reply body */
+  message?: string;
+  /** Alternative to message: use a saved reply template */
+  reply_template_id?: number;
+  /** Sender email account to send from (use the original reply's sender_email_id) */
+  sender_email_id: number;
+  /** Array of recipient email addresses to reply to */
+  to_emails?: string[];
+  /** If true, replies to all original recipients (shorthand for providing to_emails) */
+  reply_all?: boolean;
+}
+
+/**
+ * Response shape from POST /replies/{id}/reply.
+ * Validated via live spike test on 2026-03-11.
+ *
+ * On success (200): { data: { success: true, message: string, reply: Reply } }
+ * On failure (422): { data: { success: false, message: string, errors: Record<string, string[]> } }
+ */
+export interface SendReplyResponse {
+  data: {
+    success: boolean;
+    message: string;
+    reply?: Reply;
+    errors?: Record<string, string[]>;
+  };
+}
+
+/**
+ * Public-facing error class for consumers of the EmailBisonClient inbox methods.
+ * Separate from the internal EmailBisonApiError (which handles retry logic).
+ */
+export class EmailBisonError extends Error {
+  constructor(
+    public readonly code: string,       // e.g. "SEND_REPLY_FAILED", "INVALID_REPLY_ID", "UNEXPECTED_RESPONSE"
+    public readonly statusCode: number, // HTTP status code
+    public readonly rawBody?: string,   // Raw response body for debugging
+  ) {
+    super(`EmailBison error ${code} (${statusCode})`);
+    this.name = "EmailBisonError";
+  }
 }

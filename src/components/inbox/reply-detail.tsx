@@ -101,7 +101,7 @@ export function InboxReplyDetail({ reply }: InboxReplyDetailProps) {
                 {reply.cc && reply.cc.length > 0 && (
                   <div>
                     <span className="font-medium text-muted-foreground">CC: </span>
-                    {reply.cc.map((r) => r.email).join(", ")}
+                    {reply.cc.map((r) => r.address).join(", ")}
                   </div>
                 )}
                 <div>
