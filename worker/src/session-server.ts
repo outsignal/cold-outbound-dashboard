@@ -13,6 +13,7 @@
 import { createServer, IncomingMessage, ServerResponse } from "http";
 import { LinkedInBrowser } from "./linkedin-browser.js";
 import { ApiClient } from "./api-client.js";
+import { VoyagerClient, VoyagerError } from "./voyager-client.js";
 
 interface SessionState {
   senderId: string;
@@ -76,6 +77,30 @@ export class SessionServer {
           ok: true,
           session: !!this.sessionState,
         });
+        return;
+      }
+
+      // Match: GET /sessions/{senderId}/conversations/{conversationId}/messages
+      // More specific — must be checked BEFORE the conversations route
+      if (
+        req.method === "GET" &&
+        path.match(/^\/sessions\/[^/]+\/conversations\/[^/]+\/messages$/)
+      ) {
+        const segments = path.split("/");
+        const senderId = segments[2];
+        const conversationId = segments[4];
+        await this.handleGetMessages(senderId, conversationId, req, res);
+        return;
+      }
+
+      // Match: GET /sessions/{senderId}/conversations
+      if (
+        req.method === "GET" &&
+        path.match(/^\/sessions\/[^/]+\/conversations$/)
+      ) {
+        const segments = path.split("/");
+        const senderId = segments[2];
+        await this.handleGetConversations(senderId, req, res);
         return;
       }
 
@@ -229,6 +254,129 @@ export class SessionServer {
       senderId: this.sessionState.senderId,
       error: this.sessionState.error,
     });
+  }
+
+  /**
+   * GET /sessions/{senderId}/conversations
+   *
+   * Fetches the last 20 LinkedIn messaging conversations for a given sender.
+   * Loads Voyager cookies from the Vercel API, constructs a VoyagerClient,
+   * and returns conversation metadata (participant info, snippets, timestamps).
+   *
+   * Auth: Shared secret via Authorization: Bearer {apiSecret}
+   * Errors: 401 Unauthorized | 404 no session | 401/403 session expired | 429 rate limited
+   */
+  private async handleGetConversations(
+    senderId: string,
+    req: IncomingMessage,
+    res: ServerResponse,
+  ): Promise<void> {
+    if (!this.verifyAuth(req)) {
+      this.jsonResponse(res, 401, { error: "Unauthorized" });
+      return;
+    }
+
+    try {
+      const cookies = await this.api.getVoyagerCookies(senderId);
+      if (!cookies) {
+        this.jsonResponse(res, 404, { error: "No Voyager session for sender" });
+        return;
+      }
+
+      // Create VoyagerClient without proxy for now
+      // TODO: Add proxy support — need getSenderById() on ApiClient to retrieve proxyUrl
+      const voyager = new VoyagerClient(cookies.liAt, cookies.jsessionId);
+      const conversations = await voyager.fetchConversations(20);
+      this.jsonResponse(res, 200, {
+        conversations,
+        syncedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      if (err instanceof VoyagerError) {
+        // Per user decision: 401/403 returns error with reconnect hint
+        if (err.status === 401 || err.status === 403) {
+          this.jsonResponse(res, err.status, {
+            error: "session_expired",
+            message: "Reconnect LinkedIn in settings",
+          });
+          return;
+        }
+        // Per user decision: 429 fails fast, no retry
+        if (err.status === 429) {
+          this.jsonResponse(res, 429, {
+            error: "rate_limited",
+            message: "LinkedIn rate limit hit. Try again in a few minutes.",
+          });
+          return;
+        }
+        this.jsonResponse(res, err.status >= 400 ? err.status : 500, {
+          error: err.body,
+        });
+        return;
+      }
+      this.jsonResponse(res, 500, { error: String(err) });
+    }
+  }
+
+  /**
+   * GET /sessions/{senderId}/conversations/{conversationId}/messages
+   *
+   * Fetches the last 20 messages for a specific LinkedIn conversation.
+   * On-demand fetch per conversation — NOT inline with conversations list
+   * to minimize Voyager API calls per Phase 33 design decision.
+   *
+   * Auth: Shared secret via Authorization: Bearer {apiSecret}
+   * Errors: 401 Unauthorized | 404 no session | 401/403 session expired | 429 rate limited
+   */
+  private async handleGetMessages(
+    senderId: string,
+    conversationId: string,
+    req: IncomingMessage,
+    res: ServerResponse,
+  ): Promise<void> {
+    if (!this.verifyAuth(req)) {
+      this.jsonResponse(res, 401, { error: "Unauthorized" });
+      return;
+    }
+
+    try {
+      const cookies = await this.api.getVoyagerCookies(senderId);
+      if (!cookies) {
+        this.jsonResponse(res, 404, { error: "No Voyager session for sender" });
+        return;
+      }
+
+      // TODO: Add proxy support (same as handleGetConversations)
+      const voyager = new VoyagerClient(cookies.liAt, cookies.jsessionId);
+      const messages = await voyager.fetchMessages(conversationId, 20);
+      this.jsonResponse(res, 200, {
+        messages,
+        conversationId,
+        fetchedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      if (err instanceof VoyagerError) {
+        if (err.status === 401 || err.status === 403) {
+          this.jsonResponse(res, err.status, {
+            error: "session_expired",
+            message: "Reconnect LinkedIn in settings",
+          });
+          return;
+        }
+        if (err.status === 429) {
+          this.jsonResponse(res, 429, {
+            error: "rate_limited",
+            message: "LinkedIn rate limit hit. Try again in a few minutes.",
+          });
+          return;
+        }
+        this.jsonResponse(res, err.status >= 400 ? err.status : 500, {
+          error: err.body,
+        });
+        return;
+      }
+      this.jsonResponse(res, 500, { error: String(err) });
+    }
   }
 
   /**
