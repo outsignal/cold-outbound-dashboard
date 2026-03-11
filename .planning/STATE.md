@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 
 ## Current Position
 
-Phase: Phase 32 — Deliverability Dashboard Reporting
-Plan: 32-04 complete
-Status: Phase 32 Plan 04 done — weekly deliverability digest notification + enhanced portal email-health page
-Last activity: 2026-03-11 — Phase 32 Plan 04 complete (digest cron, DNS badges, bounce status in portal)
+Phase: Phase 34 — LinkedIn Data Layer
+Plan: 34-01 complete
+Status: Phase 34 Plan 01 done — LinkedIn inbox Prisma models (LinkedInConversation, LinkedInMessage, LinkedInSyncStatus) + sync function with Person URL matching + portal sync API route (202 fire-and-forget)
+Last activity: 2026-03-11 — Phase 34 Plan 01 complete (DB models, syncLinkedInConversations(), POST /api/portal/inbox/linkedin/sync)
 
 Progress: v5.0 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
 
@@ -79,6 +79,11 @@ Progress: v5.0 [░░░░░░░░░░░░░░░░░░░░░�
 - [33-02]: Messages fetched on-demand (separate endpoint) not inline with conversations — minimizes Voyager API calls
 - [33-02]: randomDelay(2-3s) applied before fetchMessages API call to mimic human browsing speed
 - [33-02]: Proxy support deferred — TODO comments left pending getSenderById() on ApiClient
+
+- [34-01]: personId not updated on re-sync — initial Person URL match is authoritative (prevents race conditions)
+- [34-01]: Sender filter uses status='active' only, not sessionStatus — expired sessions still show previously-synced conversations
+- [34-01]: normalizeLinkedinUrl lowercases /in/username before Person.linkedinUrl contains query — prevents format mismatch
+- [34-01]: LinkedInSyncStatus is a separate model (not on Sender) — cleaner separation, avoids migrating a frequently-modified table
 - [Phase 32-03]: DeliverabilityBentoCard fetches from existing /api/deliverability/summary endpoint — no new API needed
 - [Phase 32-03]: Insight dedup uses findFirst on observation contains senderEmail — prevents duplicate active insights per sender
 
@@ -104,5 +109,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: Completed 32-04-PLAN.md — weekly deliverability digest notification + enhanced portal email-health page.
+Stopped at: Completed 34-01-PLAN.md — LinkedIn inbox data layer: Prisma models, sync function, portal sync API route.
 Resume file: None

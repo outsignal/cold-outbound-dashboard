@@ -71,10 +71,10 @@ Requirements for Client Portal Inbox. Each maps to roadmap phases.
 
 ### LinkedIn Data
 
-- [ ] **LI-01**: LinkedInConversation model stores conversation metadata with participant info
-- [ ] **LI-02**: LinkedInMessage model stores messages with outbound/inbound flag
-- [ ] **LI-03**: LinkedIn sync API triggers async worker fetch with 5-min cache
-- [ ] **LI-04**: Sync matches participants to Person records by LinkedIn URL
+- [x] **LI-01**: LinkedInConversation model stores conversation metadata with participant info
+- [x] **LI-02**: LinkedInMessage model stores messages with outbound/inbound flag
+- [x] **LI-03**: LinkedIn sync API triggers async worker fetch with 5-min cache
+- [x] **LI-04**: Sync matches participants to Person records by LinkedIn URL
 
 ### Email Inbox
 
@@ -185,10 +185,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | API-02 | Phase 33 | Complete |
 | API-03 | Phase 33 | Complete |
 | API-04 | Phase 33 | Complete |
-| LI-01 | Phase 34 | Pending |
-| LI-02 | Phase 34 | Pending |
-| LI-03 | Phase 34 | Pending |
-| LI-04 | Phase 34 | Pending |
+| LI-01 | Phase 34 | Complete |
+| LI-02 | Phase 34 | Complete |
+| LI-03 | Phase 34 | Complete |
+| LI-04 | Phase 34 | Complete |
 | EMAIL-01 | Phase 35 | Pending |
 | EMAIL-02 | Phase 35 | Pending |
 | EMAIL-03 | Phase 35 | Pending |
