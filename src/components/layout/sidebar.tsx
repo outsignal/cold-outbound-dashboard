@@ -35,6 +35,7 @@ import {
   BookOpen,
   MessageSquareText,
   Brain,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -130,6 +131,7 @@ const STATIC_NAV_GROUPS: NavGroup[] = [
       { href: "/replies", label: "Replies", icon: MessageSquareText },
       { href: "/analytics", label: "Analytics", icon: BarChart3 },
       { href: "/intelligence", label: "Intelligence Hub", icon: Brain },
+      { href: "/deliverability", label: "Deliverability", icon: ShieldCheck },
       { href: "/webhook-log", label: "Webhook Log", icon: Webhook },
     ],
   },
