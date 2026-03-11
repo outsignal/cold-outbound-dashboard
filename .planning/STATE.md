@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Email Deliverability & Domain Infrastructure Monitoring
 status: unknown
-last_updated: "2026-03-11T19:33:36.748Z"
+last_updated: "2026-03-11T19:36:10.511Z"
 progress:
   total_phases: 34
   completed_phases: 31
   total_plans: 105
-  completed_plans: 104
+  completed_plans: 105
 ---
 
 # Project State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 ## Current Position
 
 Phase: Phase 37 — Inbox UI Polish & Admin Inbox Navigation
-Plan: 37-01 complete
-Status: Phase 37 Plan 01 done — isRead schema migration + 3 unread tracking API endpoints + portal sidebar unread badge (Replies removed, 30s polling) + admin sidebar Inbox nav item added.
-Last activity: 2026-03-11 - Completed 37-01: schema migration, unread tracking APIs, navigation updates
+Plan: 37-02 complete
+Status: Phase 37 Plan 02 done — mobile single-panel inbox, package-aware channel tabs (All/Email/LinkedIn), intent badges on thread rows, cross-channel chips, email composer subject field, 2s read timer.
+Last activity: 2026-03-11 - Completed 37-02: inbox UI polish with mobile layout, channel tabs, badges, cross-channel navigation
 
 Progress: v5.0 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
 
@@ -111,6 +111,9 @@ Progress: v5.0 [░░░░░░░░░░░░░░░░░░░░░�
 - [Phase 37-01]: isRead field with @@index([workspaceSlug, isRead]) for efficient unread count queries
 - [Phase 37-01]: OR clause on emailBisonParentId/emailBisonReplyId in mark-read covers both thread roots and reply children
 - [Phase 37-01]: LinkedIn unreadCount from LinkedInConversation._sum aggregate — reuses existing field
+- [Phase 37-02]: Mobile panel visibility uses CSS hidden md:flex not JS resize listeners — no hydration issues
+- [Phase 37-02]: Cross-channel data added to thread detail API response — single round-trip for full thread + cross-channel metadata
+- [Phase 37-02]: workspace package fetched from /api/portal/workspace on mount — dedicated endpoint, clean separation from inbox data
 
 ### Blockers/Concerns
 
@@ -126,6 +129,7 @@ Progress: v5.0 [░░░░░░░░░░░░░░░░░░░░░�
 | 2 | Automate critical sender remediation - pause/remove/resume campaigns, set daily_limit=1, disable warmup, store state for recovery | 2026-03-11 | e0229e0 | [2-automate-critical-sender-remediation-cam](./quick/2-automate-critical-sender-remediation-cam/) |
 - LinkedIn Voyager rate limits unknown — 2-3s delays between calls, limit 20 conversations, 5-min cache, graceful 401/429 degradation
 | Phase 37-inbox-ui-polish-admin-inbox-navigation P01 | 4 | 2 tasks | 7 files |
+| Phase 37-inbox-ui-polish-admin-inbox-navigation P02 | 22 | 2 tasks | 8 files |
 
 ### Pending Todos
 
@@ -134,5 +138,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: Completed 37-01-PLAN.md — schema migration, unread tracking APIs, navigation updates
+Stopped at: Completed 37-02-PLAN.md — inbox UI polish: mobile layout, channel tabs, intent badges, cross-channel chips
 Resume file: None

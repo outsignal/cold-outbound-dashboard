@@ -92,13 +92,13 @@ Requirements for Client Portal Inbox. Each maps to roadmap phases.
 
 ### Inbox UI
 
-- [ ] **UI-01**: Two-panel layout (thread list left, conversation right)
-- [ ] **UI-02**: Channel tabs (All / Email / LinkedIn) based on workspace package
+- [x] **UI-01**: Two-panel layout (thread list left, conversation right)
+- [x] **UI-02**: Channel tabs (All / Email / LinkedIn) based on workspace package
 - [x] **UI-03**: Unread indicators on threads with unread count in nav
-- [ ] **UI-04**: Message bubbles (inbound left, outbound right) with intent/sentiment badges
-- [ ] **UI-05**: Reply composer with email mode (Send) and LinkedIn mode (Queue Message)
-- [ ] **UI-06**: Mobile single-panel layout with back navigation
-- [ ] **UI-07**: Cross-channel indicator when same person active on both email + LinkedIn
+- [x] **UI-04**: Message bubbles (inbound left, outbound right) with intent/sentiment badges
+- [x] **UI-05**: Reply composer with email mode (Send) and LinkedIn mode (Queue Message)
+- [x] **UI-06**: Mobile single-panel layout with back navigation
+- [x] **UI-07**: Cross-channel indicator when same person active on both email + LinkedIn
 
 ### Admin Inbox
 
@@ -197,13 +197,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LIIN-02 | Phase 36 | Complete |
 | LIIN-03 | Phase 36 | Complete |
 | LIIN-04 | Phase 36 | Complete |
-| UI-01 | Phase 37 | Pending |
-| UI-02 | Phase 37 | Pending |
+| UI-01 | Phase 37 | Complete |
+| UI-02 | Phase 37 | Complete |
 | UI-03 | Phase 37 | Complete |
-| UI-04 | Phase 37 | Pending |
-| UI-05 | Phase 37 | Pending |
-| UI-06 | Phase 37 | Pending |
-| UI-07 | Phase 37 | Pending |
+| UI-04 | Phase 37 | Complete |
+| UI-05 | Phase 37 | Complete |
+| UI-06 | Phase 37 | Complete |
+| UI-07 | Phase 37 | Complete |
 | ADMIN-01 | Phase 37 | Pending |
 | ADMIN-02 | Phase 37 | Pending |
 | ADMIN-03 | Phase 37 | Pending |
