@@ -36,6 +36,7 @@ import {
   MessageSquareText,
   Brain,
   ShieldCheck,
+  Inbox,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -127,6 +128,7 @@ const STATIC_NAV_GROUPS: NavGroup[] = [
     collapsible: true,
     tier: "secondary",
     items: [
+      { href: "/inbox", label: "Inbox", icon: Inbox },
       { href: "/email", label: "Email Health", icon: Mail },
       { href: "/replies", label: "Replies", icon: MessageSquareText },
       { href: "/analytics", label: "Analytics", icon: BarChart3 },

@@ -69,6 +69,7 @@ const QUEUE_STATUS_BADGE: Record<
 interface LinkedInConversationViewProps {
   conversationId: string;
   onMessageSent: () => void;
+  onSwitchChannel?: (threadId: number) => void;
 }
 
 export function LinkedInConversationView({

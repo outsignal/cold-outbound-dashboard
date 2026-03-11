@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Megaphone,
-  MessageSquare,
   Inbox,
   LinkedinIcon,
   Mail,
@@ -44,7 +43,6 @@ const navItems: NavItem[] = [
   { href: "/portal", label: "Dashboard", icon: LayoutDashboard },
   { href: "/portal/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/portal/inbox", label: "Inbox", icon: Inbox },
-  { href: "/portal/replies", label: "Replies", icon: MessageSquare },
   { href: "/portal/linkedin", label: "LinkedIn", icon: LinkedinIcon },
   { href: "/portal/email-health", label: "Email Health", icon: Mail },
   { href: "/portal/signals", label: "Signals", icon: Zap },
@@ -58,6 +56,7 @@ export function PortalSidebar({ workspaceName }: PortalSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   // Hydrate collapsed state from localStorage after mount
   useEffect(() => {
@@ -66,6 +65,24 @@ export function PortalSidebar({ workspaceName }: PortalSidebarProps) {
       if (stored === "true") setCollapsed(true);
     } catch {}
     setMounted(true);
+  }, []);
+
+  // Poll unread count every 30s for nav badge
+  useEffect(() => {
+    let active = true;
+    async function fetchUnread() {
+      try {
+        const res = await fetch("/api/portal/inbox/unread-count");
+        const json = await res.json();
+        if (active) setUnreadCount(json.total ?? 0);
+      } catch {}
+    }
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30_000);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
   }, []);
 
   const toggleCollapsed = useCallback(() => {
@@ -92,6 +109,8 @@ export function PortalSidebar({ workspaceName }: PortalSidebarProps) {
         ? pathname === "/portal"
         : pathname === item.href || pathname.startsWith(item.href + "/");
 
+    const isInbox = item.href === "/portal/inbox";
+
     const linkContent = (
       <Link
         href={item.href}
@@ -104,7 +123,16 @@ export function PortalSidebar({ workspaceName }: PortalSidebarProps) {
         )}
       >
         <item.icon className="h-4 w-4 shrink-0" />
-        {!isCollapsed && <>{item.label}</>}
+        {!isCollapsed && (
+          <>
+            <span>{item.label}</span>
+            {isInbox && unreadCount > 0 && (
+              <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-semibold px-1">
+                {unreadCount > 99 ? "99+" : unreadCount}
+              </span>
+            )}
+          </>
+        )}
       </Link>
     );
 
@@ -114,10 +142,18 @@ export function PortalSidebar({ workspaceName }: PortalSidebarProps) {
           <TooltipTrigger asChild>
             <div className="relative">
               {linkContent}
+              {isInbox && unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary text-primary-foreground text-[9px] font-bold px-0.5">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </div>
           </TooltipTrigger>
           <TooltipContent side="right" sideOffset={8}>
             {item.label}
+            {isInbox && unreadCount > 0 && (
+              <span className="ml-1.5 text-primary">({unreadCount})</span>
+            )}
           </TooltipContent>
         </Tooltip>
       );

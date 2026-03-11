@@ -162,6 +162,7 @@ function MessageCard({ msg }: { msg: ThreadMessage }) {
 interface EmailThreadViewProps {
   threadId: number;
   onReplySent: () => void;
+  onSwitchChannel?: (conversationId: string) => void;
 }
 
 export function EmailThreadView({ threadId, onReplySent }: EmailThreadViewProps) {
