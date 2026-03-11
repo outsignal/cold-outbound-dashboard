@@ -179,7 +179,7 @@ export async function notifyBlacklistDelisted(params: {
   const blocks: KnownBlock[] = [
     {
       type: "header",
-      text: { type: "plain_text", text: `Domain Delisted: ${domain}` },
+      text: { type: "plain_text", text: `\u2705 Domain Delisted: ${domain}`, emoji: true },
     },
     {
       type: "section",
@@ -193,7 +193,7 @@ export async function notifyBlacklistDelisted(params: {
       elements: [
         {
           type: "mrkdwn",
-          text: "Good news — deliverability should be restored. Monitor bounce rates over the next 24 hours.",
+          text: ":white_check_mark: Deliverability should be restored. Monitor bounce rates over the next 24 hours.",
         },
       ],
     },
