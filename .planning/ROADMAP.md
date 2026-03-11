@@ -176,7 +176,9 @@ Plans:
   2. LinkedInMessage records exist for each message with sender flag (inbound/outbound), body text, and sent timestamp
   3. Portal calls POST /api/portal/inbox/linkedin/sync and receives 202 immediately; the worker fetches and syncs conversations asynchronously in the background
   4. Participants in synced conversations are matched to existing Person records by LinkedIn profile URL where available
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 34-01-PLAN.md — Prisma models (LinkedInConversation, LinkedInMessage, LinkedInSyncStatus) + sync logic + portal sync API route
 
 ### Phase 35: Email Inbox
 **Goal**: Clients can read threaded email conversations and send replies from the portal inbox — delivering immediate value on the highest-volume channel
@@ -251,7 +253,7 @@ Plans:
 | 31. Auto-Rotation Engine | 2/2 | Complete    | 2026-03-11 | - |
 | 32. Deliverability Dashboard & Reporting | 4/4 | Complete    | 2026-03-11 | - |
 | 33. API Spike & Client Extensions | 2/2 | Complete    | 2026-03-11 | - |
-| 34. LinkedIn Data Layer | v5.0 | 0/TBD | Not started | - |
+| 34. LinkedIn Data Layer | v5.0 | 0/1 | Not started | - |
 | 35. Email Inbox | v5.0 | 0/TBD | Not started | - |
 | 36. LinkedIn Inbox | v5.0 | 0/TBD | Not started | - |
 | 37. Inbox UI Polish, Admin Inbox & Navigation | v5.0 | 0/TBD | Not started | - |
