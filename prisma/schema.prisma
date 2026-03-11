@@ -311,6 +311,21 @@ model Reply {
   webhookEventId   String?  // Link to WebhookEvent for audit trail
   personId         String?  // Link to Person (looked up by email)
 
+  // Inbox / thread grouping
+  emailBisonParentId  Int?     // EB reply.parent_id — thread root for grouping
+  leadEmail           String?  // Inbound lead's email — secondary thread grouping
+
+  // Inbox display
+  htmlBody            String?  // Raw HTML email body from EB reply.html_body
+  interested          Boolean  @default(false)  // EB reply.interested flag — thread list highlight
+  direction           String   @default("inbound")  // "inbound" | "outbound" — derived from EB folder
+
+  // Reply sending
+  ebSenderEmailId     Int?     // EB reply.sender_email_id — auto-select sender on reply
+
+  // AI suggestion
+  aiSuggestedReply    String?  // AI-generated reply text — persisted from webhook/poll
+
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -321,6 +336,8 @@ model Reply {
   @@index([senderEmail])
   @@index([intent])
   @@index([classifiedAt])  // For retry cron: WHERE classifiedAt IS NULL
+  @@index([workspaceSlug, emailBisonParentId])  // Thread grouping queries
+  @@index([workspaceSlug, leadEmail])           // Thread grouping by lead email
 }
 
 model Insight {
