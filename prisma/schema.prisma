@@ -1268,6 +1268,56 @@ model BounceSnapshot {
   @@index([snapshotDate])
 }
 
+// --- Inbox Placement Testing (v4.0 Phase 30) ---
+
+model PlacementTest {
+  id            String   @id @default(cuid())
+  senderEmail   String   // The email address tested, e.g. "john@outsignal.ai"
+  senderDomain  String   // Derived from senderEmail, e.g. "outsignal.ai"
+  workspaceSlug String
+
+  // mail-tester.com test address assigned for this test run
+  testAddress   String   // e.g. "test-xxx@srv1.mail-tester.com"
+
+  // Lifecycle: pending -> completed | failed | expired
+  status        String   @default("pending") // "pending" | "completed" | "failed" | "expired"
+
+  // Results (null while pending)
+  score         Float?   // 0-10 scale from mail-tester.com
+  details       Json?    // Full mail-tester.com JSON response
+  errorMessage  String?  // Populated when status = "failed"
+
+  // Timestamps
+  createdAt     DateTime @default(now())
+  completedAt   DateTime? // When results were fetched
+
+  @@index([senderEmail, createdAt])
+  @@index([workspaceSlug])
+  @@index([status])
+}
+
+model EmailSenderHealth {
+  id            String   @id @default(cuid())
+  senderEmail   String   @unique // One record per sender email address
+  senderDomain  String
+  workspaceSlug String
+
+  // Health status derived from placement test scores
+  emailHealthStatus String @default("healthy") // "healthy" | "warning" | "critical"
+
+  // Most recent test result
+  lastTestScore Float?    // Most recent placement test score (0-10)
+  lastTestAt    DateTime? // When last test completed
+
+  // Why the status changed
+  statusReason  String?   // e.g. "Placement score 4.2"
+
+  updatedAt     DateTime @updatedAt
+  createdAt     DateTime @default(now())
+
+  @@index([workspaceSlug])
+}
+
 // --- Audit Logging ---
 
 model AuditLog {
