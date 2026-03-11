@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 Phase: Phase 34 — LinkedIn Data Layer
 Plan: 34-01 complete
 Status: Phase 34 Plan 01 done — LinkedIn inbox Prisma models (LinkedInConversation, LinkedInMessage, LinkedInSyncStatus) + sync function with Person URL matching + portal sync API route (202 fire-and-forget)
-Last activity: 2026-03-11 — Phase 34 Plan 01 complete (DB models, syncLinkedInConversations(), POST /api/portal/inbox/linkedin/sync)
+Last activity: 2026-03-11 - Completed quick task 1: Automated EmailBison sender sync
 
 Progress: v5.0 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
 
@@ -100,6 +100,12 @@ Progress: v5.0 [░░░░░░░░░░░░░░░░░░░░░�
 - EmailBison POST /replies/{id}/reply RESOLVED — spike confirmed working on white-label, requires reply_all:true or to_emails[], response: {data: {success, message, reply: Reply}}
 - Voyager conversation API response schema needs live validation in Phase 33 before sync parser is built
 - Vercel 60s timeout — LinkedIn sync must be fully fire-and-forget (202 before any Voyager calls)
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 1 | Automated EmailBison sender sync - pull sender emails into Sender table and run on daily cron | 2026-03-11 | 074cf22 | [1-automated-emailbison-sender-sync-pull-se](./quick/1-automated-emailbison-sender-sync-pull-se/) |
 - LinkedIn Voyager rate limits unknown — 2-3s delays between calls, limit 20 conversations, 5-min cache, graceful 401/429 degradation
 
 ### Pending Todos
