@@ -150,7 +150,9 @@ export async function evaluateSender(params: {
           console.error(`${LOG_PREFIX} Failed to reduce daily limit for ${sender.emailAddress}:`, err);
         }
       } else if (newStatus === "critical") {
-        // Critical remediation: remove sender from all active campaigns
+        // Critical remediation: throttle sender to 1/day and pause/unpause campaigns
+        // to trigger EB's scheduler to redistribute leads to other healthy senders.
+        // Do NOT remove sender from campaign — that marks pending sequences as "stopped".
         try {
           const senderEmails = await ebClient.getSenderEmails();
           const senderEmail = senderEmails.find(s => s.id === sender.emailBisonSenderId);
@@ -161,49 +163,47 @@ export async function evaluateSender(params: {
             const currentWarmup = senderEmail.warmup_enabled ?? true;
             const limitToStore = sender.originalDailyLimit ?? currentLimit;
 
-            // Find active campaigns this sender is in
-            const activeCampaigns = (senderEmail.campaigns ?? []).filter(
-              c => c.status === "active"
-            );
-            const removedCampaignIds: number[] = [];
-
-            // For each active campaign: pause -> remove sender -> resume
-            for (const campaign of activeCampaigns) {
-              try {
-                await ebClient.pauseCampaign(campaign.id);
-                await ebClient.removeSenderFromCampaign(campaign.id, sender.emailBisonSenderId!);
-                await ebClient.resumeCampaign(campaign.id);
-                removedCampaignIds.push(campaign.id);
-                console.log(`${LOG_PREFIX} ${sender.emailAddress}: removed from campaign "${campaign.name}" (${campaign.id})`);
-              } catch (campaignErr) {
-                console.error(`${LOG_PREFIX} Failed to remove ${sender.emailAddress} from campaign ${campaign.id}:`, campaignErr);
-                // Try to resume campaign if we paused it but removal failed
-                try { await ebClient.resumeCampaign(campaign.id); } catch { /* best effort */ }
-              }
-            }
-
-            // Set daily_limit to 1
-            await ebClient.patchSenderEmail(sender.emailBisonSenderId!, {
-              daily_limit: 1,
-              warmup_enabled: isBlacklisted ? false : currentWarmup,
-            });
-
             // Store original state on Sender for recovery
             await prisma.sender.update({
               where: { id: sender.id },
               data: {
                 originalDailyLimit: limitToStore,
                 originalWarmupEnabled: currentWarmup,
-                removedFromCampaignIds: removedCampaignIds.length > 0 ? JSON.stringify(removedCampaignIds) : null,
               },
             });
 
-            action = removedCampaignIds.length > 0
+            // Set daily_limit=1 and disable warmup if blacklisted
+            await ebClient.patchSenderEmail(sender.emailBisonSenderId!, {
+              daily_limit: 1,
+              warmup_enabled: isBlacklisted ? false : currentWarmup,
+            });
+
+            // Find active campaigns this sender is in
+            const activeCampaigns = (senderEmail.campaigns ?? []).filter(
+              c => c.status === "active"
+            );
+
+            // Pause then unpause each campaign to trigger EB scheduler redistribution
+            let redistributedCount = 0;
+            for (const campaign of activeCampaigns) {
+              try {
+                await ebClient.pauseCampaign(campaign.id);
+                await ebClient.resumeCampaign(campaign.id);
+                redistributedCount++;
+                console.log(`${LOG_PREFIX} ${sender.emailAddress}: pause/unpause campaign "${campaign.name}" (${campaign.id}) to trigger redistribution`);
+              } catch (campaignErr) {
+                console.error(`${LOG_PREFIX} Failed to pause/unpause campaign ${campaign.id} for ${sender.emailAddress}:`, campaignErr);
+                // Try to resume campaign if pause succeeded but resume failed
+                try { await ebClient.resumeCampaign(campaign.id); } catch { /* best effort */ }
+              }
+            }
+
+            action = redistributedCount > 0
               ? "critical_remediation_complete"
               : "critical_daily_limit_reduced";
             console.log(
               `${LOG_PREFIX} ${sender.emailAddress}: CRITICAL remediation — ` +
-              `daily_limit=1, removed from ${removedCampaignIds.length} campaigns` +
+              `daily_limit=1, pause/unpause ${redistributedCount} campaigns for redistribution` +
               (isBlacklisted ? ", warmup disabled (blacklisted)" : "")
             );
           }
@@ -287,17 +287,10 @@ export async function evaluateSender(params: {
             warmup_enabled: restoreWarmup,
           });
 
-          // Parse removed campaign IDs for notification
-          let removedCampaigns: number[] = [];
-          try {
-            removedCampaigns = sender.removedFromCampaignIds ? JSON.parse(sender.removedFromCampaignIds) : [];
-          } catch { /* ignore parse errors */ }
-
           action = "critical_recovery_complete";
           console.log(
             `${LOG_PREFIX} ${sender.emailAddress}: recovery from critical — ` +
-            `daily_limit=${restoreLimit}, warmup=${restoreWarmup}` +
-            (removedCampaigns.length > 0 ? `, NOTE: was removed from campaigns ${removedCampaigns.join(",")} — manual re-add required` : "")
+            `daily_limit=${restoreLimit}, warmup=${restoreWarmup}`
           );
         } catch (err) {
           console.error(`${LOG_PREFIX} Failed to restore settings for ${sender.emailAddress}:`, err);
