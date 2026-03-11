@@ -21,6 +21,8 @@ interface SenderSnapshot {
   consecutiveHealthyChecks: number;
   emailBisonSenderId: number | null;
   originalDailyLimit: number | null;
+  originalWarmupEnabled: boolean | null;
+  removedFromCampaignIds: string | null; // JSON string
 }
 
 // ─── Core classification ──────────────────────────────────────────────────────
@@ -148,12 +150,67 @@ export async function evaluateSender(params: {
           console.error(`${LOG_PREFIX} Failed to reduce daily limit for ${sender.emailAddress}:`, err);
         }
       } else if (newStatus === "critical") {
-        // Campaign removal API is unknown per research — log intent, notify admin
-        action = "campaign_removal_pending";
-        console.log(
-          `${LOG_PREFIX} ${sender.emailAddress}: CRITICAL — manual campaign removal required. ` +
-          `Warmup will remain active.`,
-        );
+        // Critical remediation: remove sender from all active campaigns
+        try {
+          const senderEmails = await ebClient.getSenderEmails();
+          const senderEmail = senderEmails.find(s => s.id === sender.emailBisonSenderId);
+
+          if (senderEmail) {
+            // Store original state before modifying
+            const currentLimit = senderEmail.daily_limit ?? 100;
+            const currentWarmup = senderEmail.warmup_enabled ?? true;
+            const limitToStore = sender.originalDailyLimit ?? currentLimit;
+
+            // Find active campaigns this sender is in
+            const activeCampaigns = (senderEmail.campaigns ?? []).filter(
+              c => c.status === "active"
+            );
+            const removedCampaignIds: number[] = [];
+
+            // For each active campaign: pause -> remove sender -> resume
+            for (const campaign of activeCampaigns) {
+              try {
+                await ebClient.pauseCampaign(campaign.id);
+                await ebClient.removeSenderFromCampaign(campaign.id, sender.emailBisonSenderId!);
+                await ebClient.resumeCampaign(campaign.id);
+                removedCampaignIds.push(campaign.id);
+                console.log(`${LOG_PREFIX} ${sender.emailAddress}: removed from campaign "${campaign.name}" (${campaign.id})`);
+              } catch (campaignErr) {
+                console.error(`${LOG_PREFIX} Failed to remove ${sender.emailAddress} from campaign ${campaign.id}:`, campaignErr);
+                // Try to resume campaign if we paused it but removal failed
+                try { await ebClient.resumeCampaign(campaign.id); } catch { /* best effort */ }
+              }
+            }
+
+            // Set daily_limit to 1
+            await ebClient.patchSenderEmail(sender.emailBisonSenderId!, {
+              daily_limit: 1,
+              warmup_enabled: isBlacklisted ? false : currentWarmup,
+            });
+
+            // Store original state on Sender for recovery
+            await prisma.sender.update({
+              where: { id: sender.id },
+              data: {
+                originalDailyLimit: limitToStore,
+                originalWarmupEnabled: currentWarmup,
+                removedFromCampaignIds: removedCampaignIds.length > 0 ? JSON.stringify(removedCampaignIds) : null,
+              },
+            });
+
+            action = removedCampaignIds.length > 0
+              ? "critical_remediation_complete"
+              : "critical_daily_limit_reduced";
+            console.log(
+              `${LOG_PREFIX} ${sender.emailAddress}: CRITICAL remediation — ` +
+              `daily_limit=1, removed from ${removedCampaignIds.length} campaigns` +
+              (isBlacklisted ? ", warmup disabled (blacklisted)" : "")
+            );
+          }
+        } catch (err) {
+          console.error(`${LOG_PREFIX} Critical remediation failed for ${sender.emailAddress}:`, err);
+          action = "critical_remediation_failed";
+        }
       }
     }
 
@@ -217,6 +274,36 @@ export async function evaluateSender(params: {
         }
       }
 
+      // Restore daily limit + warmup if stepping down from critical
+      if (currentStatus === "critical" && EMAILBISON_MGMT_ENABLED && sender.emailBisonSenderId !== null) {
+        try {
+          const ebClient = new EmailBisonClient(process.env.EMAILBISON_API_TOKEN ?? "");
+          // Restore daily_limit
+          const restoreLimit = sender.originalDailyLimit ?? 100;
+          // Restore warmup
+          const restoreWarmup = sender.originalWarmupEnabled ?? true;
+          await ebClient.patchSenderEmail(sender.emailBisonSenderId, {
+            daily_limit: restoreLimit,
+            warmup_enabled: restoreWarmup,
+          });
+
+          // Parse removed campaign IDs for notification
+          let removedCampaigns: number[] = [];
+          try {
+            removedCampaigns = sender.removedFromCampaignIds ? JSON.parse(sender.removedFromCampaignIds) : [];
+          } catch { /* ignore parse errors */ }
+
+          action = "critical_recovery_complete";
+          console.log(
+            `${LOG_PREFIX} ${sender.emailAddress}: recovery from critical — ` +
+            `daily_limit=${restoreLimit}, warmup=${restoreWarmup}` +
+            (removedCampaigns.length > 0 ? `, NOTE: was removed from campaigns ${removedCampaigns.join(",")} — manual re-add required` : "")
+          );
+        } catch (err) {
+          console.error(`${LOG_PREFIX} Failed to restore settings for ${sender.emailAddress}:`, err);
+        }
+      }
+
       const bouncePctDisplay = bounceRate !== null ? (bounceRate * 100).toFixed(1) : "n/a";
 
       await prisma.$transaction([
@@ -226,7 +313,12 @@ export async function evaluateSender(params: {
             emailBounceStatus: stepDownStatus,
             emailBounceStatusAt: new Date(),
             consecutiveHealthyChecks: 0,
-            // Clear stored original limit after restoring
+            // Clear stored recovery fields after restoring
+            ...(currentStatus === "critical" ? {
+              originalDailyLimit: null,
+              originalWarmupEnabled: null,
+              removedFromCampaignIds: null,
+            } : {}),
             ...(currentStatus === "warning" ? { originalDailyLimit: null } : {}),
           },
         }),
@@ -294,6 +386,8 @@ export async function runBounceMonitor(): Promise<{
       consecutiveHealthyChecks: true,
       emailBisonSenderId: true,
       originalDailyLimit: true,
+      originalWarmupEnabled: true,
+      removedFromCampaignIds: true,
     },
   });
 
