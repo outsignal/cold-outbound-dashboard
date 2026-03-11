@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 
 ## Current Position
 
-Phase: Phase 35 — Email Inbox
-Plan: 35-02 complete
-Status: Phase 35 Plan 02 done — 3 portal API routes created: GET /api/portal/inbox/email/threads (thread list grouped by parent_id chain), GET /api/portal/inbox/email/threads/[threadId] (chronological messages with outbound context), POST /api/portal/inbox/email/reply (send via EmailBison + persist outbound Reply).
-Last activity: 2026-03-11 - Completed 35-02: Email inbox API routes
+Phase: Phase 36 — LinkedIn Inbox
+Plan: 36-01 complete
+Status: Phase 36 Plan 01 done — 4 portal API routes created: GET /api/portal/inbox/linkedin/conversations (conversation list with Person subtitle join), GET /api/portal/inbox/linkedin/conversations/[id]/messages (on-demand worker fetch + DB upsert), POST /api/portal/inbox/linkedin/reply (priority-1 action queue), GET /api/portal/inbox/linkedin/actions/[actionId]/status (action status polling).
+Last activity: 2026-03-11 - Completed 36-01: LinkedIn inbox API routes
 
 Progress: v5.0 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
 
@@ -101,6 +101,11 @@ Progress: v5.0 [░░░░░░░░░░░░░░░░░░░░░�
 - [Phase 35-02]: Thread grouping skips replies with no emailBisonReplyId — can't reliably group orphaned records
 - [Phase 35-02]: reply_all:true used in sendReply — per Phase 33 spike validation, required alongside sender_email_id
 
+- [36-01]: Two-query pattern for Person join — personId has no @relation on LinkedInConversation, separate findMany + Map avoids N+1
+- [36-01]: On-demand message fetch only calls worker when no DB messages exist (or refresh=true) — minimizes Voyager API calls
+- [36-01]: 422 vs 404 for missing personId on reply — 422 Unprocessable Entity correct when can't proceed without Person record
+- [36-01]: Graceful degradation on worker failure in message fetch — returns existing DB messages, never 500s
+
 ### Blockers/Concerns
 
 - EmailBison POST /replies/{id}/reply RESOLVED — spike confirmed working on white-label, requires reply_all:true or to_emails[], response: {data: {success, message, reply: Reply}}
@@ -122,5 +127,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: Completed 35-02-PLAN.md — 3 email inbox API routes (thread list, thread detail, reply send)
+Stopped at: Completed 36-01-PLAN.md — 4 LinkedIn inbox API routes (conversation list, message fetch, reply queue, action status)
 Resume file: None

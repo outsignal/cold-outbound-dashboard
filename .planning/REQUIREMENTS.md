@@ -85,10 +85,10 @@ Requirements for Client Portal Inbox. Each maps to roadmap phases.
 
 ### LinkedIn Inbox
 
-- [ ] **LIIN-01**: LinkedIn conversation list shows recent conversations from DB
-- [ ] **LIIN-02**: LinkedIn conversation detail shows full message history
-- [ ] **LIIN-03**: Client can queue LinkedIn reply from portal (priority 1 LinkedInAction)
-- [ ] **LIIN-04**: Manual refresh triggers re-sync from Voyager API
+- [x] **LIIN-01**: LinkedIn conversation list shows recent conversations from DB
+- [x] **LIIN-02**: LinkedIn conversation detail shows full message history
+- [x] **LIIN-03**: Client can queue LinkedIn reply from portal (priority 1 LinkedInAction)
+- [x] **LIIN-04**: Manual refresh triggers re-sync from Voyager API
 
 ### Inbox UI
 
@@ -193,10 +193,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EMAIL-02 | Phase 35 | Complete |
 | EMAIL-03 | Phase 35 | Complete |
 | EMAIL-04 | Phase 35 | Complete |
-| LIIN-01 | Phase 36 | Pending |
-| LIIN-02 | Phase 36 | Pending |
-| LIIN-03 | Phase 36 | Pending |
-| LIIN-04 | Phase 36 | Pending |
+| LIIN-01 | Phase 36 | Complete |
+| LIIN-02 | Phase 36 | Complete |
+| LIIN-03 | Phase 36 | Complete |
+| LIIN-04 | Phase 36 | Complete |
 | UI-01 | Phase 37 | Pending |
 | UI-02 | Phase 37 | Pending |
 | UI-03 | Phase 37 | Pending |
