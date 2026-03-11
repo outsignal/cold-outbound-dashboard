@@ -1,6 +1,7 @@
 import { getPortalSession } from "@/lib/portal-session";
 import { getWorkspaceBySlug } from "@/lib/workspaces";
 import { EmailBisonClient } from "@/lib/emailbison/client";
+import { prisma } from "@/lib/db";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,23 @@ interface SenderHealthRow {
   healthStatus: "healthy" | "warning" | "critical";
 }
 
+// DB-sourced sender data enrichment
+interface DbSenderData {
+  emailBounceStatus: string;
+  emailBounceStatusAt: Date | null;
+  warmupDay: number | null;
+  recentEventNote: string | null;
+}
+
+// Domain DNS health data
+interface DomainDnsRow {
+  domain: string;
+  spfStatus: string | null;
+  dkimStatus: string | null;
+  dmarcStatus: string | null;
+  overallHealth: string;
+}
+
 function computeHealth(sender: SenderEmail): SenderHealthRow {
   const sent = sender.emails_sent_count;
   const bounced = sender.bounced_count;
@@ -49,6 +67,26 @@ function computeHealth(sender: SenderEmail): SenderHealthRow {
     replyRate,
     healthStatus,
   };
+}
+
+function extractDomain(email: string): string {
+  const parts = email.split("@");
+  return parts.length === 2 ? parts[1].toLowerCase() : "";
+}
+
+function recentEventToNote(reason: string): string {
+  switch (reason) {
+    case "manual":
+      return "Daily limit reduced";
+    case "bounce_rate":
+      return "Status elevated";
+    case "step_down":
+      return "Recovering";
+    case "blacklist":
+      return "Blacklist detected";
+    default:
+      return "Status updated";
+  }
 }
 
 export default async function PortalEmailHealthPage() {
@@ -85,6 +123,73 @@ export default async function PortalEmailHealthPage() {
     error = err instanceof Error ? err.message : "Failed to fetch sender data";
   }
 
+  // ---- DB enrichment: sender health status + recent events ----
+  const dbSenders = await prisma.sender.findMany({
+    where: {
+      workspaceSlug,
+      emailAddress: { not: null },
+    },
+    select: {
+      emailAddress: true,
+      emailBounceStatus: true,
+      emailBounceStatusAt: true,
+      warmupDay: true,
+    },
+  });
+
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const recentEvents = await prisma.emailHealthEvent.findMany({
+    where: { workspaceSlug },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+  });
+
+  // Group recent events by senderEmail (most recent per sender)
+  const eventBySender = new Map<string, { reason: string; createdAt: Date }>();
+  for (const evt of recentEvents) {
+    if (!eventBySender.has(evt.senderEmail)) {
+      eventBySender.set(evt.senderEmail, {
+        reason: evt.reason,
+        createdAt: evt.createdAt,
+      });
+    }
+  }
+
+  // Build DB sender lookup
+  const dbSenderMap = new Map<string, DbSenderData>();
+  for (const s of dbSenders) {
+    if (!s.emailAddress) continue;
+    const evt = eventBySender.get(s.emailAddress);
+    const isRecent = evt && evt.createdAt >= sevenDaysAgo;
+    dbSenderMap.set(s.emailAddress.toLowerCase(), {
+      emailBounceStatus: s.emailBounceStatus,
+      emailBounceStatusAt: s.emailBounceStatusAt,
+      warmupDay: s.warmupDay,
+      recentEventNote: isRecent ? recentEventToNote(evt.reason) : null,
+    });
+  }
+
+  // ---- DB enrichment: domain DNS health ----
+  // Extract unique sending domains from EmailBison senders
+  const sendingDomains = [
+    ...new Set(senders.map((s) => extractDomain(s.email)).filter(Boolean)),
+  ];
+
+  let domainHealthRows: DomainDnsRow[] = [];
+  if (sendingDomains.length > 0) {
+    const domainHealthRecords = await prisma.domainHealth.findMany({
+      where: { domain: { in: sendingDomains } },
+      select: {
+        domain: true,
+        spfStatus: true,
+        dkimStatus: true,
+        dmarcStatus: true,
+        overallHealth: true,
+      },
+    });
+    domainHealthRows = domainHealthRecords;
+  }
+
   // Compute aggregates
   const totalSenders = senders.length;
   const disconnected = senders.filter((s) => s.status === "Disconnected");
@@ -100,9 +205,32 @@ export default async function PortalEmailHealthPage() {
 
   const healthBadgeStyles = {
     healthy: "bg-emerald-100 text-emerald-800",
+    elevated: "bg-blue-100 text-blue-800",
     warning: "bg-yellow-100 text-yellow-800",
     critical: "bg-red-100 text-red-800",
   };
+
+  // DB bounce status badge styles (includes "elevated" from DB model)
+  const emailBounceStatusStyles: Record<string, string> = {
+    healthy: "bg-emerald-100 text-emerald-800",
+    elevated: "bg-blue-100 text-blue-800",
+    warning: "bg-yellow-100 text-yellow-800",
+    critical: "bg-red-100 text-red-800",
+  };
+
+  function dnsBadgeStyle(status: string | null, type: "spf" | "dkim" | "dmarc") {
+    if (!status || status === "missing" || status === "fail")
+      return "bg-red-100 text-red-800";
+    if (type === "dkim" && status === "partial") return "bg-yellow-100 text-yellow-800";
+    return "bg-emerald-100 text-emerald-800";
+  }
+
+  function dnsLabel(status: string | null, prefix: string) {
+    if (!status || status === "missing") return `${prefix} \u2717`;
+    if (status === "fail") return `${prefix} \u2717`;
+    if (status === "partial") return `${prefix} ~`;
+    return `${prefix} \u2713`;
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -178,6 +306,73 @@ export default async function PortalEmailHealthPage() {
         </div>
       )}
 
+      {/* Domain Health (DNS badges) */}
+      {domainHealthRows.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-heading">Domain Health</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Domain</TableHead>
+                  <TableHead>SPF</TableHead>
+                  <TableHead>DKIM</TableHead>
+                  <TableHead>DMARC</TableHead>
+                  <TableHead>Overall</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {domainHealthRows.map((row) => (
+                  <TableRow key={row.domain}>
+                    <TableCell className="font-mono text-sm font-medium">
+                      {row.domain}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className={`text-xs ${dnsBadgeStyle(row.spfStatus, "spf")}`}
+                      >
+                        {dnsLabel(row.spfStatus, "SPF")}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className={`text-xs ${dnsBadgeStyle(row.dkimStatus, "dkim")}`}
+                      >
+                        {dnsLabel(row.dkimStatus, "DKIM")}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className={`text-xs ${dnsBadgeStyle(row.dmarcStatus, "dmarc")}`}
+                      >
+                        {dnsLabel(row.dmarcStatus, "DMARC")}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        className={`text-xs ${
+                          row.overallHealth === "healthy"
+                            ? "bg-emerald-100 text-emerald-800"
+                            : row.overallHealth === "warning"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : row.overallHealth === "critical"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {row.overallHealth}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Sender Health Table */}
       <Card>
         <CardHeader>
@@ -207,60 +402,86 @@ export default async function PortalEmailHealthPage() {
                   <TableHead className="text-right">Replies</TableHead>
                   <TableHead className="text-right">Reply %</TableHead>
                   <TableHead>Health</TableHead>
+                  <TableHead>Bounce Status</TableHead>
+                  <TableHead>Recent</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {senders.map((sender) => (
-                  <TableRow key={sender.email}>
-                    <TableCell className="font-medium text-sm">
-                      {sender.email}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="secondary"
-                        className={`text-xs ${
-                          sender.status === "Connected"
-                            ? "bg-emerald-100 text-emerald-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {sender.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {sender.emailsSent.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {sender.bounced.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      <span
-                        className={
-                          sender.healthStatus === "critical"
-                            ? "text-red-600 font-bold"
-                            : sender.healthStatus === "warning"
-                              ? "text-amber-600 font-medium"
-                              : ""
-                        }
-                      >
-                        {sender.bounceRate.toFixed(1)}%
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {sender.replies.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {sender.replyRate.toFixed(1)}%
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        className={`text-xs ${healthBadgeStyles[sender.healthStatus]}`}
-                      >
-                        {sender.healthStatus}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {senders.map((sender) => {
+                  const dbData = dbSenderMap.get(sender.email.toLowerCase());
+                  const emailBounceStatus = dbData?.emailBounceStatus ?? null;
+                  return (
+                    <TableRow key={sender.email}>
+                      <TableCell className="font-medium text-sm">
+                        {sender.email}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="secondary"
+                          className={`text-xs ${
+                            sender.status === "Connected"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {sender.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {sender.emailsSent.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {sender.bounced.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        <span
+                          className={
+                            sender.healthStatus === "critical"
+                              ? "text-red-600 font-bold"
+                              : sender.healthStatus === "warning"
+                                ? "text-amber-600 font-medium"
+                                : ""
+                          }
+                        >
+                          {sender.bounceRate.toFixed(1)}%
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {sender.replies.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {sender.replyRate.toFixed(1)}%
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          className={`text-xs ${healthBadgeStyles[sender.healthStatus]}`}
+                        >
+                          {sender.healthStatus}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {emailBounceStatus ? (
+                          <Badge
+                            className={`text-xs ${emailBounceStatusStyles[emailBounceStatus] ?? "bg-gray-100 text-gray-600"}`}
+                          >
+                            {emailBounceStatus}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {dbData?.recentEventNote ? (
+                          <span className="text-xs text-muted-foreground">
+                            {dbData.recentEventNote}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           ) : null}
