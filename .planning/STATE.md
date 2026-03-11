@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 ## Current Position
 
 Phase: Phase 37 — Inbox UI Polish & Admin Inbox Navigation
-Plan: 37-02 complete
-Status: Phase 37 Plan 02 done — mobile single-panel inbox, package-aware channel tabs (All/Email/LinkedIn), intent badges on thread rows, cross-channel chips, email composer subject field, 2s read timer.
-Last activity: 2026-03-11 - Completed 37-02: inbox UI polish with mobile layout, channel tabs, badges, cross-channel navigation
+Plan: 37-03 complete
+Status: Phase 37 Plan 03 done — admin master inbox with cross-workspace filtering, workspace badges, Replying-as banner, 6 admin inbox API routes (email threads/reply, LinkedIn conversations/messages/reply).
+Last activity: 2026-03-11 - Completed 37-03: admin inbox page, workspace filter, workspace badges, Replying-as banner, admin API endpoints
 
 Progress: v5.0 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
 
@@ -142,5 +142,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: Completed 37-02-PLAN.md — inbox UI polish: mobile layout, channel tabs, intent badges, cross-channel chips
+Stopped at: Completed 37-03-PLAN.md — admin master inbox: workspace filter, workspace badges, Replying-as banner, 6 admin API routes
 Resume file: None
