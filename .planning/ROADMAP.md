@@ -219,7 +219,11 @@ Plans:
   3. Unread threads show a dot indicator and the Inbox nav item shows the total unread count; reading a thread clears its unread state
   4. When the same person has both an email reply and a LinkedIn conversation, a cross-channel indicator appears in both thread views linking to the other channel
   5. Admin can navigate to /admin/inbox, filter by workspace, and reply on behalf of any client using the same two-panel components built for the portal
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 37-01-PLAN.md — Schema migration (isRead on Reply) + unread tracking APIs + navigation updates (both portals)
+- [ ] 37-02-PLAN.md — Portal inbox UI polish (mobile layout, channel tabs, cross-channel indicator, intent badges, composer upgrade)
+- [ ] 37-03-PLAN.md — Admin master inbox (API endpoints + page with workspace filter + reply on behalf)
 
 ## Progress
 
@@ -263,4 +267,4 @@ Plans:
 | 34. LinkedIn Data Layer | 1/1 | Complete    | 2026-03-11 | - |
 | 35. Email Inbox | 3/3 | Complete | 2026-03-11 | - |
 | 36. LinkedIn Inbox | 2/2 | Complete    | 2026-03-11 | - |
-| 37. Inbox UI Polish, Admin Inbox & Navigation | v5.0 | 0/TBD | Not started | - |
+| 37. Inbox UI Polish, Admin Inbox & Navigation | v5.0 | 0/3 | Not started | - |
