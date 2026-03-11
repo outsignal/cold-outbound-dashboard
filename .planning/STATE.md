@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Email Deliverability & Domain Infrastructure Monitoring
 status: unknown
-last_updated: "2026-03-11T18:29:49.757Z"
+last_updated: "2026-03-11T19:33:36.748Z"
 progress:
-  total_phases: 33
+  total_phases: 34
   completed_phases: 31
-  total_plans: 102
-  completed_plans: 103
+  total_plans: 105
+  completed_plans: 104
 ---
 
 # Project State
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 
 ## Current Position
 
-Phase: Phase 36 — LinkedIn Inbox
-Plan: 36-02 complete
-Status: Phase 36 Plan 02 done — LinkedIn inbox UI complete: LinkedInConversationList (left panel with status dots, subtitle), LinkedInConversationView (chat bubbles, refresh/sync, Queue Message composer with optimistic UI + polling), Email/LinkedIn channel toggle on inbox page. Visual verification passed.
-Last activity: 2026-03-11 - Completed 36-02: LinkedIn inbox UI components and channel toggle
+Phase: Phase 37 — Inbox UI Polish & Admin Inbox Navigation
+Plan: 37-01 complete
+Status: Phase 37 Plan 01 done — isRead schema migration + 3 unread tracking API endpoints + portal sidebar unread badge (Replies removed, 30s polling) + admin sidebar Inbox nav item added.
+Last activity: 2026-03-11 - Completed 37-01: schema migration, unread tracking APIs, navigation updates
 
 Progress: v5.0 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
 
@@ -108,6 +108,9 @@ Progress: v5.0 [░░░░░░░░░░░░░░░░░░░░░�
 - [Phase 36-02]: Chat bubbles not stacked cards for LinkedIn — mirrors native LinkedIn messaging feel
 - [Phase 36-02]: Queue Message button text (not Send) — communicates async delivery via LinkedIn worker
 - [Phase 36-02]: Both channels poll simultaneously — data always fresh regardless of active tab
+- [Phase 37-01]: isRead field with @@index([workspaceSlug, isRead]) for efficient unread count queries
+- [Phase 37-01]: OR clause on emailBisonParentId/emailBisonReplyId in mark-read covers both thread roots and reply children
+- [Phase 37-01]: LinkedIn unreadCount from LinkedInConversation._sum aggregate — reuses existing field
 
 ### Blockers/Concerns
 
@@ -122,6 +125,7 @@ Progress: v5.0 [░░░░░░░░░░░░░░░░░░░░░�
 | 1 | Automated EmailBison sender sync - pull sender emails into Sender table and run on daily cron | 2026-03-11 | 074cf22 | [1-automated-emailbison-sender-sync-pull-se](./quick/1-automated-emailbison-sender-sync-pull-se/) |
 | 2 | Automate critical sender remediation - pause/remove/resume campaigns, set daily_limit=1, disable warmup, store state for recovery | 2026-03-11 | e0229e0 | [2-automate-critical-sender-remediation-cam](./quick/2-automate-critical-sender-remediation-cam/) |
 - LinkedIn Voyager rate limits unknown — 2-3s delays between calls, limit 20 conversations, 5-min cache, graceful 401/429 degradation
+| Phase 37-inbox-ui-polish-admin-inbox-navigation P01 | 4 | 2 tasks | 7 files |
 
 ### Pending Todos
 
@@ -130,5 +134,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: Completed 36-02-PLAN.md — LinkedIn inbox UI components and channel toggle
+Stopped at: Completed 37-01-PLAN.md — schema migration, unread tracking APIs, navigation updates
 Resume file: None
