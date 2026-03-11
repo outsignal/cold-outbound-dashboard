@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Email Deliverability & Domain Infrastructure Monitoring
 status: unknown
-last_updated: "2026-03-11T13:33:07.378Z"
+last_updated: "2026-03-11T15:03:04.150Z"
 progress:
-  total_phases: 31
+  total_phases: 32
   completed_phases: 29
-  total_plans: 97
-  completed_plans: 98
+  total_plans: 100
+  completed_plans: 99
 ---
 
 # Project State
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 
 ## Current Position
 
-Phase: Phase 34 — LinkedIn Data Layer
-Plan: 34-01 complete
-Status: Phase 34 Plan 01 done — LinkedIn inbox Prisma models (LinkedInConversation, LinkedInMessage, LinkedInSyncStatus) + sync function with Person URL matching + portal sync API route (202 fire-and-forget)
-Last activity: 2026-03-11 - Completed quick task 1: Automated EmailBison sender sync
+Phase: Phase 35 — Email Inbox
+Plan: 35-01 complete
+Status: Phase 35 Plan 01 done — Reply model extended with 7 inbox fields (emailBisonParentId, leadEmail, htmlBody, interested, direction, ebSenderEmailId, aiSuggestedReply) + 2 new indexes. Both ingestion paths (webhook + poll-replies) updated to populate them.
+Last activity: 2026-03-11 - Completed 35-01: Reply inbox data foundation
 
 Progress: v5.0 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
 
@@ -94,6 +94,9 @@ Progress: v5.0 [░░░░░░░░░░░░░░░░░░░░░�
 - [Phase 32-02]: Promise.allSettled for parallel fetches — each section degrades independently on error
 - [Phase 32-02]: Workspace options derived from senders response — avoids extra /api/workspaces call
 - [Phase 32-02]: ActivityFeed accepts initialEvents/hasMore/cursor props — supports server-driven pagination from parent page
+- [Phase 35-01]: prisma db push used instead of migrate dev — database schema was ahead of migration history (pre-existing drift), reset would destroy production data
+- [Phase 35-01]: aiSuggestedReply not added to poll-replies cron — AI suggestion requires full context (lead name, interested flag) only available in webhook handler
+- [Phase 35-01]: direction field defaults to inbound, explicit outbound detection via folder=Sent or type=Outgoing Email from EB reply data
 
 ### Blockers/Concerns
 
@@ -115,5 +118,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: Completed 34-01-PLAN.md — LinkedIn inbox data layer: Prisma models, sync function, portal sync API route.
+Stopped at: Completed 35-01-PLAN.md — Reply inbox data foundation: 7 new fields + 2 indexes, webhook + poll-replies updated.
 Resume file: None
