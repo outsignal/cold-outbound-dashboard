@@ -19,6 +19,7 @@ const ALL_NOTIFICATION_TYPES = [
   { key: "overdue_invoice_alert", label: "Overdue Invoice Alert", channels: "Slack", audience: "Admin" },
   { key: "unpaid_renewal_alert", label: "Unpaid Renewal Alert", channels: "Slack", audience: "Admin" },
   { key: "system", label: "System Events", channels: "Slack", audience: "Admin" },
+  { key: "deliverability_digest", label: "Deliverability Digest", channels: "Slack + Email", audience: "Admin" },
 ] as const;
 
 // GET /api/notification-health?range=24h|7d|30d

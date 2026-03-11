@@ -1629,6 +1629,434 @@ export async function sendSenderHealthDigest(params: {
   }
 }
 
+export async function notifyDeliverabilityDigest(): Promise<void> {
+  const adminBaseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ?? "https://admin.outsignal.ai";
+  const deliverabilityUrl = `${adminBaseUrl}/deliverability`;
+
+  // Idempotency: skip if a digest was already sent in the last 6 days
+  const sixDaysAgo = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000);
+  const recentDigest = await prisma.notificationAuditLog.findFirst({
+    where: {
+      notificationType: "deliverability_digest",
+      status: "sent",
+      createdAt: { gte: sixDaysAgo },
+    },
+    select: { id: true, createdAt: true },
+  });
+  if (recentDigest) {
+    console.log(
+      `[notifyDeliverabilityDigest] Digest already sent this week (${recentDigest.createdAt.toISOString()}) — skipping`,
+    );
+    return;
+  }
+
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  // 1. Domain health summary
+  const allDomains = await prisma.domainHealth.findMany({
+    select: { domain: true, overallHealth: true },
+  });
+  const healthyDomains = allDomains.filter(
+    (d) => d.overallHealth === "healthy",
+  ).length;
+  const atRiskDomains = allDomains.filter((d) =>
+    ["warning", "critical"].includes(d.overallHealth),
+  ).length;
+
+  // 2. Worst domain (first critical, fallback to first warning)
+  const worstDomain =
+    allDomains.find((d) => d.overallHealth === "critical") ??
+    allDomains.find((d) => d.overallHealth === "warning") ??
+    null;
+
+  // 3. Transitions this week
+  const transitionCount = await prisma.emailHealthEvent.count({
+    where: { createdAt: { gte: sevenDaysAgo } },
+  });
+
+  // 4. Current problem senders (warning or critical status)
+  const problemSenders = await prisma.sender.findMany({
+    where: {
+      emailBounceStatus: { in: ["warning", "critical"] },
+      emailAddress: { not: null },
+    },
+    select: {
+      emailAddress: true,
+      emailBounceStatus: true,
+      workspaceSlug: true,
+    },
+    orderBy: [{ emailBounceStatus: "asc" }, { emailAddress: "asc" }],
+  });
+
+  // 5. Per-workspace bounce trends (compare latest vs 7-day-ago average)
+  const workspaces = await prisma.workspace.findMany({
+    select: { slug: true, name: true },
+    orderBy: { name: "asc" },
+  });
+
+  interface WorkspaceTrend {
+    name: string;
+    avgRate: number | null;
+    arrow: string;
+  }
+
+  const workspaceTrends: WorkspaceTrend[] = [];
+
+  for (const ws of workspaces) {
+    // Most recent snapshot avg
+    const recentSnapshots = await prisma.bounceSnapshot.findMany({
+      where: {
+        workspaceSlug: ws.slug,
+        bounceRate: { not: null },
+        snapshotDate: {
+          gte: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+        },
+      },
+      select: { bounceRate: true },
+    });
+
+    // 7-day-ago snapshot avg
+    const olderSnapshots = await prisma.bounceSnapshot.findMany({
+      where: {
+        workspaceSlug: ws.slug,
+        bounceRate: { not: null },
+        snapshotDate: {
+          gte: sevenDaysAgo,
+          lte: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+        },
+      },
+      select: { bounceRate: true },
+    });
+
+    const avgRecent =
+      recentSnapshots.length > 0
+        ? recentSnapshots.reduce((s, r) => s + (r.bounceRate ?? 0), 0) /
+          recentSnapshots.length
+        : null;
+    const avgOlder =
+      olderSnapshots.length > 0
+        ? olderSnapshots.reduce((s, r) => s + (r.bounceRate ?? 0), 0) /
+          olderSnapshots.length
+        : null;
+
+    let arrow = "-";
+    if (avgRecent != null && avgOlder != null) {
+      arrow = avgRecent > avgOlder + 0.005 ? "\u2191" : avgRecent < avgOlder - 0.005 ? "\u2193" : "\u2192";
+    }
+
+    if (avgRecent != null) {
+      workspaceTrends.push({ name: ws.name, avgRate: avgRecent, arrow });
+    }
+  }
+
+  // ---------- Slack ----------
+
+  const opsChannelId = process.env.OPS_SLACK_CHANNEL_ID;
+
+  if (opsChannelId) {
+    if (verifySlackChannel(opsChannelId, "admin", "notifyDeliverabilityDigest")) {
+      try {
+        const problemSenderLines =
+          problemSenders.length > 0
+            ? problemSenders
+                .slice(0, 10)
+                .map((s) => `\u2022 ${s.emailAddress} (${s.emailBounceStatus})`)
+                .join("\n")
+            : null;
+
+        const trendLines =
+          workspaceTrends.length > 0
+            ? workspaceTrends
+                .map(
+                  (t) =>
+                    `\u2022 ${t.name}: ${t.avgRate != null ? (t.avgRate * 100).toFixed(2) + "%" : "N/A"} ${t.arrow}`,
+                )
+                .join("\n")
+            : "No bounce data available.";
+
+        const blocks: KnownBlock[] = [
+          {
+            type: "header",
+            text: {
+              type: "plain_text",
+              text: ":chart_with_upwards_trend: Weekly Deliverability Digest",
+            },
+          },
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Domains:* ${healthyDomains} healthy, ${atRiskDomains} at-risk`,
+            },
+          },
+          ...(worstDomain
+            ? [
+                {
+                  type: "section" as const,
+                  text: {
+                    type: "mrkdwn" as const,
+                    text: `*Worst domain:* ${worstDomain.domain} (${worstDomain.overallHealth})`,
+                  },
+                },
+              ]
+            : []),
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Transitions this week:* ${transitionCount}`,
+            },
+          },
+          ...(problemSenderLines
+            ? [
+                {
+                  type: "section" as const,
+                  text: {
+                    type: "mrkdwn" as const,
+                    text: `*Problem senders:*\n${problemSenderLines}`,
+                  },
+                },
+              ]
+            : [
+                {
+                  type: "section" as const,
+                  text: {
+                    type: "mrkdwn" as const,
+                    text: "*Problem senders:* None",
+                  },
+                },
+              ]),
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Bounce Trends by Workspace:*\n${trendLines}`,
+            },
+          },
+          {
+            type: "actions",
+            elements: [
+              {
+                type: "button",
+                text: { type: "plain_text", text: "View Deliverability Dashboard" },
+                url: deliverabilityUrl,
+              },
+            ],
+          },
+        ];
+
+        await audited(
+          {
+            notificationType: "deliverability_digest",
+            channel: "slack",
+            recipient: opsChannelId,
+          },
+          () =>
+            postMessage(
+              opsChannelId,
+              "Weekly Deliverability Digest",
+              blocks,
+            ),
+        );
+      } catch (err) {
+        console.error("[notifyDeliverabilityDigest] Slack failed:", err);
+      }
+    }
+  }
+
+  // ---------- Email ----------
+
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (adminEmail) {
+    try {
+      const verified = verifyEmailRecipients(
+        [adminEmail],
+        "admin",
+        "notifyDeliverabilityDigest",
+      );
+      if (verified.length > 0) {
+        const problemSenderRowsHtml =
+          problemSenders.length > 0
+            ? problemSenders
+                .slice(0, 10)
+                .map(
+                  (s) =>
+                    `<tr>
+                <td style="padding:8px 0;border-bottom:1px solid #f4f4f5;">
+                  <span style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:13px;color:#18181b;">${s.emailAddress}</span>
+                  <span style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#a1a1aa;"> &mdash; ${s.workspaceSlug}</span>
+                </td>
+                <td align="right" style="padding:8px 0;border-bottom:1px solid #f4f4f5;">
+                  <span style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:600;color:${s.emailBounceStatus === "critical" ? "#991b1b" : "#92400e"};background-color:${s.emailBounceStatus === "critical" ? "#fef2f2" : "#fffbeb"};padding:3px 10px;border-radius:100px;white-space:nowrap;">${s.emailBounceStatus}</span>
+                </td>
+              </tr>`,
+                )
+                .join("")
+            : `<tr><td colspan="2" style="padding:10px 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#71717a;">No problem senders this week.</td></tr>`;
+
+        const trendRowsHtml =
+          workspaceTrends.length > 0
+            ? workspaceTrends
+                .map(
+                  (t) =>
+                    `<tr>
+                <td style="padding:8px 0;border-bottom:1px solid #f4f4f5;">
+                  <span style="font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:600;color:#18181b;">${t.name}</span>
+                </td>
+                <td align="right" style="padding:8px 0;border-bottom:1px solid #f4f4f5;">
+                  <span style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:13px;color:#18181b;">${t.avgRate != null ? (t.avgRate * 100).toFixed(2) + "%" : "N/A"} ${t.arrow}</span>
+                </td>
+              </tr>`,
+                )
+                .join("")
+            : `<tr><td colspan="2" style="padding:10px 0;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#71717a;">No bounce data available.</td></tr>`;
+
+        const worstDomainHtml = worstDomain
+          ? `              <!-- Worst domain -->
+              <tr>
+                <td style="padding-bottom:24px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#fef2f2;border-radius:8px;border:1px solid #fecaca;">
+                    <tr>
+                      <td style="padding:14px 18px;">
+                        <p style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;color:#991b1b;margin:0 0 4px 0;text-transform:uppercase;">Worst Domain</p>
+                        <p style="font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;font-size:15px;color:#18181b;margin:0;font-weight:600;">${worstDomain.domain}</p>
+                        <p style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#991b1b;margin:4px 0 0 0;font-weight:600;">${worstDomain.overallHealth}</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>`
+          : "";
+
+        await audited(
+          {
+            notificationType: "deliverability_digest",
+            channel: "email",
+            recipient: verified.join(","),
+          },
+          () =>
+            sendNotificationEmail({
+              to: verified,
+              subject: "[Outsignal] Weekly Deliverability Digest",
+              html: `<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#f4f4f5;margin:0;padding:0;">
+  <tr>
+    <td align="center" style="padding:40px 16px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:100%;">
+        <!-- Header -->
+        <tr>
+          <td style="background-color:#18181b;padding:20px 32px;border-radius:8px 8px 0 0;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;letter-spacing:3px;color:#F0FF7A;">OUTSIGNAL</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <!-- Body -->
+        <tr>
+          <td style="background-color:#ffffff;padding:32px 32px 24px 32px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td style="font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:700;color:#18181b;padding-bottom:8px;line-height:1.3;">Weekly Deliverability Digest</td>
+              </tr>
+              <tr>
+                <td style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#71717a;padding-bottom:24px;line-height:1.5;">Cross-workspace summary &mdash; ${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</td>
+              </tr>
+              <!-- Domain summary -->
+              <tr>
+                <td style="padding-bottom:24px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr>
+                      <td width="50%" style="padding-right:8px;" valign="top">
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                          <tr>
+                            <td style="background-color:#f0fdf4;border-radius:8px;padding:16px 20px;text-align:center;">
+                              <p style="font-family:Arial,Helvetica,sans-serif;font-size:28px;font-weight:700;color:#16a34a;margin:0;line-height:1;">${healthyDomains}</p>
+                              <p style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#065f46;margin:6px 0 0 0;font-weight:600;">Healthy Domains</p>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                      <td width="50%" style="padding-left:8px;" valign="top">
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                          <tr>
+                            <td style="background-color:${atRiskDomains > 0 ? "#fef2f2" : "#f4f4f5"};border-radius:8px;padding:16px 20px;text-align:center;">
+                              <p style="font-family:Arial,Helvetica,sans-serif;font-size:28px;font-weight:700;color:${atRiskDomains > 0 ? "#dc2626" : "#a1a1aa"};margin:0;line-height:1;">${atRiskDomains}</p>
+                              <p style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:${atRiskDomains > 0 ? "#991b1b" : "#71717a"};margin:6px 0 0 0;font-weight:600;">At-Risk Domains</p>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              <!-- Transitions -->
+              <tr>
+                <td style="padding-bottom:24px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                    <tr>
+                      <td style="background-color:#f0f9ff;border-radius:8px;padding:16px 20px;">
+                        <p style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#0c4a6e;margin:0;font-weight:600;">Transitions this week: ${transitionCount}</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+${worstDomainHtml}
+              <!-- Problem senders -->
+              <tr>
+                <td style="padding-bottom:24px;">
+                  <p style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;color:#a1a1aa;margin:0 0 10px 0;text-transform:uppercase;">Problem Senders</p>
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                    ${problemSenderRowsHtml}
+                  </table>
+                </td>
+              </tr>
+              <!-- Bounce trends -->
+              <tr>
+                <td style="padding-bottom:24px;">
+                  <p style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;color:#a1a1aa;margin:0 0 10px 0;text-transform:uppercase;">Bounce Trends by Workspace</p>
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                    ${trendRowsHtml}
+                  </table>
+                </td>
+              </tr>
+              <!-- CTA button -->
+              <tr>
+                <td style="padding-top:8px;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td style="background-color:#F0FF7A;border-radius:8px;">
+                        <a href="${deliverabilityUrl}" target="_blank" style="display:inline-block;padding:14px 32px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;color:#18181b;text-decoration:none;">View Deliverability Dashboard</a>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+          <td style="background-color:#fafafa;padding:20px 32px;border-top:1px solid #e4e4e7;border-radius:0 0 8px 8px;">
+            <p style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#a1a1aa;margin:0;line-height:1.5;">Outsignal &mdash; Weekly deliverability digest.<br/>You received this because you are the system administrator.</p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>`,
+            }),
+        );
+      }
+    } catch (err) {
+      console.error("[notifyDeliverabilityDigest] Email failed:", err);
+    }
+  }
+}
+
 export async function notifyWeeklyDigest(params: {
   workspaceSlug: string;
   topInsights: Array<{
