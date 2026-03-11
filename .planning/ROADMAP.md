@@ -86,7 +86,7 @@ Full details: [milestones/v3.0-ROADMAP.md](milestones/v3.0-ROADMAP.md)
 
 **Milestone Goal:** Full inbox experience at /portal/inbox with threaded email conversations (via EmailBison) and LinkedIn messaging (via Voyager API), replacing the read-only replies feed with reply capability.
 
-- [ ] **Phase 33: API Spike & Client Extensions** — Validate EmailBison sendReply live behavior and extend both the EmailBisonClient and VoyagerClient with inbox methods; all downstream phases depend on these contracts
+- [x] **Phase 33: API Spike & Client Extensions** — Validate EmailBison sendReply live behavior and extend both the EmailBisonClient and VoyagerClient with inbox methods; all downstream phases depend on these contracts (completed 2026-03-11)
 - [ ] **Phase 34: LinkedIn Data Layer** — DB models for LinkedIn conversations + messages, fire-and-forget sync API, and participant-to-Person matching; gates all LinkedIn UI work
 - [ ] **Phase 35: Email Inbox** — Thread grouping API, conversation view, email reply composer, and AI suggested reply display; delivers immediate client value on the highest-volume channel
 - [ ] **Phase 36: LinkedIn Inbox** — Conversation list and detail views from DB, LinkedIn reply queue via LinkedInAction, and manual refresh trigger
@@ -157,7 +157,7 @@ Plans:
   2. EmailBisonClient exposes sendReply(), getReply(), and getRepliesPage() methods with correct TypeScript types
   3. VoyagerClient exposes fetchConversations() and fetchMessages() methods that return typed conversation and message objects from the Voyager messaging API
   4. The Railway worker exposes GET /sessions/{senderId}/conversations and returns conversations JSON the portal can consume
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [ ] 33-01-PLAN.md — EmailBison sendReply spike + client extensions (sendReply, getReply, getRepliesPage)
 - [ ] 33-02-PLAN.md — VoyagerClient conversation methods + worker conversations endpoint
@@ -245,7 +245,7 @@ Plans:
 | 30. Inbox Placement Testing | v4.0 | 2/2 | Complete | 2026-03-11 |
 | 31. Auto-Rotation Engine | 2/2 | Complete    | 2026-03-11 | - |
 | 32. Deliverability Dashboard & Reporting | v4.0 | 0/TBD | Not started | - |
-| 33. API Spike & Client Extensions | 1/2 | In Progress|  | - |
+| 33. API Spike & Client Extensions | 2/2 | Complete   | 2026-03-11 | - |
 | 34. LinkedIn Data Layer | v5.0 | 0/TBD | Not started | - |
 | 35. Email Inbox | v5.0 | 0/TBD | Not started | - |
 | 36. LinkedIn Inbox | v5.0 | 0/TBD | Not started | - |

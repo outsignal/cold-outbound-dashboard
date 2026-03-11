@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Email Deliverability & Domain Infrastructure Monitoring
 status: unknown
-last_updated: "2026-03-11T11:46:29.929Z"
+last_updated: "2026-03-11T12:08:00Z"
 progress:
   total_phases: 29
   completed_phases: 26
@@ -67,6 +67,9 @@ Progress: v5.0 [░░░░░░░░░░░░░░░░░░░░░�
 - [Phase 31-02]: workspaceSlug added to runBounceMonitor transitions so replaceSender has workspace scope
 - [Phase 31-02]: Manual override resets consecutiveHealthyChecks to 0 with no lock — next cron resumes auto-evaluation
 
+- [33-01]: sendReply requires to_emails[] OR reply_all:true — not documented, only revealed by live spike
+- [33-01]: sendReply response is {data: {success, message, reply: Reply}} — not {data: Reply} as assumed
+- [33-01]: ReplyRecipient uses .address not .email — corrected from spike, existing component fixed
 - [33-02]: VoyagerError 401/403 propagates without retry — SessionServer returns {error: session_expired, message: Reconnect LinkedIn in settings}
 - [33-02]: VoyagerError 429 fails fast, no retry — account safety is priority
 - [33-02]: Messages fetched on-demand (separate endpoint) not inline with conversations — minimizes Voyager API calls
@@ -75,7 +78,7 @@ Progress: v5.0 [░░░░░░░░░░░░░░░░░░░░░�
 
 ### Blockers/Concerns
 
-- EmailBison POST /replies/{id}/reply is undocumented in live behavior — Phase 33 spike resolves this; fallback is mailto: deeplink
+- EmailBison POST /replies/{id}/reply RESOLVED — spike confirmed working on white-label, requires reply_all:true or to_emails[], response: {data: {success, message, reply: Reply}}
 - Voyager conversation API response schema needs live validation in Phase 33 before sync parser is built
 - Vercel 60s timeout — LinkedIn sync must be fully fire-and-forget (202 before any Voyager calls)
 - LinkedIn Voyager rate limits unknown — 2-3s delays between calls, limit 20 conversations, 5-min cache, graceful 401/429 degradation
@@ -87,5 +90,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: Completed 33-02-PLAN.md — VoyagerClient messaging endpoints + SessionServer routes done
+Stopped at: Completed 33-01-PLAN.md — EmailBison spike + client extensions done. Plan 02 already previously complete.
 Resume file: None
