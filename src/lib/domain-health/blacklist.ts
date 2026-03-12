@@ -152,9 +152,17 @@ export function reverseIp(ip: string): string {
  * Check a single DNSBL entry for a given query (domain or reversed IP).
  * Returns the DNSBL entry if listed, null if clean or on error.
  */
-// Spamhaus (and some other DNSBLs) return special IPs to signal errors, not actual listings.
-// 127.255.255.252 = excessive queries, 127.255.255.254 = public/open resolver, 127.255.255.255 = general error
-const DNSBL_ERROR_IPS = new Set(["127.255.255.252", "127.255.255.254", "127.255.255.255"]);
+// Per-DNSBL error IPs: some DNSBLs return specific IPs to signal resolver errors,
+// not actual listings. These vary by provider and must be filtered per-host.
+// - Spamhaus: 127.255.255.x = error (252=excessive queries, 254=public resolver, 255=general)
+// - URIBL: 127.0.0.1 = public/cloud resolver blocked (NOT a real listing)
+// - SURBL: 127.0.0.1 = public/cloud resolver blocked
+// Note: 127.0.0.1 is a valid "listed" response for most DNSBLs, so only filter it for known offenders.
+const GLOBAL_ERROR_IPS = new Set(["127.255.255.252", "127.255.255.254", "127.255.255.255"]);
+const PER_HOST_ERROR_IPS: Record<string, Set<string>> = {
+  "multi.uribl.com": new Set(["127.0.0.1"]),
+  "multi.surbl.org": new Set(["127.0.0.1"]),
+};
 
 async function checkSingleDnsbl(
   resolver: Resolver,
@@ -165,7 +173,8 @@ async function checkSingleDnsbl(
   try {
     const addresses = await resolver.resolve4(lookupHost);
     // Filter out DNSBL error responses (not actual listings)
-    const realHits = addresses.filter((ip) => !DNSBL_ERROR_IPS.has(ip));
+    const hostErrors = PER_HOST_ERROR_IPS[entry.host];
+    const realHits = addresses.filter((ip) => !GLOBAL_ERROR_IPS.has(ip) && !hostErrors?.has(ip));
     if (realHits.length === 0) {
       console.warn(`${LOG_PREFIX} ${lookupHost}: DNSBL error response (${addresses.join(",")}), not a real listing`);
       return null;
