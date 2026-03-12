@@ -1,10 +1,7 @@
-import { task } from "@trigger.dev/sdk";
+import { task, tasks } from "@trigger.dev/sdk";
 import { PrismaClient } from "@prisma/client";
-import { generateText } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
 import { classifyReply } from "@/lib/classification/classify-reply";
 import { notifyReply } from "@/lib/notifications";
-import { postMessage } from "@/lib/slack";
 import { anthropicQueue } from "./queues";
 
 // PrismaClient at module scope — not inside run() (pattern from smoke-test.ts)
@@ -36,7 +33,7 @@ export interface ProcessReplyPayload {
 export const processReply = task({
   id: "process-reply",
   queue: anthropicQueue,
-  maxDuration: 120, // 2 min — classification + notify + AI suggestion
+  maxDuration: 60, // 1 min — classification + notify only (AI suggestion runs in separate task)
   retry: {
     maxAttempts: 3,
     factor: 2,
@@ -226,55 +223,20 @@ export const processReply = task({
     }
 
     // ----------------------------------------------------------------
-    // Step 4: Generate AI reply suggestion
+    // Step 4: Trigger AI reply suggestion (async — runs as separate task)
     // ----------------------------------------------------------------
 
     const replyTriggerEvents = ["LEAD_REPLIED", "LEAD_INTERESTED"];
     if (replyTriggerEvents.includes(eventType) && textBody) {
       try {
-        const result = await generateText({
-          model: anthropic("claude-haiku-4-5-20251001"),
-          system:
-            "You are a helpful sales reply assistant. Write a brief, conversational response to an incoming email. Keep it under 70 words, sound human and natural, reference what they said, and move the conversation forward. Use a soft question CTA. No em dashes. No spintax. No merge variables.",
-          prompt: `Lead: ${leadName ?? leadEmail}
-Email: ${leadEmail}
-Subject: ${subject ?? "(no subject)"}
-Their message: ${textBody}${interested ? "\nNote: This lead is marked as INTERESTED." : ""}`,
+        await tasks.trigger("generate-suggestion", {
+          replyId,
+          workspaceSlug,
         });
-
-        const suggestion = result.text;
-
-        console.log(
-          `[process-reply] AI suggestion generated for ${leadEmail} (${suggestion.length} chars)`,
-        );
-
-        // Persist AI suggestion to Reply record
-        await prisma.reply.update({
-          where: { id: replyId },
-          data: { aiSuggestedReply: suggestion },
-        }).catch((err: unknown) => {
-          console.error("[process-reply] Failed to persist AI suggestion:", err);
-        });
-
-        // Post follow-up Slack messages with AI suggestion
-        const workspace = await prisma.workspace.findUnique({
-          where: { slug: workspaceSlug },
-          select: { slackChannelId: true },
-        });
-
-        const suggestionText = `*Suggested Response for ${leadName || leadEmail}:*\n${suggestion}`;
-
-        if (workspace?.slackChannelId) {
-          await postMessage(workspace.slackChannelId, suggestionText).catch(() => {});
-        }
-
-        const repliesChannelId = process.env.REPLIES_SLACK_CHANNEL_ID;
-        if (repliesChannelId) {
-          await postMessage(repliesChannelId, suggestionText).catch(() => {});
-        }
+        console.log(`[process-reply] Triggered generate-suggestion for reply ${replyId}`);
       } catch (err) {
-        console.error("[process-reply] AI suggestion generation failed:", err);
-        // Non-blocking — notification already fired without suggestion
+        console.error("[process-reply] Failed to trigger generate-suggestion:", err);
+        // Non-blocking — notification already fired, suggestion will be missing but reply is processed
       }
     }
 
