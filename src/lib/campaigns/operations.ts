@@ -439,7 +439,7 @@ export async function updateCampaignStatus(
 export async function deleteCampaign(id: string): Promise<void> {
   const current = await prisma.campaign.findUnique({
     where: { id },
-    select: { status: true },
+    select: { status: true, name: true, workspaceSlug: true },
   });
 
   if (!current) {
@@ -453,6 +453,11 @@ export async function deleteCampaign(id: string): Promise<void> {
         `Only campaigns in 'draft' or 'internal_review' can be deleted.`,
     );
   }
+
+  // Cascade delete sequence rules before deleting the campaign
+  await prisma.campaignSequenceRule.deleteMany({
+    where: { workspaceSlug: current.workspaceSlug, campaignName: current.name },
+  });
 
   await prisma.campaign.delete({ where: { id } });
 }

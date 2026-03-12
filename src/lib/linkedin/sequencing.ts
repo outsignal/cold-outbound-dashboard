@@ -202,7 +202,9 @@ export async function createSequenceRulesForCampaign(
     campaignName,
     triggerEvent:
       step.triggerEvent ?? (step.position === 1 ? "delay_after_previous" : "email_sent"),
-    triggerStepRef: step.triggerStepRef ?? null,
+    triggerStepRef: step.triggerEvent === "email_sent" || (!step.triggerEvent && step.position !== 1)
+      ? (step.triggerStepRef ?? `email_${step.position}`)
+      : (step.triggerStepRef ?? null),
     actionType: step.type,
     messageTemplate: step.body ?? null,
     delayMinutes: (step.delayHours ?? 0) * 60,
