@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Trigger.dev Migration — Background Jobs Infrastructure
 status: unknown
-last_updated: "2026-03-12T18:54:56.062Z"
+last_updated: "2026-03-12T21:44:21.976Z"
 progress:
-  total_phases: 40
-  completed_phases: 36
-  total_plans: 119
-  completed_plans: 119
+  total_phases: 42
+  completed_phases: 37
+  total_plans: 124
+  completed_plans: 121
 ---
 
 # Project State
@@ -105,6 +105,8 @@ Recent v5.0 decisions carried forward (still relevant):
 - [Phase 42-02]: poll-replies uses emailBisonQueue — applies concurrency limit to prevent spike when all 9 workspaces poll simultaneously
 - [Phase 42-02]: domain-health removes MAX_DOMAINS_PER_RUN=4 cap — Trigger.dev 300s maxDuration allows checking all domains; cap was Vercel 60s workaround
 - [Phase 42-02]: domain-health uses Promise.allSettled for concurrent checking — domains are independent, settled pattern provides per-domain error isolation
+- [Phase 45-01]: triggerStepRef derived as email_${step.position} for email_sent rules — webhook query now matches rules created at deploy time
+- [Phase 45-01]: Connect dedup scoped per workspace via sender relation filter — cross-workspace campaigns remain independent
 
 ### Pending Todos
 
