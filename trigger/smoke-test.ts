@@ -82,19 +82,22 @@ export const smokeTest = task({
       }
     }
 
-    // 4. EmailBison — proves EMAILBISON_API_KEY is present and valid
+    // 4. EmailBison — proves workspace apiTokens are in DB (EB uses per-workspace tokens, not a global env var)
     {
       const t0 = Date.now();
       try {
-        const res = await fetch("https://app.outsignal.ai/api/workspaces", {
-          headers: {
-            Authorization: "Bearer " + process.env.EMAILBISON_API_KEY,
-          },
+        const workspace = await prisma.workspace.findFirst({
+          where: { apiToken: { not: null } },
+          select: { slug: true, apiToken: true },
+        });
+        if (!workspace?.apiToken) throw new Error("No workspace with apiToken found in DB");
+        const res = await fetch("https://app.outsignal.ai/api/campaigns", {
+          headers: { Authorization: `Bearer ${workspace.apiToken}` },
         });
         results.emailbison = {
           ok: res.status === 200,
           ms: Date.now() - t0,
-          detail: String(res.status),
+          detail: `status=${res.status} (workspace=${workspace.slug})`,
         };
       } catch (err) {
         results.emailbison = {
@@ -110,13 +113,23 @@ export const smokeTest = task({
       const t0 = Date.now();
       try {
         const resend = new Resend(process.env.RESEND_API_KEY);
-        const { data, error } = await resend.apiKeys.list();
-        if (error) throw new Error(error.message);
-        results.resend = {
-          ok: true,
-          ms: Date.now() - t0,
-          detail: `${data?.data?.length ?? 0} keys`,
-        };
+        const { data, error } = await resend.domains.list();
+        if (error) {
+          // "restricted" errors still prove the key is valid — just scoped
+          const isRestricted = error.message?.toLowerCase().includes("restricted");
+          results.resend = {
+            ok: isRestricted,
+            ms: Date.now() - t0,
+            detail: isRestricted ? "key valid (send-only restricted)" : undefined,
+            error: isRestricted ? undefined : error.message,
+          };
+        } else {
+          results.resend = {
+            ok: true,
+            ms: Date.now() - t0,
+            detail: `${data?.data?.length ?? 0} domains`,
+          };
+        }
       } catch (err) {
         results.resend = {
           ok: false,
