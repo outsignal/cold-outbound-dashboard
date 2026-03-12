@@ -12,6 +12,8 @@ import { serperAdapter } from "@/lib/discovery/adapters/serper";
 import { firecrawlDirectoryAdapter } from "@/lib/discovery/adapters/firecrawl-directory";
 import { apifyLeadsFinderAdapter } from "@/lib/discovery/adapters/apify-leads-finder";
 import { checkDomainsForGoogleAds, searchGoogleAdsAdvertisers } from "../discovery/adapters/google-ads";
+import { checkTechStack } from "../discovery/adapters/builtwith";
+import { searchGoogleMaps } from "../discovery/adapters/google-maps";
 import { stageDiscoveredPeople } from "@/lib/discovery/staging";
 import { incrementDailySpend, PROVIDER_COSTS } from "@/lib/enrichment/costs";
 import { getWorkspaceQuotaUsage } from "@/lib/workspaces/quota";
@@ -173,6 +175,7 @@ const leadsTools = {
             "serper-web",
             "serper-maps",
             "firecrawl",
+            "google-maps",
           ]),
           reasoning: z
             .string()
@@ -207,6 +210,7 @@ const leadsTools = {
         "serper-web": "serper-web",
         "serper-maps": "serper-maps",
         firecrawl: "firecrawl-extract",
+        "google-maps": "google-maps",
       };
 
       const sourcesWithCost = params.sources.map((s) => {
@@ -823,6 +827,88 @@ const leadsTools = {
       return results;
     },
   }),
+
+  checkTechStack: tool({
+    description:
+      "Check what technologies a list of domains use via BuiltWith. Returns full tech stack per domain. Optionally filter for specific technologies (e.g. Shopify, WooCommerce, HubSpot). Useful for tech qualification — e.g. finding Shopify stores for BlankTag, checking if prospects use a specific CMS/framework/analytics tool. Costs ~$0.005 per domain checked (Apify compute). Requires Apify paid plan.",
+    inputSchema: z.object({
+      domains: z
+        .array(z.string())
+        .describe("List of domains to check (e.g., ['acme.com', 'example.co.uk'])"),
+      filterTechnologies: z
+        .array(z.string())
+        .optional()
+        .describe("Optional list of technology names to match against (e.g., ['Shopify', 'WooCommerce', 'Magento']). Case-insensitive."),
+    }),
+    execute: async ({ domains, filterTechnologies }) => {
+      const results = await checkTechStack(domains, filterTechnologies);
+      await incrementDailySpend("builtwith", results.length * 0.005);
+      return {
+        source: "builtwith",
+        domainsChecked: domains.length,
+        costUsd: results.length * 0.005,
+        results: results.map((r) => ({
+          domain: r.domain,
+          techCount: r.techCount,
+          hasMatch: r.hasMatch,
+          matchedTechnologies: r.matchedTechnologies,
+          technologies: r.technologies.slice(0, 20).map((t) => ({
+            name: t.name,
+            category: t.category,
+          })),
+        })),
+      };
+    },
+  }),
+
+  searchGoogleMaps: tool({
+    description:
+      "Search Google Maps for local/SMB businesses by keyword and location. Returns business name, address, phone, website, domain, rating, reviews, categories. Great for finding prospects in specific geographies — e.g. umbrella companies in London for 1210 Solutions, restaurants in Manchester, contractors in Birmingham. Company-level data (no person data). Costs ~$0.005 per search (Apify compute). Requires Apify paid plan.",
+    inputSchema: z.object({
+      query: z
+        .string()
+        .describe("Business type or keyword to search (e.g., 'umbrella companies', 'Italian restaurant', 'recruitment agency')"),
+      location: z
+        .string()
+        .optional()
+        .describe("Location to search in (e.g., 'London, UK', 'New York, NY', 'Manchester')"),
+      maxResults: z
+        .number()
+        .optional()
+        .default(20)
+        .describe("Maximum number of results to return (default: 20, max: 100)"),
+      countryCode: z
+        .string()
+        .optional()
+        .describe("ISO country code to restrict results (e.g., 'gb', 'us')"),
+    }),
+    execute: async ({ query, location, maxResults, countryCode }) => {
+      const results = await searchGoogleMaps(query, location, {
+        maxResults,
+        countryCode,
+      });
+      await incrementDailySpend("google-maps", 0.005);
+      return {
+        source: "google-maps",
+        found: results.length,
+        costUsd: 0.005,
+        places: results.slice(0, 20).map((r) => ({
+          name: r.name,
+          address: r.address,
+          phone: r.phone,
+          website: r.website,
+          domain: r.domain,
+          rating: r.rating,
+          reviewsCount: r.reviewsCount,
+          category: r.category,
+          categories: r.categories,
+          city: r.city,
+          countryCode: r.countryCode,
+          mapsUrl: r.mapsUrl,
+        })),
+      };
+    },
+  }),
 };
 
 // --- System Prompt ---
@@ -897,7 +983,8 @@ You decide which sources to use -- there are no rigid categories. Use these as s
 - extractDirectory -- Extract contacts from the directory URL
 
 **Local/SMB businesses:**
-- searchGoogle (maps mode) -- Google Maps data with phone/address/website (company-level, no person data)
+- searchGoogleMaps -- Deep Google Maps/Places search via Apify. Returns name, address, phone, website, domain, rating, reviews, categories, city, countryCode. Best for finding businesses by category in specific areas (e.g. "umbrella companies in London" for 1210 Solutions, "recruitment agencies in Manchester"). Company-level data (no person data). ~$0.005/search. Requires Apify paid plan.
+- searchGoogle (maps mode) -- Lightweight Google Maps data via Serper with phone/address/website (company-level, no person data). Fewer fields than searchGoogleMaps but faster and cheaper.
 
 **Mixed/Ambiguous requests:**
 - Make your best guess and build the plan. The plan IS the clarification -- admin reviews and adjusts before execution.
