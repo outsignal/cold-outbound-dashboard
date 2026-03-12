@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Trigger.dev Migration — Background Jobs Infrastructure
 status: unknown
-last_updated: "2026-03-12T18:53:23.923Z"
+last_updated: "2026-03-12T18:54:25.197Z"
 progress:
   total_phases: 40
   completed_phases: 36
   total_plans: 119
-  completed_plans: 117
+  completed_plans: 118
 ---
 
 # Project State
@@ -100,6 +100,8 @@ Recent v5.0 decisions carried forward (still relevant):
 - [Phase 42-01]: sync-senders, bounce-snapshots, deliverability-digest use no queue — lib functions handle prisma internally, no AI/EB concurrency risk
 - [Phase 42-01]: bounce-monitor uses PrismaClient at module scope for insight creation and sender queries
 - [Phase 42-01]: No anthropicQueue on any of the four tasks — none call Anthropic
+- [Phase 42]: inbox-linkedin-maintenance runs every 6h (not daily) — LinkedIn warmup/acceptance rates benefit from more frequent updates
+- [Phase 42]: enrichment-job-processor loops until done — processes all pending chunks vs one chunk per Vercel cron invocation
 
 ### Pending Todos
 

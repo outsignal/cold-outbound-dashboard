@@ -35,7 +35,7 @@ Requirements for Trigger.dev Migration — Background Jobs Infrastructure. Each 
 - [x] **CRON-07**: sync-senders migrated to scheduled task
 - [x] **CRON-08**: bounce-snapshots migrated to scheduled task
 - [x] **CRON-09**: deliverability-digest migrated to scheduled task
-- [ ] **CRON-10**: inbox-health split into separate tasks (inbox checks, sender health, invoices, LinkedIn maintenance)
+- [x] **CRON-10**: inbox-health split into separate tasks (inbox checks, sender health, invoices, LinkedIn maintenance)
 
 ### Decommission & Observability
 
@@ -91,7 +91,7 @@ Requirements for Trigger.dev Migration — Background Jobs Infrastructure. Each 
 | CRON-07 | Phase 42 | Complete |
 | CRON-08 | Phase 42 | Complete |
 | CRON-09 | Phase 42 | Complete |
-| CRON-10 | Phase 42 | Pending |
+| CRON-10 | Phase 42 | Complete |
 | DECOMM-03 | Phase 42 | Complete |
 | DECOMM-01 | Phase 43 | Pending |
 | DECOMM-02 | Phase 43 | Pending |
