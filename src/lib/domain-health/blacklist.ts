@@ -1,11 +1,11 @@
 /**
  * DNSBL (DNS-based Blackhole List) blacklist checker.
- * Checks domains and IPs against the top 12 DNSBLs used by Gmail/Outlook and major MTAs.
+ * Checks domains and IPs against the top 13 DNSBLs used by Gmail/Outlook and major MTAs.
  *
  * Architecture:
  * - Domain-based DNSBLs (URI lists): query {domain}.{dnsbl}
  * - IP-based DNSBLs: query {reversed_ip}.{dnsbl}
- * - All 12 checks run in parallel via Promise.allSettled
+ * - All 13 checks run in parallel via Promise.allSettled
  * - 3s timeout per query — graceful failure on DNS errors/timeouts
  */
 
@@ -40,13 +40,12 @@ export interface BlacklistResult {
 }
 
 /**
- * Top 12 DNSBLs split into critical and warning tiers.
+ * Top 13 DNSBLs split into critical and warning tiers.
  * Critical = Spamhaus + Barracuda (Gmail and Outlook actively check these).
  * Warning = others used by major MTAs and spam filters.
  */
 // Defunct/low-value lists removed (2026-03): SORBS x3, WPBL, iX NiXSpam (shutdown),
 // SpamEatingMonkey, JustSpam, TTK PTE, s5h.net, SpamRATS (low impact)
-// URIBL Multi removed: returns false positives (127.0.0.1) from cloud/public resolvers
 export const DNSBL_LIST: DnsblEntry[] = [
   // --- CRITICAL tier ---
   {
@@ -126,6 +125,13 @@ export const DNSBL_LIST: DnsblEntry[] = [
     delistUrl: "https://surbl.org/surbl-analysis",
   },
   {
+    host: "multi.uribl.com",
+    name: "URIBL Multi",
+    tier: "warning",
+    type: "domain",
+    delistUrl: "https://lookup.uribl.com/",
+  },
+  {
     host: "dnsbl.invaluement.com",
     name: "Invaluement ivmSIP",
     tier: "warning",
@@ -188,7 +194,7 @@ async function checkSingleDnsbl(
  * - IP-type DNSBLs: query {reversed_ip}.{dnsbl} (uses EMAILBISON_SENDING_IP if ip param not provided)
  * - "both" type DNSBLs: check both domain and IP
  *
- * All 12 checks run in parallel. DNS errors are logged but don't fail the overall check.
+ * All 13 checks run in parallel. DNS errors are logged but don't fail the overall check.
  */
 export async function checkBlacklists(
   domain: string,
@@ -286,6 +292,9 @@ export function getDelistUrl(dnsblHost: string, domain: string, ip?: string): st
     // SURBL — lookup by domain
     case "multi.surbl.org":
       return `https://surbl.org/surbl-analysis?d=${domain}`;
+    // URIBL — lookup by domain
+    case "multi.uribl.com":
+      return `https://lookup.uribl.com/?domain=${domain}`;
     // Invaluement — lookup by IP
     case "dnsbl.invaluement.com":
       return ip ? `https://www.invaluement.com/lookup/?ip=${ip}` : `https://www.invaluement.com/lookup/`;
