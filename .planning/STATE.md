@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-03-12)
 ## Current Position
 
 Phase: 43 of 44 (Decommission + Observability Validation)
-Plan: 2 of TBD (43-02 complete)
-Status: Phase 43 Plan 02 complete — webhook handler fire-and-forget eliminated, 11 dead cron routes deleted, codebase clean
-Last activity: 2026-03-12 — Phase 43-02 complete: zero fire-and-forget in webhook handlers, 11 cron route directories removed (2012 LOC dead code gone)
+Plan: 3 of TBD (43-03 complete)
+Status: Phase 43 Plan 03 complete — Background Tasks observability dashboard shipped, admin can monitor Trigger.dev runs without leaving the admin UI
+Last activity: 2026-03-12 — Phase 43-03 complete: Background Tasks admin page + API proxy + sidebar link (DECOMM-04 fulfilled)
 
 Progress: v6.0 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
 
@@ -45,6 +45,11 @@ Progress: v6.0 [░░░░░░░░░░░░░░░░░░░░░�
 ## Accumulated Context
 
 ### Decisions
+
+v6.0 Phase 43-03 decisions:
+- [Phase 43-03]: Trigger.dev REST API proxied via Next.js route using plain fetch with Bearer token — no SDK overhead, avoids build-time complexity
+- [Phase 43-03]: Workspace tag filter options derived dynamically from live run data (tags not starting with run_) — no hardcoded workspace list needed
+- [Phase 43-03]: Failed task errors displayed as inline red row below task row — per DECOMM-04 locked decision, not hidden behind a click
 
 v6.0 Phase 43-02 decisions:
 - [Phase 43-02]: BOUNCE and UNSUBSCRIBED notify() calls converted from .catch(() => {}) to try/catch await — errors now logged, not silently swallowed
@@ -139,5 +144,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-12
-Stopped at: Completed 43-02-PLAN.md (fire-and-forget cleanup, 11 cron route deletions)
+Stopped at: Completed 43-03-PLAN.md (Background Tasks observability dashboard)
 Resume file: None

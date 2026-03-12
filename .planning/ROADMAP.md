@@ -104,7 +104,7 @@ Full details: [milestones/v3.0-ROADMAP.md](milestones/v3.0-ROADMAP.md)
 - [x] **Phase 40: Writer Agent Restoration** — AI reply suggestion upgraded from Haiku shortcut to full Opus writer agent running as a Trigger.dev task with no timeout constraint (completed 2026-03-12)
 - [x] **Phase 41: AI Cron Migration** — retry-classification, generate-insights, and snapshot-metrics migrated as scheduled tasks; these are the most timeout-vulnerable crons and most likely already failing silently (completed 2026-03-12)
 - [x] **Phase 42: Remaining Cron Lift-and-Shift** — poll-replies, domain-health, bounce-monitor, sync-senders, bounce-snapshots, deliverability-digest, and inbox-health (split) migrated; campaign deploy after() pattern replaced (completed 2026-03-12)
-- [ ] **Phase 43: Decommission + Observability Validation** — cron-job.org fully retired, fire-and-forget patterns removed, background task observability live in admin dashboard
+- [x] **Phase 43: Decommission + Observability Validation** — cron-job.org fully retired, fire-and-forget patterns removed, background task observability live in admin dashboard (completed 2026-03-12)
 - [ ] **Phase 44: OOO Re-engagement Pipeline** — AI-extracted return dates from OOO replies, Trigger.dev delayed tasks, auto-enrolment into personalised Welcome Back campaigns, OOO queue dashboard
 
 ## Phase Details
@@ -321,7 +321,7 @@ Plans:
   2. A search of the codebase for `.then(` in webhook handler files returns no background work — all async operations are `tasks.trigger()` calls
   3. Admin can navigate to a Background Tasks page (or panel) in the dashboard and see a list of recent task runs with status (success/failed/running), duration, and workspace tag — making failures visible without logging into Trigger.dev
   4. A deliberately-failed task appears in the admin dashboard within 5 minutes of the failure, with enough context to identify which workspace and operation was affected
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 - [ ] 43-01-PLAN.md — Schedule consolidation + postmaster-stats-sync + onFailure hook + deploy + cron-job.org retirement
 - [ ] 43-02-PLAN.md — Fire-and-forget cleanup + cron route deletion + vercel.json update
@@ -375,7 +375,7 @@ Plans:
 | 40. Writer Agent Restoration | 1/2 | Complete    | 2026-03-12 | - |
 | 41. AI Cron Migration | v6.0 | 2/2 | Complete | 2026-03-12 |
 | 42. Remaining Cron Lift-and-Shift | v6.0 | 5/5 | Complete | 2026-03-12 |
-| 43. Decommission + Observability Validation | 2/3 | In Progress|  | - |
+| 43. Decommission + Observability Validation | 3/3 | Complete   | 2026-03-12 | - |
 | 44. OOO Re-engagement Pipeline | v6.0 | 0/TBD | Not started | - |
 
 ### Phase 44: OOO Re-engagement Pipeline
