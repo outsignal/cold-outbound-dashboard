@@ -103,7 +103,7 @@ Full details: [milestones/v3.0-ROADMAP.md](milestones/v3.0-ROADMAP.md)
 - [x] **Phase 39: Webhook Reply Migration** — EmailBison webhook handler reduced to verify + trigger + 200; reply classification and LinkedIn fast-track moved to Trigger.dev tasks with inline fallback (2 plans) (completed 2026-03-12)
 - [x] **Phase 40: Writer Agent Restoration** — AI reply suggestion upgraded from Haiku shortcut to full Opus writer agent running as a Trigger.dev task with no timeout constraint (completed 2026-03-12)
 - [x] **Phase 41: AI Cron Migration** — retry-classification, generate-insights, and snapshot-metrics migrated as scheduled tasks; these are the most timeout-vulnerable crons and most likely already failing silently (completed 2026-03-12)
-- [ ] **Phase 42: Remaining Cron Lift-and-Shift** — poll-replies, domain-health, bounce-monitor, sync-senders, bounce-snapshots, deliverability-digest, and inbox-health (split) migrated; campaign deploy after() pattern replaced
+- [x] **Phase 42: Remaining Cron Lift-and-Shift** — poll-replies, domain-health, bounce-monitor, sync-senders, bounce-snapshots, deliverability-digest, and inbox-health (split) migrated; campaign deploy after() pattern replaced (completed 2026-03-12)
 - [ ] **Phase 43: Decommission + Observability Validation** — cron-job.org fully retired, fire-and-forget patterns removed, background task observability live in admin dashboard
 - [ ] **Phase 44: OOO Re-engagement Pipeline** — AI-extracted return dates from OOO replies, Trigger.dev delayed tasks, auto-enrolment into personalised Welcome Back campaigns, OOO queue dashboard
 
@@ -304,13 +304,13 @@ Plans:
   3. inbox-health is split into at least 3 separate tasks (inbox checks, sender health, invoice processing) — each visible as a distinct scheduled task in the Trigger.dev dashboard with independent retry history
   4. A campaign deployment completes successfully via Trigger.dev task — the `after()` pattern in the deploy route is gone and the task run appears in dashboard history
   5. cron-job.org jobs for all 7 migrated crons are deactivated the same day each Trigger.dev cron is verified stable
-**Plans:** 4/5 plans executed
+**Plans:** 5/5 plans complete
 Plans:
-- [ ] 42-01-PLAN.md — Simple cron tasks (sync-senders, bounce-snapshots, deliverability-digest, bounce-monitor)
-- [ ] 42-02-PLAN.md — Complex cron tasks (poll-replies with emailBisonQueue, domain-health with cap removed)
-- [ ] 42-03-PLAN.md — inbox-health split (4 tasks) + enrichment-job-processor
-- [ ] 42-04-PLAN.md — campaign-deploy task + route refactor (after() → tasks.trigger())
-- [ ] 42-05-PLAN.md — Deploy to Trigger.dev Cloud + remove Vercel crons + disable cron-job.org jobs
+- [x] 42-01-PLAN.md — Simple cron tasks (sync-senders, bounce-snapshots, deliverability-digest, bounce-monitor)
+- [x] 42-02-PLAN.md — Complex cron tasks (poll-replies with emailBisonQueue, domain-health with cap removed)
+- [x] 42-03-PLAN.md — inbox-health split (4 tasks) + enrichment-job-processor
+- [x] 42-04-PLAN.md — campaign-deploy task + route refactor (after() → tasks.trigger())
+- [x] 42-05-PLAN.md — Deploy to Trigger.dev Cloud + consolidate schedules + disable cron-job.org jobs
 
 ### Phase 43: Decommission + Observability Validation
 **Goal**: cron-job.org is fully retired, all fire-and-forget patterns are removed from the codebase, and the admin dashboard surfaces background task status so failures are no longer silent
@@ -370,7 +370,7 @@ Plans:
 | 39. Webhook Reply Migration | 2/2 | Complete    | 2026-03-12 | - |
 | 40. Writer Agent Restoration | 1/2 | Complete    | 2026-03-12 | - |
 | 41. AI Cron Migration | v6.0 | 2/2 | Complete | 2026-03-12 |
-| 42. Remaining Cron Lift-and-Shift | 4/5 | In Progress|  | - |
+| 42. Remaining Cron Lift-and-Shift | v6.0 | 5/5 | Complete | 2026-03-12 |
 | 43. Decommission + Observability Validation | v6.0 | 0/TBD | Not started | - |
 | 44. OOO Re-engagement Pipeline | v6.0 | 0/TBD | Not started | - |
 

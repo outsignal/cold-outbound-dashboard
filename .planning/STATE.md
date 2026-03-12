@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-12)
 
 **Core value:** Own the lead data pipeline end-to-end so we never pay for the same lead twice and can cancel the $300+/month Clay subscription.
-**Current focus:** v6.0 Phase 42 — Remaining Cron Lift-and-Shift
+**Current focus:** v6.0 Phase 43 — Decommission + Observability Validation
 
 ## Current Position
 
-Phase: 42 of 44 (Remaining Cron Lift-and-Shift)
-Plan: 4 of TBD (in progress)
-Status: Phase 42 in progress — 42-04 complete: campaign-deploy Trigger.dev task created, deploy route refactored from after() to tasks.trigger()
-Last activity: 2026-03-12 — 42-04 complete: campaign-deploy task + deploy route refactor
+Phase: 43 of 44 (Decommission + Observability Validation)
+Plan: 0 of TBD (not yet planned)
+Status: Phase 42 complete — all cron tasks deployed to Trigger.dev (10/10 schedules), 7 cron-job.org jobs disabled, campaign deploy after() replaced
+Last activity: 2026-03-12 — Phase 42 complete: consolidated 4 tasks to fit free tier, deployed, disabled cron-job.org
 
 Progress: v6.0 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
 

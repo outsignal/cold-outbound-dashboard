@@ -85,14 +85,14 @@ Requirements for Trigger.dev Migration — Background Jobs Infrastructure. Each 
 | CRON-01 | Phase 41 | Complete (2026-03-12) |
 | CRON-02 | Phase 41 | Complete (2026-03-12) |
 | CRON-03 | Phase 41 | Complete (2026-03-12) |
-| CRON-04 | Phase 42 | Complete |
-| CRON-05 | Phase 42 | Complete |
-| CRON-06 | Phase 42 | Complete |
-| CRON-07 | Phase 42 | Complete |
-| CRON-08 | Phase 42 | Complete |
-| CRON-09 | Phase 42 | Complete |
-| CRON-10 | Phase 42 | Complete |
-| DECOMM-03 | Phase 42 | Complete |
+| CRON-04 | Phase 42 | Complete (2026-03-12) |
+| CRON-05 | Phase 42 | Complete (2026-03-12) |
+| CRON-06 | Phase 42 | Complete (2026-03-12) |
+| CRON-07 | Phase 42 | Complete (2026-03-12) |
+| CRON-08 | Phase 42 | Complete (2026-03-12) |
+| CRON-09 | Phase 42 | Complete (2026-03-12) |
+| CRON-10 | Phase 42 | Complete (2026-03-12) |
+| DECOMM-03 | Phase 42 | Complete (2026-03-12) |
 | DECOMM-01 | Phase 43 | Pending |
 | DECOMM-02 | Phase 43 | Pending |
 | DECOMM-04 | Phase 43 | Pending |
