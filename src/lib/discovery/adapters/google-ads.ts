@@ -2,35 +2,43 @@
  * Google Ads Transparency adapter.
  *
  * Company-level signal checker — NOT a DiscoveryAdapter (domain-based, not filter-based).
- * Uses the Apify actor `silva95gustavo/google-ads-scraper` to scrape the Google Ads
- * Transparency Center for active ad creatives.
+ * Uses the Apify actor `lexis-solutions/google-ads-scraper` (4.9/5 rating) to scrape
+ * the Google Ads Transparency Center for active ad creatives.
  *
  * Two modes:
  *   - checkDomainsForGoogleAds: Check a list of domains for active Google Ads
  *   - searchGoogleAdsAdvertisers: Search by keyword/advertiser name
  *
- * Cost: ~$5/mo flat (Apify actor subscription).
+ * Cost: ~$25/mo rental (Apify actor subscription).
  */
 
 import { runApifyActor } from "@/lib/apify/client";
 
-const ACTOR_ID = "silva95gustavo/google-ads-scraper";
+const ACTOR_ID = "lexis-solutions/google-ads-scraper";
 const TRANSPARENCY_BASE = "https://adstransparency.google.com";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-/** Raw item returned by the Apify actor (one per ad creative). */
+/** Raw item returned by the lexis-solutions actor (one per ad creative). */
 interface GoogleAdsRawItem {
+  id?: string;
   advertiserId?: string;
+  creativeId?: string;
   advertiserName?: string;
-  domain?: string;
   format?: string;
-  firstShown?: string;
-  lastShown?: string;
+  url?: string;
   previewUrl?: string;
-  adLibraryUrl?: string;
+  firstShownAt?: number; // unix timestamp
+  lastShownAt?: number; // unix timestamp
+  impressions?: unknown;
+  shownCountries?: string[];
+  countryStats?: unknown;
+  audienceSelections?: unknown;
+  variants?: unknown;
+  /** Contains the queried domain URL, e.g. https://adstransparency.google.com/?domain=example.com */
+  originUrl?: string;
 }
 
 /** Aggregated result for a single domain or advertiser. */
@@ -53,8 +61,26 @@ export interface GoogleAdsCheckResult {
 // ---------------------------------------------------------------------------
 
 /**
+ * Extract domain from a lexis-solutions originUrl.
+ * Format: `https://adstransparency.google.com/?domain=example.com`
+ */
+function extractDomainFromOriginUrl(originUrl: string): string | null {
+  try {
+    return new URL(originUrl).searchParams.get("domain");
+  } catch {
+    return null;
+  }
+}
+
+/** Convert a unix timestamp (seconds) to an ISO date string, or undefined. */
+function unixToISO(ts: number | undefined): string | undefined {
+  if (ts == null) return undefined;
+  return new Date(ts * 1000).toISOString();
+}
+
+/**
  * Group raw actor items by domain and aggregate into GoogleAdsCheckResult[].
- * If items don't carry a `domain` field, falls back to the requested domain list.
+ * Extracts domain from `originUrl` (lexis-solutions format), with fallback.
  */
 function aggregateByDomain(
   items: GoogleAdsRawItem[],
@@ -68,7 +94,9 @@ function aggregateByDomain(
   }
 
   for (const item of items) {
-    const key = (item.domain ?? "").toLowerCase();
+    const key = (
+      (item.originUrl ? extractDomainFromOriginUrl(item.originUrl) : null) ?? ""
+    ).toLowerCase();
     if (!key) continue;
     const list = grouped.get(key) ?? [];
     list.push(item);
@@ -80,8 +108,12 @@ function aggregateByDomain(
   for (const [domain, ads] of grouped) {
     const formats = [...new Set(ads.map((a) => a.format).filter(Boolean))] as string[];
 
-    const firstShownDates = ads.map((a) => a.firstShown).filter(Boolean) as string[];
-    const lastShownDates = ads.map((a) => a.lastShown).filter(Boolean) as string[];
+    const firstShownDates = ads
+      .map((a) => unixToISO(a.firstShownAt))
+      .filter(Boolean) as string[];
+    const lastShownDates = ads
+      .map((a) => unixToISO(a.lastShownAt))
+      .filter(Boolean) as string[];
 
     results.push({
       domain,
@@ -121,7 +153,7 @@ export async function checkDomainsForGoogleAds(
   const startUrls = domains.map((d) => {
     const params = new URLSearchParams({ domain: d });
     if (options?.region) params.set("region", options.region);
-    return `${TRANSPARENCY_BASE}/?${params.toString()}`;
+    return { url: `${TRANSPARENCY_BASE}/?${params.toString()}` };
   });
 
   const items = await runApifyActor<GoogleAdsRawItem>(ACTOR_ID, { startUrls });
@@ -141,14 +173,21 @@ export async function searchGoogleAdsAdvertisers(
   const params = new URLSearchParams({ topic: query });
   if (options?.region) params.set("region", options.region);
 
-  const startUrls = [`${TRANSPARENCY_BASE}/?${params.toString()}`];
+  const startUrls = [{ url: `${TRANSPARENCY_BASE}/?${params.toString()}` }];
 
   const items = await runApifyActor<GoogleAdsRawItem>(ACTOR_ID, { startUrls });
 
   // Topic searches may return ads across multiple domains/advertisers.
   // Extract unique domains from results.
   const domainsInResults = [
-    ...new Set(items.map((i) => (i.domain ?? "").toLowerCase()).filter(Boolean)),
+    ...new Set(
+      items
+        .map((i) =>
+          (i.originUrl ? extractDomainFromOriginUrl(i.originUrl) : null) ?? "",
+        )
+        .map((d) => d.toLowerCase())
+        .filter(Boolean),
+    ),
   ];
 
   return aggregateByDomain(items, domainsInResults);
