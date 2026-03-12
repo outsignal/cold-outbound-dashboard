@@ -685,6 +685,9 @@ model Campaign {
   // Values: "creative-ideas" | "pvp" | "one-liner" | "custom" | null (legacy)
   copyStrategy String?
 
+  // LinkedIn connection timeout — how many days to wait for acceptance before withdrawing
+  connectionTimeoutDays Int @default(14)
+
   // Lead approval (CAMP-04)
   leadsApproved   Boolean   @default(false)
   leadsFeedback   String?
@@ -1013,7 +1016,16 @@ model CampaignSequenceRule {
   delayMinutes    Int     @default(0) // Delay after trigger before executing
 
   // Conditions
-  requireConnected Boolean @default(false) // Only fire if already connected
+  requireConnected Boolean @default(false) // Only fire if already connected (legacy — use conditionType for new rules)
+
+  // Advanced conditions (replaces simple requireConnected boolean)
+  conditionType     String?  // null | "requireConnected" | "hasReplied" | "emailBounced"
+  conditionStepRef  String?  // which email step to check (for future emailOpened/emailClicked)
+
+  // Else-path: alternative action if condition fails
+  elseActionType      String?  // "connect" | "message" | "profile_view" | null
+  elseMessageTemplate String?
+  elseDelayMinutes    Int?
 
   position  Int // Order in the sequence
   createdAt DateTime @default(now())
