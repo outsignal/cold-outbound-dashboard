@@ -42,7 +42,7 @@ interface EcommerceStoreRawItem {
   visits?: number;
   traffic?: number;
   technologies?: string | string[];
-  apps?: string[];
+  apps?: string | string[];
   categories?: string | string[];
   category?: string;
   socialLinks?: Record<string, string>;
@@ -183,7 +183,12 @@ function processResults(items: EcommerceStoreRawItem[]): EcommerceStoreResult[] 
       city: item.city,
       monthlyVisits: item.monthlyVisits ?? item.monthly_visits ?? item.visits ?? item.traffic,
       technologies: [
-        ...new Set([...rawTech, ...(item.apps ?? [])]),
+        ...new Set([
+          ...rawTech,
+          ...(typeof item.apps === 'string'
+            ? item.apps.split('|').filter(Boolean)
+            : Array.isArray(item.apps) ? item.apps : []),
+        ]),
       ],
       categories: rawCats,
       socialLinks: buildSocialLinks(item),
