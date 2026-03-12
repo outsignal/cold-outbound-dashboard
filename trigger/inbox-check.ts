@@ -5,6 +5,7 @@ import { notify } from "@/lib/notify";
 import { runSenderHealthCheck } from "@/lib/linkedin/health-check";
 import { notifySenderHealth, sendSenderHealthDigest } from "@/lib/notifications";
 import { refreshStaleSessions } from "@/lib/linkedin/session-refresh";
+import { runSyncSenders } from "./sync-senders";
 
 export const inboxCheckTask = schedules.task({
   id: "inbox-check",
@@ -155,6 +156,12 @@ export const inboxCheckTask = schedules.task({
       `[${timestamp}] [inbox-check] Step 2 complete: ${healthResults.length} result(s) (${criticalCount} critical, ${warningCount} warnings)`,
     );
 
+    // -----------------------------------------------------------------------
+    // Step 3: Sync senders (merged from sync-senders scheduled task)
+    // -----------------------------------------------------------------------
+    console.log("[inbox-check] Running sync-senders...");
+    const syncResult = await runSyncSenders();
+
     return {
       checked: changes.length,
       workspacesWithChanges: changes.map((c) => ({
@@ -168,6 +175,13 @@ export const inboxCheckTask = schedules.task({
         critical: criticalCount,
         warnings: warningCount,
         sessionRefreshCount: sessionRefreshResult.count,
+      },
+      senderSync: {
+        workspaces: syncResult.workspaces,
+        synced: syncResult.synced,
+        created: syncResult.created,
+        skipped: syncResult.skipped,
+        errors: syncResult.errors.length,
       },
     };
   },
