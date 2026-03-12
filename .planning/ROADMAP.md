@@ -398,10 +398,11 @@ Plans:
 
 ### Phase 45: Multi-Channel Sequencing Fix & If/Else Upgrade
 
-**Goal:** [To be planned]
-**Requirements**: TBD
+**Goal:** Fix 4 critical bugs silently breaking the LinkedIn sequencing engine (triggerStepRef null, missing bounce/unsub cancellation, connection dedup, cascade delete) and upgrade the evaluation engine with if/else branching conditions (requireConnected, hasReplied, emailBounced) plus configurable per-campaign connection timeout
+**Requirements**: SEQ-BUG-01, SEQ-BUG-02, SEQ-BUG-03, SEQ-BUG-04, SEQ-IFELSE-01, SEQ-IFELSE-02, SEQ-IFELSE-03, SEQ-TIMEOUT-01
 **Depends on:** Phase 44
-**Plans:** 0 plans
+**Plans:** 2 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 45 to break down)
+- [ ] 45-01-PLAN.md — Tier 1 bug fixes (triggerStepRef derivation, bounce/unsub cancellation, connect dedup, cascade delete)
+- [ ] 45-02-PLAN.md — Tier 2 schema migration + if/else evaluation engine + per-campaign connection timeout
