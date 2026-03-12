@@ -1469,3 +1469,37 @@ model LinkedInSyncStatus {
 
   sender Sender @relation(fields: [senderId], references: [id], onDelete: Cascade)
 }
+
+// --- Google Postmaster Tools (v5.0) ---
+
+model PostmasterStats {
+  id                      String   @id @default(cuid())
+  domain                  String
+  date                    DateTime @db.Date
+  spamRate                Float?
+  spamRateLower           Float?
+  spamRateUpper           Float?
+  domainReputation        String?  // HIGH, MEDIUM, LOW, BAD
+  spfSuccessRatio         Float?
+  dkimSuccessRatio        Float?
+  dmarcSuccessRatio       Float?
+  outboundEncryptionRatio Float?
+  deliveryErrors          String?  // JSON array of error objects
+  ipReputations           String?  // JSON array of IP reputation objects
+  rawData                 String?  // Full API response JSON for reference
+  createdAt               DateTime @default(now())
+
+  @@unique([domain, date])
+  @@index([domain])
+  @@index([date])
+}
+
+model PostmasterAuth {
+  id           String    @id @default(cuid())
+  refreshToken String    // Encrypted refresh token
+  accessToken  String?   // Short-lived access token
+  expiresAt    DateTime?
+  scopes       String    // OAuth scopes granted
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
