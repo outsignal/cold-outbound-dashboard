@@ -321,7 +321,11 @@ Plans:
   2. A search of the codebase for `.then(` in webhook handler files returns no background work — all async operations are `tasks.trigger()` calls
   3. Admin can navigate to a Background Tasks page (or panel) in the dashboard and see a list of recent task runs with status (success/failed/running), duration, and workspace tag — making failures visible without logging into Trigger.dev
   4. A deliberately-failed task appears in the admin dashboard within 5 minutes of the failure, with enough context to identify which workspace and operation was affected
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 43-01-PLAN.md — Schedule consolidation + postmaster-stats-sync + onFailure hook + deploy + cron-job.org retirement
+- [ ] 43-02-PLAN.md — Fire-and-forget cleanup + cron route deletion + vercel.json update
+- [ ] 43-03-PLAN.md — Background Tasks API route + admin dashboard page + sidebar link
 
 ## Progress
 
@@ -371,7 +375,7 @@ Plans:
 | 40. Writer Agent Restoration | 1/2 | Complete    | 2026-03-12 | - |
 | 41. AI Cron Migration | v6.0 | 2/2 | Complete | 2026-03-12 |
 | 42. Remaining Cron Lift-and-Shift | v6.0 | 5/5 | Complete | 2026-03-12 |
-| 43. Decommission + Observability Validation | v6.0 | 0/TBD | Not started | - |
+| 43. Decommission + Observability Validation | v6.0 | 0/3 | Not started | - |
 | 44. OOO Re-engagement Pipeline | v6.0 | 0/TBD | Not started | - |
 
 ### Phase 44: OOO Re-engagement Pipeline
@@ -391,3 +395,13 @@ Plans:
 
 Plans:
 - [ ] TBD (run /gsd:plan-phase 44 to break down)
+
+### Phase 45: Multi-Channel Sequencing Fix & If/Else Upgrade
+
+**Goal:** [To be planned]
+**Requirements**: TBD
+**Depends on:** Phase 44
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd:plan-phase 45 to break down)
