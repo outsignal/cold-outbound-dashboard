@@ -14,7 +14,8 @@
 import { NextResponse } from "next/server";
 import { validateCronSecret } from "@/lib/cron-auth";
 import { runBounceMonitor, replaceSender } from "@/lib/domain-health/bounce-monitor";
-import { notifySenderHealthTransition } from "@/lib/domain-health/bounce-notifications";
+import { notifySenderHealthTransition, sendSenderHealthDigestEmail } from "@/lib/domain-health/bounce-notifications";
+import type { SenderHealthDigestItem } from "@/lib/domain-health/bounce-notifications";
 import { prisma } from "@/lib/db";
 
 export const maxDuration = 60;
@@ -35,6 +36,9 @@ export async function GET(request: Request) {
     const result = await runBounceMonitor();
 
     // 2. Send notifications for each transition (gated here — no repeats for sustained states)
+    //    Slack fires immediately per-sender; email is collected and sent as one digest.
+    const digestItems: SenderHealthDigestItem[] = [];
+
     for (const transition of result.transitions) {
       try {
         // For critical transitions, find a replacement sender in the same workspace
@@ -57,7 +61,20 @@ export async function GET(request: Request) {
           }
         }
 
+        // Slack fires immediately; email skipped (batched into digest below)
         await notifySenderHealthTransition({
+          senderEmail: transition.senderEmail,
+          workspaceSlug: transition.workspaceSlug,
+          fromStatus: transition.from,
+          toStatus: transition.to,
+          reason: transition.reason,
+          action: transition.action,
+          replacementEmail,
+          skipEmail: true,
+        });
+
+        // Collect for digest email
+        digestItems.push({
           senderEmail: transition.senderEmail,
           workspaceSlug: transition.workspaceSlug,
           fromStatus: transition.from,
@@ -126,6 +143,16 @@ export async function GET(request: Request) {
           `${LOG_PREFIX} Failed to notify for transition ${transition.senderEmail} → ${transition.to}:`,
           notifErr,
         );
+      }
+    }
+
+    // 3. Send one combined digest email for all transitions
+    if (digestItems.length > 0) {
+      try {
+        await sendSenderHealthDigestEmail(digestItems);
+        console.log(`${LOG_PREFIX} Sent sender health digest email covering ${digestItems.length} transition(s)`);
+      } catch (digestErr) {
+        console.error(`${LOG_PREFIX} Failed to send sender health digest email:`, digestErr);
       }
     }
 
