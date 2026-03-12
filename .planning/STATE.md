@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-03-12)
 ## Current Position
 
 Phase: 43 of 44 (Decommission + Observability Validation)
-Plan: 1 of TBD (43-01 complete)
-Status: Phase 43 Plan 01 complete — sync-senders merged into inbox-check, postmaster-stats-sync Trigger.dev task live (10am UTC), global onFailure Slack hook added, cron-job.org fully retired (0 active jobs)
-Last activity: 2026-03-12 — Phase 43-01 complete: zero active cron-job.org jobs, 10/10 Trigger.dev schedule slots used
+Plan: 2 of TBD (43-02 complete)
+Status: Phase 43 Plan 02 complete — webhook handler fire-and-forget eliminated, 11 dead cron routes deleted, codebase clean
+Last activity: 2026-03-12 — Phase 43-02 complete: zero fire-and-forget in webhook handlers, 11 cron route directories removed (2012 LOC dead code gone)
 
 Progress: v6.0 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
 
@@ -45,6 +45,13 @@ Progress: v6.0 [░░░░░░░░░░░░░░░░░░░░░�
 ## Accumulated Context
 
 ### Decisions
+
+v6.0 Phase 43-02 decisions:
+- [Phase 43-02]: BOUNCE and UNSUBSCRIBED notify() calls converted from .catch(() => {}) to try/catch await — errors now logged, not silently swallowed
+- [Phase 43-02]: LinkedIn sync route void Promise.allSettled kept as-is — intentional portal UX pattern (202 immediate response), documented with comment
+- [Phase 43-02]: Other .catch(() => {}) patterns in portal/campaigns, onboard, stripe routes are out of scope (not webhook handler files)
+- [Phase 43-02]: inbox-health parent directory removed after check/ subdirectory deletion left it empty
+- [Phase 43-02]: .next build cache cleared to fix stale validator.ts references to deleted route files
 
 v6.0 Phase 43-01 decisions:
 - [Phase 43-01]: Two-step deploy required to swap sync-senders for postmaster-stats-sync — adding before removing hits 11/10 limit; remove first (10→9), then add (9→10)
@@ -132,5 +139,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-12
-Stopped at: Completed 45-02-PLAN.md (if/else branching conditions + per-campaign connection timeout)
+Stopped at: Completed 43-02-PLAN.md (fire-and-forget cleanup, 11 cron route deletions)
 Resume file: None
