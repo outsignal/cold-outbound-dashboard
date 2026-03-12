@@ -375,7 +375,7 @@ Plans:
 | 40. Writer Agent Restoration | 1/2 | Complete    | 2026-03-12 | - |
 | 41. AI Cron Migration | v6.0 | 2/2 | Complete | 2026-03-12 |
 | 42. Remaining Cron Lift-and-Shift | v6.0 | 5/5 | Complete | 2026-03-12 |
-| 43. Decommission + Observability Validation | 3/3 | Complete   | 2026-03-12 | - |
+| 43. Decommission + Observability Validation | 3/3 | Complete    | 2026-03-12 | - |
 | 44. OOO Re-engagement Pipeline | v6.0 | 0/TBD | Not started | - |
 
 ### Phase 44: OOO Re-engagement Pipeline
