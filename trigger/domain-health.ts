@@ -26,6 +26,7 @@ import type {
   BlacklistDigestItem,
   DnsFailureDigestItem,
 } from "@/lib/domain-health/notifications";
+import { captureAllWorkspaces } from "@/lib/domain-health/snapshots";
 
 // PrismaClient at module scope — not inside run()
 const prisma = new PrismaClient();
@@ -526,11 +527,37 @@ export const domainHealthTask = schedules.task({
     }
 
     console.log(
-      `${LOG_PREFIX} Complete: ${results.length} domains checked, ${allErrors.length} errors`,
+      `${LOG_PREFIX} Step 1 complete: ${results.length} domains checked, ${allErrors.length} errors`,
     );
 
     if (allErrors.length > 0) {
       console.warn(`${LOG_PREFIX} Errors during domain health check:`, allErrors);
+    }
+
+    // -----------------------------------------------------------------------
+    // Step 2: Bounce snapshots (merged from bounce-snapshots)
+    // Captures daily bounce rate snapshots for all workspaces.
+    // Only meaningful at 8am run but harmless to run at 8pm too (idempotent).
+    // -----------------------------------------------------------------------
+    console.log(`${LOG_PREFIX} Step 2: Bounce snapshot capture`);
+
+    let bounceSnapshotResult: { workspaces: number; senders: number; errors: string[] } = {
+      workspaces: 0,
+      senders: 0,
+      errors: [],
+    };
+
+    try {
+      bounceSnapshotResult = await captureAllWorkspaces();
+      console.log(
+        `${LOG_PREFIX} Step 2 complete: ${bounceSnapshotResult.workspaces} workspaces, ${bounceSnapshotResult.senders} senders captured, ${bounceSnapshotResult.errors.length} errors`,
+      );
+      if (bounceSnapshotResult.errors.length > 0) {
+        console.warn(`${LOG_PREFIX} Bounce snapshot errors:`, bounceSnapshotResult.errors);
+      }
+    } catch (err) {
+      console.error(`${LOG_PREFIX} Bounce snapshot capture failed:`, err);
+      bounceSnapshotResult.errors.push(err instanceof Error ? err.message : String(err));
     }
 
     return {
@@ -544,6 +571,11 @@ export const domainHealthTask = schedules.task({
         errors: r.errors.length,
       })),
       errors: allErrors,
+      bounceSnapshots: {
+        workspaces: bounceSnapshotResult.workspaces,
+        senders: bounceSnapshotResult.senders,
+        errors: bounceSnapshotResult.errors.length,
+      },
     };
   },
 });

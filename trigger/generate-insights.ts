@@ -3,6 +3,9 @@ import { PrismaClient } from "@prisma/client";
 import { generateInsights } from "@/lib/insights/generate";
 import { notifyWeeklyDigest } from "@/lib/notifications";
 import { anthropicQueue } from "./queues";
+import { progressWarmup } from "@/lib/linkedin/rate-limiter";
+import { updateAcceptanceRate } from "@/lib/linkedin/sender";
+import { recoverStuckActions, expireStaleActions } from "@/lib/linkedin/queue";
 
 // PrismaClient at module scope — not inside run()
 const prisma = new PrismaClient();
@@ -149,7 +152,45 @@ export const generateInsightsTask = schedules.task({
     const errors = results.filter((r) => "error" in r && r.error);
 
     console.log(
-      `[generate-insights] Done: ${totalInsights} total insights, ${errors.length} workspace errors`,
+      `[generate-insights] Step 1 complete: ${totalInsights} total insights, ${errors.length} workspace errors`,
+    );
+
+    // -----------------------------------------------------------------------
+    // Step 2: LinkedIn maintenance (merged from inbox-linkedin-maintenance)
+    // Runs every 6h alongside insights — warmup progression, acceptance rates,
+    // stuck/stale action recovery.
+    // -----------------------------------------------------------------------
+    console.log(`[generate-insights] Step 2: LinkedIn maintenance`);
+
+    const activeSenders = await prisma.sender.findMany({
+      where: { status: "active" },
+      select: { id: true, name: true },
+    });
+
+    let warmupProcessed = 0;
+    let warmupErrors = 0;
+
+    // Sequential per-sender loop — safe default, per-sender DB queries
+    for (const sender of activeSenders) {
+      try {
+        await progressWarmup(sender.id);
+        warmupProcessed++;
+      } catch (err) {
+        warmupErrors++;
+        console.error(`[generate-insights] progressWarmup failed for ${sender.name}:`, err);
+      }
+      try {
+        await updateAcceptanceRate(sender.id);
+      } catch (err) {
+        console.error(`[generate-insights] updateAcceptanceRate failed for ${sender.name}:`, err);
+      }
+    }
+
+    const stuckRecovered = await recoverStuckActions();
+    const staleExpired = await expireStaleActions();
+
+    console.log(
+      `[generate-insights] Step 2 complete: warmup=${warmupProcessed}/${activeSenders.length}, errors=${warmupErrors}, stuck=${stuckRecovered}, expired=${staleExpired}`,
     );
 
     return {
@@ -158,6 +199,13 @@ export const generateInsightsTask = schedules.task({
       digestsSent: workspaces.length - errors.length,
       results,
       errors: errors.length > 0 ? errors : undefined,
+      linkedinMaintenance: {
+        warmupProcessed,
+        warmupErrors,
+        stuckRecovered,
+        staleExpired,
+        totalSenders: activeSenders.length,
+      },
     };
   },
 });

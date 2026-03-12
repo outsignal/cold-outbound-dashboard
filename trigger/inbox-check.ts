@@ -2,6 +2,9 @@ import { schedules } from "@trigger.dev/sdk";
 import { checkAllWorkspaces } from "@/lib/inbox-health/monitor";
 import { notifyInboxDisconnect } from "@/lib/notifications";
 import { notify } from "@/lib/notify";
+import { runSenderHealthCheck } from "@/lib/linkedin/health-check";
+import { notifySenderHealth, sendSenderHealthDigest } from "@/lib/notifications";
+import { refreshStaleSessions } from "@/lib/linkedin/session-refresh";
 
 export const inboxCheckTask = schedules.task({
   id: "inbox-check",
@@ -71,7 +74,85 @@ export const inboxCheckTask = schedules.task({
     }
 
     console.log(
-      `[${timestamp}] [inbox-check] Complete: ${changes.length} workspace(s) with changes`,
+      `[${timestamp}] [inbox-check] Step 1 complete: ${changes.length} workspace(s) with changes`,
+    );
+
+    // -----------------------------------------------------------------------
+    // Step 2: Sender health check (merged from inbox-sender-health)
+    // -----------------------------------------------------------------------
+    console.log(`[${timestamp}] [inbox-check] Step 2: Sender health check`);
+
+    const healthResults = await runSenderHealthCheck();
+
+    const warningsForDigest: Array<{
+      workspaceSlug: string;
+      senderName: string;
+      reason: string;
+      detail: string;
+    }> = [];
+
+    for (const result of healthResults) {
+      if (result.severity === "critical") {
+        // Critical: fire immediate Slack + email notification
+        try {
+          await notifySenderHealth({
+            workspaceSlug: result.workspaceSlug,
+            senderName: result.senderName,
+            reason: result.reason,
+            detail: result.detail,
+            severity: "critical",
+            reassignedCount: result.reassignedCount,
+            workspacePaused: result.workspacePaused,
+          });
+        } catch (err) {
+          console.error(`[inbox-check] Critical notification failed for ${result.senderName}:`, err);
+        }
+
+        // Also write to in-app notification + ops Slack
+        await notify({
+          type: "system",
+          severity: "error",
+          title: `Sender flagged: ${result.senderName}`,
+          message: result.detail,
+          workspaceSlug: result.workspaceSlug,
+          metadata: {
+            senderId: result.senderId,
+            reason: result.reason,
+            reassignedCount: result.reassignedCount,
+            workspacePaused: result.workspacePaused,
+          },
+        });
+      } else {
+        // Warning: collect for daily digest
+        warningsForDigest.push({
+          workspaceSlug: result.workspaceSlug,
+          senderName: result.senderName,
+          reason: result.reason,
+          detail: result.detail,
+        });
+      }
+    }
+
+    // Send daily digest for warning-level events (Slack only)
+    if (warningsForDigest.length > 0) {
+      try {
+        await sendSenderHealthDigest({ warnings: warningsForDigest });
+      } catch (err) {
+        console.error("[inbox-check] Digest notification failed:", err);
+      }
+    }
+
+    const criticalCount = healthResults.filter((r) => r.severity === "critical").length;
+    const warningCount = warningsForDigest.length;
+
+    // Session refresh logically belongs with sender health
+    const sessionRefreshResult = await refreshStaleSessions();
+    if (sessionRefreshResult.count > 0) {
+      console.log(`[${timestamp}] [inbox-check] Session refresh: flagged ${sessionRefreshResult.count} stale sessions`);
+    }
+
+    console.log(
+      `[${timestamp}] [inbox-check] Step 2 complete: ${healthResults.length} result(s) (${criticalCount} critical, ${warningCount} warnings)`,
     );
 
     return {
@@ -82,6 +163,12 @@ export const inboxCheckTask = schedules.task({
         persistentDisconnections: c.persistentDisconnections.length,
         reconnections: c.reconnections.length,
       })),
+      senderHealth: {
+        healthChecked: healthResults.length,
+        critical: criticalCount,
+        warnings: warningCount,
+        sessionRefreshCount: sessionRefreshResult.count,
+      },
     };
   },
 });
