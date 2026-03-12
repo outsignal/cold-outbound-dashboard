@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: Trigger.dev Migration — Background Jobs Infrastructure
 status: unknown
-last_updated: "2026-03-12T15:56:27.282Z"
+last_updated: "2026-03-12T18:53:23.923Z"
 progress:
-  total_phases: 39
-  completed_phases: 35
-  total_plans: 114
-  completed_plans: 114
+  total_phases: 40
+  completed_phases: 36
+  total_plans: 119
+  completed_plans: 117
 ---
 
 # Project State
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-12)
 
 **Core value:** Own the lead data pipeline end-to-end so we never pay for the same lead twice and can cancel the $300+/month Clay subscription.
-**Current focus:** v6.0 Phase 41 — AI Cron Migration
+**Current focus:** v6.0 Phase 42 — Remaining Cron Lift-and-Shift
 
 ## Current Position
 
-Phase: 41 of 44 (AI Cron Migration)
-Plan: 1 of ? (Plan 01 complete)
-Status: Phase 41-01 complete — three Trigger.dev scheduled tasks created: retry-classification (30 min), snapshot-metrics (daily), generate-insights (6 hr)
-Last activity: 2026-03-12 — 41-01 complete: AI cron tasks created with no timeout constraint, Promise.all fan-out, anthropicQueue
+Phase: 42 of 44 (Remaining Cron Lift-and-Shift)
+Plan: 4 of TBD (in progress)
+Status: Phase 42 in progress — 42-04 complete: campaign-deploy Trigger.dev task created, deploy route refactored from after() to tasks.trigger()
+Last activity: 2026-03-12 — 42-04 complete: campaign-deploy task + deploy route refactor
 
 Progress: v6.0 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
 
@@ -95,6 +95,8 @@ Recent v5.0 decisions carried forward (still relevant):
 - [Phase 37-03]: requireAdminAuth() not getPortalSession() for admin routes
 - [Phase 39-02]: Relative path used for import type (trigger/ is at project root, not under src/)
 - [Phase 39-02]: bumpPriority removed from webhook — fully handled inside linkedin-fast-track Trigger.dev task
+- [Phase 42-04]: campaign-deploy has no queue — infrequent deploys, no concurrency concern
+- [Phase 42-04]: await tasks.trigger() used (not void) — ensures task registered before route responds
 
 ### Pending Todos
 
@@ -111,5 +113,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-12
-Stopped at: Completed 41-01-PLAN.md (three AI cron Trigger.dev scheduled tasks created)
+Stopped at: Completed 42-04-PLAN.md (campaign-deploy Trigger.dev task + deploy route refactor)
 Resume file: None
