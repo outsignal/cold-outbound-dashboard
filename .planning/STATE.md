@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-12)
 
 **Core value:** Own the lead data pipeline end-to-end so we never pay for the same lead twice and can cancel the $300+/month Clay subscription.
-**Current focus:** v6.0 Phase 39 — Webhook Reply Migration to Trigger.dev
+**Current focus:** v6.0 Phase 40 — Writer Agent Restoration
 
 ## Current Position
 
-Phase: 39 of 44 (Webhook Reply Migration)
-Plan: 2 of 2 (COMPLETE)
-Status: Phase 39 complete — webhook handler migrated to Trigger.dev tasks, maxDuration=10, fire-and-forget eliminated
-Last activity: 2026-03-12 — 39-02 complete: webhook handler refactored to trigger process-reply + linkedin-fast-track tasks with inline fallback
+Phase: 40 of 44 (Writer Agent Restoration)
+Plan: 1 of 3 (Plan 01 complete)
+Status: Phase 40 in progress — generate-suggestion Trigger.dev task created (Plan 01 complete)
+Last activity: 2026-03-12 — 40-01 complete: generate-suggestion task with full Opus writer agent + KB search
 
 Progress: v6.0 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
 
@@ -45,6 +45,12 @@ Progress: v6.0 [░░░░░░░░░░░░░░░░░░░░░�
 ## Accumulated Context
 
 ### Decisions
+
+v6.0 Phase 40-01 decisions:
+- [Phase 40-01]: Writer in reply mode returns plain text (not JSON) — use result.text directly as suggestion, not result.output
+- [Phase 40-01]: generate-suggestion retry maxAttempts: 2 (not 3) — Opus calls are expensive, avoid excess retries
+- [Phase 40-01]: Thread context via emailBisonParentId preferred; leadEmail fallback for replies without parent
+- [Phase 40-01]: Both Slack postMessage calls wrapped in .catch(() => {}) — Slack failure must not block task
 
 v6.0 Phase 39-01 decisions:
 - [Phase 39-01]: ebReplyId typed as number (not string|number) — Prisma Reply.emailBisonReplyId is Int? in schema
@@ -100,5 +106,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-12
-Stopped at: Completed 39-02-PLAN.md (webhook handler migrated to Trigger.dev tasks, Phase 39 complete)
+Stopped at: Completed 40-01-PLAN.md (generate-suggestion Trigger.dev task with full Opus writer agent)
 Resume file: None
