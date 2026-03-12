@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
+import { generateText } from "ai";
+import { anthropic } from "@ai-sdk/anthropic";
 import { prisma } from "@/lib/db";
 import { notifyReply } from "@/lib/notifications";
 import { notify } from "@/lib/notify";
@@ -73,24 +75,20 @@ async function generateReplySuggestion(params: {
   interested: boolean;
 }): Promise<string | null> {
   try {
-    const { runWriterAgent } = await import("@/lib/agents/writer");
-    const result = await runWriterAgent({
-      workspaceSlug: params.workspaceSlug,
-      task: `Suggest a reply to this incoming email from ${params.leadName ?? params.leadEmail}.
-
+    const result = await generateText({
+      model: anthropic("claude-haiku-4-5-20251001"),
+      system:
+        "You are a helpful sales reply assistant. Write a brief, conversational response to an incoming email. Keep it under 70 words, sound human and natural, reference what they said, and move the conversation forward. Use a soft question CTA. No em dashes. No spintax. No merge variables.",
+      prompt: `Lead: ${params.leadName ?? params.leadEmail}
+Email: ${params.leadEmail}
 Subject: ${params.subject ?? "(no subject)"}
-Their message: ${params.replyBody ?? "(no body)"}
-${params.interested ? "Note: This lead is marked as INTERESTED." : ""}
-
-Write a brief, conversational response (under 70 words). This is a reply to an existing conversation, NOT a cold outreach. Do not use spintax or PVP framework. Sound human and natural. Reference what they said and move the conversation forward.`,
-      channel: "email",
+Their message: ${params.replyBody ?? "(no body)"}${params.interested ? "\nNote: This lead is marked as INTERESTED." : ""}`,
     });
 
-    // Extract the reply text from the writer output
-    if (result.emailSteps && result.emailSteps.length > 0) {
-      return result.emailSteps[0].body;
-    }
-    return result.reviewNotes || null;
+    console.log(
+      `[webhook] AI suggestion generated for ${params.leadEmail} (${result.text.length} chars)`,
+    );
+    return result.text;
   } catch (error) {
     console.error("Reply suggestion generation failed:", error);
     return null; // Non-blocking — notification still fires without suggestion
