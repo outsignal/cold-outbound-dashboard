@@ -3,6 +3,7 @@ import { prismaExtension } from "@trigger.dev/build/extensions/prisma";
 
 export default defineConfig({
   project: process.env.TRIGGER_PROJECT_REF!,
+  maxDuration: 300,
   dirs: ["./trigger"],
   build: {
     extensions: [
