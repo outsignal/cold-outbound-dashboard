@@ -31,9 +31,10 @@ export async function GET(request: Request) {
       new URL("/domain-health?success=postmaster_connected", request.url)
     );
   } catch (err) {
-    console.error("[postmaster-oauth] Callback failed:", err);
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[postmaster-oauth] Callback failed:", msg);
     return NextResponse.redirect(
-      new URL("/domain-health?error=postmaster_callback_failed", request.url)
+      new URL(`/domain-health?error=postmaster_callback_failed&detail=${encodeURIComponent(msg)}`, request.url)
     );
   }
 }
