@@ -362,4 +362,32 @@ export class EmailBisonClient {
 
     return response;
   }
+
+  /**
+   * Attach one or more leads to a campaign by their EB lead IDs.
+   * POST /campaigns/{campaignId}/leads/attach-leads
+   */
+  async attachLeadsToCampaign(campaignId: number, leadIds: number[]): Promise<void> {
+    await this.request<unknown>(`/campaigns/${campaignId}/leads/attach-leads`, {
+      method: 'POST',
+      body: JSON.stringify({ lead_ids: leadIds }),
+      revalidate: 0,
+    });
+  }
+
+  /**
+   * Search leads by email within a workspace.
+   * GET /workspaces/{slug}/leads?email={email}
+   */
+  async findLeadByEmail(workspaceSlug: string, email: string): Promise<Lead | null> {
+    try {
+      const response = await this.request<PaginatedResponse<Lead>>(
+        `/workspaces/${workspaceSlug}/leads?email=${encodeURIComponent(email)}`,
+        { revalidate: 0 },
+      );
+      return response.data?.[0] ?? null;
+    } catch {
+      return null;
+    }
+  }
 }

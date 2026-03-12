@@ -2381,3 +2381,63 @@ ${campaignHtml}
     }
   }
 }
+
+/**
+ * Notify a workspace's reply channel when OOO leads are re-engaged via Welcome Back campaign.
+ * Slack-only (no email) per CONTEXT.md decision.
+ */
+export async function notifyOooReengaged(params: {
+  workspaceSlug: string;
+  count: number;
+  leadEmails: string[];
+}): Promise<void> {
+  const workspace = await prisma.workspace.findUnique({
+    where: { slug: params.workspaceSlug },
+  });
+
+  if (!workspace) return;
+
+  const slackChannelId = workspace.slackChannelId;
+  if (!slackChannelId) return;
+
+  if (!verifySlackChannel(slackChannelId, "client", "notifyOooReengaged")) return;
+
+  const headerText = `[${workspace.name}] ${params.count} lead${params.count !== 1 ? "s" : ""} back from OOO \u2014 Welcome Back campaign sent`;
+
+  // Build bullet list (max 5, then "...and N more")
+  const shown = params.leadEmails.slice(0, 5);
+  const overflow = params.leadEmails.length - shown.length;
+  const bulletLines = shown.map((e) => `\u2022 ${e}`);
+  if (overflow > 0) {
+    bulletLines.push(`...and ${overflow} more`);
+  }
+  const leadList = bulletLines.join("\n");
+
+  const slackBlocks: KnownBlock[] = [
+    {
+      type: "header",
+      text: { type: "plain_text", text: headerText },
+    },
+    {
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: leadList,
+      },
+    },
+  ];
+
+  try {
+    await audited(
+      {
+        notificationType: "ooo_reengaged",
+        channel: "slack",
+        recipient: slackChannelId,
+        workspaceSlug: params.workspaceSlug,
+      },
+      () => postMessage(slackChannelId, headerText, slackBlocks),
+    );
+  } catch (err) {
+    console.error("[notifyOooReengaged] Slack notification failed:", err);
+  }
+}
