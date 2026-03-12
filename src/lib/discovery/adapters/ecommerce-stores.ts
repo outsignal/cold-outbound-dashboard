@@ -23,26 +23,39 @@ const ACTOR_ID = "ecommerce_leads/store-leads-14m-e-commerce-leads";
 interface EcommerceStoreRawItem {
   domain?: string;
   storeName?: string;
+  store_name?: string;
   name?: string;
+  title?: string;
   platform?: string;
+  ecommerce?: string;
+  ecommerce_platform?: string;
   email?: string;
+  contact_email?: string;
+  emails?: string | string[];
   phone?: string;
+  contact_phone?: string;
+  phones?: string | string[];
   country?: string;
   city?: string;
   monthlyVisits?: number;
   monthly_visits?: number;
-  technologies?: string[];
+  visits?: number;
+  traffic?: number;
+  technologies?: string | string[];
   apps?: string[];
-  categories?: string[];
+  categories?: string | string[];
   category?: string;
   socialLinks?: Record<string, string>;
   social_links?: Record<string, string>;
+  social?: Record<string, string>;
+  social_networks?: Record<string, string>;
   facebook?: string;
   instagram?: string;
   twitter?: string;
   linkedin?: string;
   employeeCount?: number;
   employee_count?: number;
+  employees?: number;
   url?: string;
   storeUrl?: string;
   store_url?: string;
@@ -117,7 +130,7 @@ function buildSocialLinks(item: EcommerceStoreRawItem): Record<string, string> {
   // Prefer structured socialLinks / social_links object, fall back to individual fields.
   const links: Record<string, string> = {};
 
-  const raw = item.socialLinks ?? item.social_links;
+  const raw = item.socialLinks ?? item.social_links ?? item.social ?? item.social_networks;
   if (raw && typeof raw === "object") {
     for (const [key, val] of Object.entries(raw)) {
       if (val) links[key] = val;
@@ -144,26 +157,37 @@ function processResults(items: EcommerceStoreRawItem[]): EcommerceStoreResult[] 
       extractDomain(item.url ?? item.storeUrl ?? item.store_url);
     if (!domain) continue;
 
-    const categories: string[] = item.categories ?? [];
-    if (item.category && !categories.includes(item.category)) {
-      categories.unshift(item.category);
+    const rawTech: string[] = typeof item.technologies === 'string'
+      ? item.technologies.split('|').filter(Boolean)
+      : Array.isArray(item.technologies) ? item.technologies : [];
+
+    const rawCats: string[] = typeof item.categories === 'string'
+      ? item.categories.split('|').filter(Boolean)
+      : Array.isArray(item.categories) ? item.categories : [];
+    if (item.category && !rawCats.includes(item.category)) {
+      rawCats.unshift(item.category);
     }
+
+    const rawEmail = item.email ?? item.contact_email
+      ?? (Array.isArray(item.emails) ? item.emails[0] : item.emails);
+    const rawPhone = item.phone ?? item.contact_phone
+      ?? (Array.isArray(item.phones) ? item.phones[0] : item.phones);
 
     results.push({
       domain,
-      storeName: item.storeName ?? item.name,
-      platform: item.platform,
-      email: item.email,
-      phone: item.phone,
+      storeName: item.storeName ?? item.store_name ?? item.name ?? item.title,
+      platform: item.platform ?? item.ecommerce ?? item.ecommerce_platform,
+      email: rawEmail,
+      phone: rawPhone,
       country: item.country,
       city: item.city,
-      monthlyVisits: item.monthlyVisits ?? item.monthly_visits,
+      monthlyVisits: item.monthlyVisits ?? item.monthly_visits ?? item.visits ?? item.traffic,
       technologies: [
-        ...new Set([...(item.technologies ?? []), ...(item.apps ?? [])]),
+        ...new Set([...rawTech, ...(item.apps ?? [])]),
       ],
-      categories,
+      categories: rawCats,
       socialLinks: buildSocialLinks(item),
-      employeeCount: item.employeeCount ?? item.employee_count,
+      employeeCount: item.employeeCount ?? item.employee_count ?? item.employees,
     });
   }
 
@@ -215,5 +239,8 @@ export async function searchEcommerceStores(
     timeoutSecs: 120,
   });
 
-  return processResults(items);
+  // The actor may ignore maxItems — enforce the limit client-side.
+  const trimmed = items.slice(0, options.maxResults ?? 100);
+
+  return processResults(trimmed);
 }
