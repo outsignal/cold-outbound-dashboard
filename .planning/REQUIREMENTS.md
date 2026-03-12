@@ -9,12 +9,12 @@ Requirements for Trigger.dev Migration — Background Jobs Infrastructure. Each 
 
 ### Foundation
 
-- [ ] **FOUND-01**: Trigger.dev SDK installed and `trigger.config.ts` configured with Prisma 6 legacy mode extension
+- [x] **FOUND-01**: Trigger.dev SDK installed and `trigger.config.ts` configured with Prisma 6 legacy mode extension
 - [ ] **FOUND-02**: Vercel integration set up for bidirectional env var sync
-- [ ] **FOUND-03**: Prisma schema updated with `debian-openssl-3.0.x` binary target
+- [x] **FOUND-03**: Prisma schema updated with `debian-openssl-3.0.x` binary target
 - [ ] **FOUND-04**: Neon DATABASE_URL configured with `connection_limit=1` for Trigger.dev tasks
 - [ ] **FOUND-05**: Smoke test task deployed and verified (Prisma read + Anthropic call)
-- [ ] **FOUND-06**: Shared concurrency queues defined (Anthropic rate limit queue, EmailBison queue)
+- [x] **FOUND-06**: Shared concurrency queues defined (Anthropic rate limit queue, EmailBison queue)
 
 ### Webhook Tasks
 
@@ -71,12 +71,12 @@ Requirements for Trigger.dev Migration — Background Jobs Infrastructure. Each 
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUND-01 | Phase 38 | Pending |
+| FOUND-01 | Phase 38 | Complete |
 | FOUND-02 | Phase 38 | Pending |
-| FOUND-03 | Phase 38 | Pending |
+| FOUND-03 | Phase 38 | Complete |
 | FOUND-04 | Phase 38 | Pending |
 | FOUND-05 | Phase 38 | Pending |
-| FOUND-06 | Phase 38 | Pending |
+| FOUND-06 | Phase 38 | Complete |
 | WHOOK-01 | Phase 39 | Pending |
 | WHOOK-03 | Phase 39 | Pending |
 | WHOOK-04 | Phase 39 | Pending |

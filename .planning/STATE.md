@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-03-12)
 ## Current Position
 
 Phase: 38 of 43 (Trigger.dev Foundation + Smoke Test)
-Plan: 0 of TBD
-Status: Ready to plan
-Last activity: 2026-03-12 — v6.0 roadmap created, phases 38-43 defined
+Plan: 1 of 3
+Status: In progress
+Last activity: 2026-03-12 — 38-01 complete: Trigger.dev SDK, trigger.config.ts, prisma binary targets, shared queues
 
 Progress: v6.0 [░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░] 0%
 
@@ -45,6 +45,11 @@ Progress: v6.0 [░░░░░░░░░░░░░░░░░░░░░�
 ## Accumulated Context
 
 ### Decisions
+
+v6.0 Phase 38-01 decisions:
+- [Phase 38-01]: TRIGGER_PROJECT_REF from env var, not hardcoded — user creates project in Trigger.dev dashboard during 38-02 setup
+- [Phase 38-01]: No migrate: true in prismaExtension — project uses prisma db push (per Phase 35-01, would break production if migrations ran)
+- [Phase 38-01]: No syncVercelEnvVars extension — using Vercel dashboard integration (documented conflict, v6.0 locked decision confirmed)
 
 Key v6.0 pre-milestone decisions:
 - [v6.0 Pre-Milestone]: Trigger.dev Cloud Hobby ($20/mo) — 25 concurrent runs + 100 schedules; free tier (10 schedules) insufficient
@@ -72,5 +77,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-03-12
-Stopped at: v6.0 roadmap created — phases 38-43 defined, requirements mapped, ready to plan Phase 38
+Stopped at: Completed 38-01-PLAN.md (Trigger.dev SDK, config, prisma binary targets, shared queues)
 Resume file: None
