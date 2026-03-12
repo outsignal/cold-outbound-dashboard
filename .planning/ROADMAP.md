@@ -134,7 +134,7 @@ Plans:
   2. Admin can click a button to initiate a placement test, which returns a mail-tester.com test address
   3. After sending to the test address, the system fetches and stores the placement score via the mail-tester.com JSON API
   4. Admin can view a timeline of past placement test scores for any sender
-**Plans:** 2/2 plans complete
+**Plans:** 3 plans
 Plans:
 - [x] 30-01-PLAN.md — PlacementTest model + mail-tester.com client + recommended badge query
 - [x] 30-02-PLAN.md — API endpoints (POST trigger + GET history) + auto-send + alerting
@@ -177,7 +177,7 @@ Plans:
   2. EmailBisonClient exposes sendReply(), getReply(), and getRepliesPage() methods with correct TypeScript types
   3. VoyagerClient exposes fetchConversations() and fetchMessages() methods that return typed conversation and message objects from the Voyager messaging API
   4. The Railway worker exposes GET /sessions/{senderId}/conversations and returns conversations JSON the portal can consume
-**Plans:** 2/2 plans complete
+**Plans:** 3 plans
 Plans:
 - [x] 33-01-PLAN.md — EmailBison sendReply spike + client extensions (sendReply, getReply, getRepliesPage)
 - [x] 33-02-PLAN.md — VoyagerClient conversation methods + worker conversations endpoint
@@ -219,7 +219,7 @@ Plans:
   2. Opening a conversation shows the full message history from the DB with inbound/outbound bubbles and timestamps
   3. Client can type a reply, click Queue Message, and see it appear as "Queued" in the conversation — the LinkedInAction is created with priority 1 and the worker delivers it within 2 minutes
   4. Client can click Refresh on any conversation to trigger a fresh Voyager sync and see new messages appear after the sync completes
-**Plans:** 2/2 plans complete
+**Plans:** 3 plans
 Plans:
 - [x] 36-01-PLAN.md — LinkedIn inbox API routes (conversation list, on-demand messages, reply queue, action status)
 - [x] 36-02-PLAN.md — LinkedIn UI components (conversation list, chat bubble view, composer) + inbox page channel toggle
@@ -376,7 +376,7 @@ Plans:
 | 41. AI Cron Migration | v6.0 | 2/2 | Complete | 2026-03-12 |
 | 42. Remaining Cron Lift-and-Shift | v6.0 | 5/5 | Complete | 2026-03-12 |
 | 43. Decommission + Observability Validation | 3/3 | Complete    | 2026-03-12 | - |
-| 44. OOO Re-engagement Pipeline | v6.0 | 0/TBD | Not started | - |
+| 44. OOO Re-engagement Pipeline | v6.0 | 0/3 | Not started | - |
 
 ### Phase 44: OOO Re-engagement Pipeline
 
@@ -391,10 +391,12 @@ Plans:
   5. Admin dashboard shows an OOO queue page listing all leads currently out-of-office with return dates, reasons, and re-engagement status (pending/sent/failed)
   6. Client receives a notification when their OOO leads are re-engaged: "[Workspace] 3 leads back from OOO — Welcome Back campaign sent"
   7. If no return date can be extracted, a sensible default is used (14 days from OOO detection) and flagged for manual review
-**Plans:** 2/2 plans complete
+**Plans:** 3 plans
 
 Plans:
-- [ ] TBD (run /gsd:plan-phase 44 to break down)
+- [ ] 44-01-PLAN.md — Schema migration + OOO extraction + process-reply OOO pipeline
+- [ ] 44-02-PLAN.md — ooo-reengage Trigger.dev task + EB client extension + notification
+- [ ] 44-03-PLAN.md — OOO Queue admin dashboard + API routes + sidebar link
 
 ### Phase 45: Multi-Channel Sequencing Fix & If/Else Upgrade
 
