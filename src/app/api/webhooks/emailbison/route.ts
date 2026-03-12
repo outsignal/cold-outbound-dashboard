@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
-import { generateText } from "ai";
-import { anthropic } from "@ai-sdk/anthropic";
+import { tasks } from "@trigger.dev/sdk";
 import { prisma } from "@/lib/db";
 import { notifyReply } from "@/lib/notifications";
 import { notify } from "@/lib/notify";
-import { enqueueAction, bumpPriority } from "@/lib/linkedin/queue";
+import { enqueueAction } from "@/lib/linkedin/queue";
 import { assignSenderForPerson } from "@/lib/linkedin/sender";
 import { evaluateSequenceRules } from "@/lib/linkedin/sequencing";
 import { rateLimit } from "@/lib/rate-limit";
 import { classifyReply } from "@/lib/classification/classify-reply";
 import { stripHtml } from "@/lib/classification/strip-html";
+import type { processReply } from "../../../../../trigger/process-reply";
+import type { linkedinFastTrack } from "../../../../../trigger/linkedin-fast-track";
 
-export const maxDuration = 60;
+export const maxDuration = 10;
 
 const webhookLimiter = rateLimit({ windowMs: 60_000, max: 60 });
 
@@ -64,35 +65,6 @@ function verifyWebhookSignature(
   }
 
   return { valid: true };
-}
-
-async function generateReplySuggestion(params: {
-  workspaceSlug: string;
-  leadName: string | null;
-  leadEmail: string;
-  subject: string | null;
-  replyBody: string | null;
-  interested: boolean;
-}): Promise<string | null> {
-  try {
-    const result = await generateText({
-      model: anthropic("claude-haiku-4-5-20251001"),
-      system:
-        "You are a helpful sales reply assistant. Write a brief, conversational response to an incoming email. Keep it under 70 words, sound human and natural, reference what they said, and move the conversation forward. Use a soft question CTA. No em dashes. No spintax. No merge variables.",
-      prompt: `Lead: ${params.leadName ?? params.leadEmail}
-Email: ${params.leadEmail}
-Subject: ${params.subject ?? "(no subject)"}
-Their message: ${params.replyBody ?? "(no body)"}${params.interested ? "\nNote: This lead is marked as INTERESTED." : ""}`,
-    });
-
-    console.log(
-      `[webhook] AI suggestion generated for ${params.leadEmail} (${result.text.length} chars)`,
-    );
-    return result.text;
-  } catch (error) {
-    console.error("Reply suggestion generation failed:", error);
-    return null; // Non-blocking — notification still fires without suggestion
-  }
 }
 
 export async function POST(request: NextRequest) {
@@ -289,179 +261,133 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // LinkedIn fast-track: on reply/interested, queue P1 connection request
-    const linkedInTriggerEvents = ["LEAD_REPLIED", "LEAD_INTERESTED"];
-    if (linkedInTriggerEvents.includes(eventType) && leadEmail) {
-      try {
-        const person = await prisma.person.findUnique({ where: { email: leadEmail } });
-        if (person?.linkedinUrl) {
-          // Try to bump existing pending connection to P1
-          const bumped = await bumpPriority(person.id, workspaceSlug);
-
-          if (!bumped) {
-            // No existing action — check if already connected, if not enqueue new P1
-            const existingConnection = await prisma.linkedInConnection.findFirst({
-              where: { personId: person.id, sender: { workspaceSlug } },
-            });
-
-            if (!existingConnection || existingConnection.status === "none") {
-              const sender = await assignSenderForPerson(workspaceSlug, {
-                emailSenderAddress: senderEmail ?? undefined,
-                mode: senderEmail ? "email_linkedin" : "linkedin_only",
-              });
-
-              if (sender) {
-                await enqueueAction({
-                  senderId: sender.id,
-                  personId: person.id,
-                  workspaceSlug,
-                  actionType: "connect",
-                  priority: 1,
-                  scheduledFor: new Date(), // ASAP
-                  campaignName: data.campaign?.name ?? null,
-                });
-              }
-            }
-          }
-        }
-      } catch (err) {
-        console.error("LinkedIn fast-track error:", err);
-      }
-    }
-
-    // --- Reply persistence + classification ---
+    // --- Trigger process-reply task ---
     const replyEvents = ["LEAD_REPLIED", "LEAD_INTERESTED", "UNTRACKED_REPLY_RECEIVED"];
     const ebReplyId = data.reply?.id ?? null;
-    let replyRecordId: string | null = null;
 
     if (replyEvents.includes(eventType) && !isAutomatedFlag && ebReplyId != null) {
       try {
-        // Extract reply data
-        const replySenderEmail = data.reply?.from_email_address ?? leadEmail ?? "unknown";
-        const replySenderName = data.reply?.from_name ?? leadName;
-        const replyBodyText = data.reply?.text_body ?? stripHtml(data.reply?.html_body ?? "");
-        const replyReceivedAt = new Date(data.reply?.date_received ?? Date.now());
-        const sequenceStep: number | null = data.scheduled_email?.sequence_step_order ?? null;
-
-        // Look up outbound email snapshot
-        let outboundSubject: string | null = null;
-        let outboundBody: string | null = null;
-        let outsignalCampaignId: string | null = null;
-        let outsignalCampaignName: string | null = null;
-
-        if (campaignId) {
-          try {
-            const campaign = await prisma.campaign.findFirst({
-              where: { emailBisonCampaignId: parseInt(campaignId) },
-              select: { id: true, name: true, emailSequence: true },
-            });
-            if (campaign) {
-              outsignalCampaignId = campaign.id;
-              outsignalCampaignName = campaign.name;
-              if (campaign.emailSequence && sequenceStep != null) {
-                try {
-                  const steps = JSON.parse(campaign.emailSequence) as { position: number; subjectLine?: string; body?: string }[];
-                  const matchedStep = steps.find((s) => s.position === sequenceStep);
-                  if (matchedStep) {
-                    outboundSubject = matchedStep.subjectLine ?? null;
-                    outboundBody = matchedStep.body ?? null;
-                  }
-                } catch {
-                  // JSON parse failure — skip outbound snapshot
-                }
-              }
-            }
-          } catch {
-            // Campaign lookup failure — non-blocking
-          }
-        }
-
-        // Look up personId
-        let personId: string | null = null;
-        try {
-          const person = await prisma.person.findUnique({
-            where: { email: replySenderEmail },
-            select: { id: true },
-          });
-          personId = person?.id ?? null;
-        } catch {
-          // Person lookup failure — non-blocking
-        }
-
-        // Upsert Reply record (dedup by emailBisonReplyId)
-        const reply = await prisma.reply.upsert({
-          where: { emailBisonReplyId: ebReplyId },
-          create: {
-            workspaceSlug,
-            senderEmail: replySenderEmail,
-            senderName: replySenderName,
-            subject,
-            bodyText: replyBodyText,
-            receivedAt: replyReceivedAt,
-            emailBisonReplyId: ebReplyId,
-            campaignId: outsignalCampaignId,
-            campaignName: outsignalCampaignName,
-            sequenceStep,
-            outboundSubject,
-            outboundBody,
-            source: "webhook",
-            webhookEventId: webhookEvent.id,
-            personId,
-            // Inbox fields
-            emailBisonParentId: data.reply?.parent_id ?? null,
-            leadEmail: (data.reply?.from_email_address ?? leadEmail ?? "").toLowerCase() || null,
-            htmlBody: data.reply?.html_body ?? null,
-            ebSenderEmailId: data.reply?.sender_email_id ?? null,
-            interested: data.reply?.interested ?? false,
-            direction: (data.reply?.folder === "Sent" || data.reply?.type === "Outgoing Email") ? "outbound" : "inbound",
-          },
-          update: {
-            bodyText: replyBodyText,
-            subject,
-            senderName: replySenderName,
-            // Backfill inbox fields on re-process
-            htmlBody: data.reply?.html_body ?? undefined,
-            interested: data.reply?.interested ?? undefined,
-            emailBisonParentId: data.reply?.parent_id ?? undefined,
-            ebSenderEmailId: data.reply?.sender_email_id ?? undefined,
-          },
+        await tasks.trigger<typeof processReply>("process-reply", {
+          workspaceSlug,
+          ebReplyId,
+          eventType,
+          leadEmail: leadEmail ?? "unknown",
+          leadName,
+          senderEmail,
+          subject,
+          textBody,
+          interested,
+          campaignId,
+          webhookEventId: webhookEvent.id,
+          replyFromEmail: data.reply?.from_email_address ?? leadEmail ?? "unknown",
+          replyFromName: data.reply?.from_name ?? leadName,
+          replyBodyText: data.reply?.text_body ?? stripHtml(data.reply?.html_body ?? ""),
+          replyHtmlBody: data.reply?.html_body ?? null,
+          replyReceivedAt: new Date(data.reply?.date_received ?? Date.now()).toISOString(),
+          replyParentId: data.reply?.parent_id ?? null,
+          replySenderEmailId: data.reply?.sender_email_id ?? null,
+          direction: (data.reply?.folder === "Sent" || data.reply?.type === "Outgoing Email") ? "outbound" : "inbound",
+          sequenceStep: data.scheduled_email?.sequence_step_order ?? null,
+        }, {
+          idempotencyKey: `reply-${ebReplyId}`,
+          tags: [workspaceSlug],
         });
-
-        replyRecordId = reply.id;
-
-        // Classify inline (before notification)
+      } catch (err) {
+        console.error("[webhook] Trigger.dev unavailable, falling back to inline processing", err);
+        // FALLBACK: Run critical path inline — all awaited, no fire-and-forget
         try {
-          const classification = await classifyReply({
-            subject,
-            bodyText: reply.bodyText,
-            senderName: reply.senderName,
-            outboundSubject: reply.outboundSubject,
-            outboundBody: reply.outboundBody,
-          });
-          await prisma.reply.update({
-            where: { id: reply.id },
-            data: {
-              intent: classification.intent,
-              sentiment: classification.sentiment,
-              objectionSubtype: classification.objectionSubtype,
-              classificationSummary: classification.summary,
-              classifiedAt: new Date(),
+          // 1. Upsert Reply (minimal — just save the record)
+          const replySenderEmail = data.reply?.from_email_address ?? leadEmail ?? "unknown";
+          const replyBodyText = data.reply?.text_body ?? stripHtml(data.reply?.html_body ?? "");
+          const replyReceivedAt = new Date(data.reply?.date_received ?? Date.now());
+          const sequenceStep: number | null = data.scheduled_email?.sequence_step_order ?? null;
+
+          let personId: string | null = null;
+          try {
+            const person = await prisma.person.findUnique({
+              where: { email: replySenderEmail },
+              select: { id: true },
+            });
+            personId = person?.id ?? null;
+          } catch { /* non-blocking */ }
+
+          const reply = await prisma.reply.upsert({
+            where: { emailBisonReplyId: ebReplyId },
+            create: {
+              workspaceSlug,
+              senderEmail: replySenderEmail,
+              senderName: data.reply?.from_name ?? leadName,
+              subject,
+              bodyText: replyBodyText,
+              receivedAt: replyReceivedAt,
+              emailBisonReplyId: ebReplyId,
+              sequenceStep,
+              source: "webhook",
+              webhookEventId: webhookEvent.id,
+              personId,
+              emailBisonParentId: data.reply?.parent_id ?? null,
+              leadEmail: (data.reply?.from_email_address ?? leadEmail ?? "").toLowerCase() || null,
+              htmlBody: data.reply?.html_body ?? null,
+              ebSenderEmailId: data.reply?.sender_email_id ?? null,
+              interested: data.reply?.interested ?? false,
+              direction: (data.reply?.folder === "Sent" || data.reply?.type === "Outgoing Email") ? "outbound" : "inbound",
+            },
+            update: {
+              bodyText: replyBodyText,
+              subject,
+              senderName: data.reply?.from_name ?? leadName,
+              htmlBody: data.reply?.html_body ?? undefined,
+              interested: data.reply?.interested ?? undefined,
+              emailBisonParentId: data.reply?.parent_id ?? undefined,
+              ebSenderEmailId: data.reply?.sender_email_id ?? undefined,
             },
           });
-        } catch (err) {
-          console.error("[webhook] Classification failed, will retry:", err);
-          // Reply saved with intent=null — retry cron picks it up
+
+          // 2. Classify inline
+          try {
+            const classification = await classifyReply({
+              subject,
+              bodyText: reply.bodyText,
+              senderName: reply.senderName,
+              outboundSubject: reply.outboundSubject,
+              outboundBody: reply.outboundBody,
+            });
+            await prisma.reply.update({
+              where: { id: reply.id },
+              data: {
+                intent: classification.intent,
+                sentiment: classification.sentiment,
+                objectionSubtype: classification.objectionSubtype,
+                classificationSummary: classification.summary,
+                classifiedAt: new Date(),
+              },
+            });
+          } catch (classErr) {
+            console.error("[webhook] Fallback classification failed:", classErr);
+          }
+
+          // 3. Notify inline
+          try {
+            await notifyReply({
+              workspaceSlug,
+              leadName,
+              leadEmail: leadEmail ?? "unknown",
+              senderEmail: senderEmail ?? "unknown",
+              subject,
+              bodyPreview: textBody,
+              interested,
+              suggestedResponse: null,
+              replyId: reply.id,
+            });
+          } catch (notifyErr) {
+            console.error("[webhook] Fallback notification failed:", notifyErr);
+          }
+        } catch (fallbackErr) {
+          console.error("[webhook] Fallback processing failed:", fallbackErr);
         }
-      } catch (err) {
-        console.error("[webhook] Reply persistence error:", err);
-        // Non-blocking — continue to notification
       }
-    }
-
-    const notifyEvents = ["LEAD_REPLIED", "LEAD_INTERESTED", "UNTRACKED_REPLY_RECEIVED"];
-
-    if (notifyEvents.includes(eventType) && !isAutomatedFlag) {
-      // 1. Send notification IMMEDIATELY (no waiting for AI)
+    } else if (replyEvents.includes(eventType) && !isAutomatedFlag && ebReplyId == null) {
+      // No EB reply ID — just notify (same as today for edge cases)
       try {
         await notifyReply({
           workspaceSlug,
@@ -472,57 +398,27 @@ export async function POST(request: NextRequest) {
           bodyPreview: textBody,
           interested,
           suggestedResponse: null,
-          replyId: replyRecordId,
+          replyId: null,
         });
       } catch (err) {
         console.error("Notification error:", err);
       }
+    }
 
-      // 2. Generate reply suggestion in background (non-blocking for the response)
-      const replyTriggerEvents = ["LEAD_REPLIED", "LEAD_INTERESTED"];
-      if (replyTriggerEvents.includes(eventType) && textBody) {
-        generateReplySuggestion({
+    // --- Trigger linkedin-fast-track task ---
+    const linkedInTriggerEvents = ["LEAD_REPLIED", "LEAD_INTERESTED"];
+    if (linkedInTriggerEvents.includes(eventType) && leadEmail) {
+      try {
+        await tasks.trigger<typeof linkedinFastTrack>("linkedin-fast-track", {
+          personEmail: leadEmail,
           workspaceSlug,
-          leadName,
-          leadEmail: leadEmail ?? "unknown",
-          subject,
-          replyBody: textBody,
-          interested,
-        }).then(async (suggestion) => {
-          if (suggestion) {
-            // Send follow-up Slack message with AI suggestion
-            const { postMessage } = await import("@/lib/slack");
-            const workspace = await prisma.workspace.findUnique({ where: { slug: workspaceSlug } });
-            if (workspace?.slackChannelId) {
-              await postMessage(workspace.slackChannelId, `*Suggested Response for ${leadName || leadEmail}:*\n${suggestion}`).catch(() => {});
-            }
-            const repliesChannelId = process.env.REPLIES_SLACK_CHANNEL_ID;
-            if (repliesChannelId) {
-              await postMessage(repliesChannelId, `*Suggested Response for ${leadName || leadEmail}:*\n${suggestion}`).catch(() => {});
-            }
-            // Persist AI suggestion to Reply record
-            if (replyRecordId) {
-              await prisma.reply.update({
-                where: { id: replyRecordId },
-                data: { aiSuggestedReply: suggestion },
-              }).catch((err) => {
-                console.error("[webhook] Failed to persist AI suggestion:", err);
-              });
-            }
-          }
-        }).catch((err) => {
-          console.error("Reply suggestion follow-up error:", err);
+          senderEmail,
+          campaignName: data.campaign?.name ?? null,
+        }, {
+          tags: [workspaceSlug],
         });
-      }
-
-      if (eventType === "LEAD_INTERESTED") {
-        notify({
-          type: "system",
-          severity: "info",
-          title: `Interested reply: ${leadName || leadEmail || "unknown"}`,
-          workspaceSlug,
-          metadata: { campaignId, eventType },
-        }).catch(() => {});
+      } catch (err) {
+        console.warn("[webhook] linkedin-fast-track trigger failed, skipping:", err);
       }
     }
 
