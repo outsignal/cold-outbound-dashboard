@@ -251,7 +251,6 @@ interface DomainCheckResult {
 
 async function checkDomain(
   priority: DomainPriority,
-  sendingIp: string | undefined,
 ): Promise<DomainCheckResult> {
   const { domain } = priority;
   const errors: string[] = [];
@@ -265,7 +264,7 @@ async function checkDomain(
   // 2. Run blacklist check (conditional per targeting criteria)
   if (shouldCheckBlacklist(priority)) {
     try {
-      const blResult = await checkBlacklists(domain, sendingIp);
+      const blResult = await checkBlacklists(domain);
       blacklistHits = blResult.hits.map((h) => h.list);
       blacklistChecked = true;
     } catch (err) {
@@ -466,7 +465,6 @@ export async function GET(request: Request) {
     );
 
     // 3. Check each domain sequentially (DNS + optional blacklist)
-    const sendingIp = process.env.EMAILBISON_SENDING_IP;
     const results: DomainCheckResult[] = [];
     const allErrors: string[] = [];
     const blacklistDigestItems: BlacklistDigestItem[] = [];
@@ -474,7 +472,7 @@ export async function GET(request: Request) {
 
     for (const priority of toCheck) {
       try {
-        const result = await checkDomain(priority, sendingIp);
+        const result = await checkDomain(priority);
         results.push(result);
         allErrors.push(...result.errors);
 
