@@ -4,7 +4,7 @@ import { tasks } from "@trigger.dev/sdk";
 import { prisma } from "@/lib/db";
 import { notifyReply } from "@/lib/notifications";
 import { notify } from "@/lib/notify";
-import { enqueueAction } from "@/lib/linkedin/queue";
+import { cancelActionsForPerson, enqueueAction } from "@/lib/linkedin/queue";
 import { assignSenderForPerson } from "@/lib/linkedin/sender";
 import { evaluateSequenceRules } from "@/lib/linkedin/sequencing";
 import { rateLimit } from "@/lib/rate-limit";
@@ -204,6 +204,21 @@ export async function POST(request: NextRequest) {
 
               // Enqueue each action returned by the rules
               for (const action of actions) {
+                // Dedup: skip connect if already pending or connected in this workspace
+                if (action.actionType === "connect") {
+                  const existingConn = await prisma.linkedInConnection.findFirst({
+                    where: {
+                      personId: person.id,
+                      status: { in: ["pending", "connected"] },
+                      sender: { workspaceSlug },
+                    },
+                  });
+                  if (existingConn) {
+                    console.log(`[webhook] Skipping connect for ${leadEmail} — already ${existingConn.status}`);
+                    continue;
+                  }
+                }
+
                 const sender = await assignSenderForPerson(
                   outsignalCampaign.workspaceSlug,
                   {
@@ -429,6 +444,15 @@ export async function POST(request: NextRequest) {
         data: { status: "bounced" },
       });
 
+      // Cancel pending LinkedIn actions for bounced person
+      const bouncedPerson = await prisma.person.findUnique({ where: { email: leadEmail }, select: { id: true } });
+      if (bouncedPerson) {
+        const cancelled = await cancelActionsForPerson(bouncedPerson.id, workspaceSlug);
+        if (cancelled > 0) {
+          console.log(`[webhook] Cancelled ${cancelled} LinkedIn actions for bounced ${leadEmail}`);
+        }
+      }
+
       notify({
         type: "system",
         severity: "warning",
@@ -444,6 +468,15 @@ export async function POST(request: NextRequest) {
         where: { email: leadEmail },
         data: { status: "unsubscribed" },
       });
+
+      // Cancel pending LinkedIn actions for unsubscribed person
+      const unsubPerson = await prisma.person.findUnique({ where: { email: leadEmail }, select: { id: true } });
+      if (unsubPerson) {
+        const cancelled = await cancelActionsForPerson(unsubPerson.id, workspaceSlug);
+        if (cancelled > 0) {
+          console.log(`[webhook] Cancelled ${cancelled} LinkedIn actions for unsubscribed ${leadEmail}`);
+        }
+      }
 
       notify({
         type: "system",
