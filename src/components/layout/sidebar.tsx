@@ -39,6 +39,7 @@ import {
   Inbox,
   Cpu,
   CalendarClock,
+  Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -172,6 +173,7 @@ const STATIC_NAV_GROUPS: NavGroup[] = [
       { href: "/agent-runs", label: "Agent Runs", icon: Activity },
       { href: "/background-tasks", label: "Background Tasks", icon: Cpu },
       { href: "/enrichment-costs", label: "Enrichment Costs", icon: DollarSign },
+      { href: "/platform-costs", label: "Platform Costs", icon: Wallet },
       { href: "/integrations", label: "Integrations", icon: Plug },
       { href: "/notification-health", label: "Notification Health", icon: HeartPulse },
       { href: "/packages", label: "Packages", icon: Package },
