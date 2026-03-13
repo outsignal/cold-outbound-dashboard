@@ -1560,6 +1560,7 @@ model PlatformCost {
   category    String   @default("infrastructure") // infrastructure | api | email | tools
   client      String?           // workspace slug or null = shared
   url         String?           // link to service dashboard
+  billingDay  Int?              // day of month (1-31) when billed, null = usage-based
   updatedAt   DateTime @updatedAt
   createdAt   DateTime @default(now())
 

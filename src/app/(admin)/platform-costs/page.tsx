@@ -18,6 +18,7 @@ interface PlatformCostRecord {
   category: string;
   client: string | null;
   url: string | null;
+  billingDay: number | null;
   updatedAt: string;
 }
 
@@ -47,6 +48,12 @@ function fmtGbp(amount: number): string {
 
 function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function ordinal(n: number): string {
+  const s = ["th", "st", "nd", "rd"];
+  const v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
 // ---- Sub-components ---------------------------------------------------------
@@ -98,10 +105,12 @@ function EditableCell({
   value,
   type,
   onSave,
+  displayValue,
 }: {
   value: string;
   type: "number" | "text";
   onSave: (newValue: string) => Promise<void>;
+  displayValue?: string;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -175,7 +184,7 @@ function EditableCell({
       onClick={() => setEditing(true)}
       className="cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5 -mx-1 transition-colors inline-flex items-center gap-1"
     >
-      {type === "number" ? fmtGbp(parseFloat(value) || 0) : value || "-"}
+      {displayValue !== undefined ? displayValue : type === "number" ? fmtGbp(parseFloat(value) || 0) : value || "-"}
       {saved && (
         <Check className="h-3.5 w-3.5 text-emerald-500 animate-in fade-in duration-300" />
       )}
@@ -194,7 +203,7 @@ function ServiceRow({
   row: PlatformCostRecord;
   showClient: boolean;
   showCategory: boolean;
-  onSave: (id: string, field: "monthlyCost" | "notes", value: string) => Promise<void>;
+  onSave: (id: string, field: "monthlyCost" | "notes" | "billingDay", value: string) => Promise<void>;
 }) {
   return (
     <tr className="border-b border-border/50 hover:bg-muted/30">
@@ -237,6 +246,14 @@ function ServiceRow({
           )}
         </td>
       )}
+      <td className="px-4 py-3 text-center">
+        <EditableCell
+          value={row.billingDay != null ? String(row.billingDay) : ""}
+          type="number"
+          onSave={(v) => onSave(row.id, "billingDay", v)}
+          displayValue={row.billingDay != null ? ordinal(row.billingDay) : "-"}
+        />
+      </td>
       <td className="px-4 py-3 text-right">
         <EditableCell
           value={String(row.monthlyCost)}
@@ -290,7 +307,7 @@ function CategoryView({
   onSave,
 }: {
   data: CostData;
-  onSave: (id: string, field: "monthlyCost" | "notes", value: string) => Promise<void>;
+  onSave: (id: string, field: "monthlyCost" | "notes" | "billingDay", value: string) => Promise<void>;
 }) {
   const grouped = useMemo(() => {
     const result: Array<{
@@ -342,15 +359,17 @@ function CategoryView({
           <CardContent className="!px-0">
             <table className="w-full text-sm table-fixed">
               <colgroup>
-                <col className="w-[40%]" />
-                <col className="w-[20%]" />
-                <col className="w-[20%]" />
+                <col className="w-[35%]" />
+                <col className="w-[15%]" />
+                <col className="w-[15%]" />
+                <col className="w-[15%]" />
                 <col className="w-[20%]" />
               </colgroup>
               <thead>
                 <tr className="border-b border-border text-xs text-muted-foreground uppercase tracking-wide">
                   <th className="text-left px-4 py-2">Service</th>
                   <th className="text-left px-4 py-2">Client</th>
+                  <th className="text-center px-4 py-2">Bills On</th>
                   <th className="text-right px-4 py-2">Monthly Cost</th>
                   <th className="text-left px-4 py-2">Notes</th>
                 </tr>
@@ -381,7 +400,7 @@ function ClientView({
   onSave,
 }: {
   data: CostData;
-  onSave: (id: string, field: "monthlyCost" | "notes", value: string) => Promise<void>;
+  onSave: (id: string, field: "monthlyCost" | "notes" | "billingDay", value: string) => Promise<void>;
 }) {
   const grouped = useMemo(() => {
     const byClient: Record<string, PlatformCostRecord[]> = {};
@@ -432,13 +451,15 @@ function ClientView({
           <CardContent className="!px-0">
             <table className="w-full text-sm table-fixed">
               <colgroup>
-                <col className="w-[60%]" />
+                <col className="w-[45%]" />
+                <col className="w-[15%]" />
                 <col className="w-[20%]" />
                 <col className="w-[20%]" />
               </colgroup>
               <thead>
                 <tr className="border-b border-border text-xs text-muted-foreground uppercase tracking-wide">
                   <th className="text-left px-4 py-2">Service</th>
+                  <th className="text-center px-4 py-2">Bills On</th>
                   <th className="text-right px-4 py-2">Monthly Cost</th>
                   <th className="text-left px-4 py-2">Notes</th>
                 </tr>
@@ -494,7 +515,7 @@ export default function PlatformCostsPage() {
 
   const handleSave = async (
     id: string,
-    field: "monthlyCost" | "notes",
+    field: "monthlyCost" | "notes" | "billingDay",
     rawValue: string
   ) => {
     const payload: Record<string, unknown> = { id };
@@ -502,6 +523,14 @@ export default function PlatformCostsPage() {
       const parsed = parseFloat(rawValue);
       if (isNaN(parsed) || parsed < 0) throw new Error("Invalid amount");
       payload.monthlyCost = parsed;
+    } else if (field === "billingDay") {
+      if (rawValue === "" || rawValue === "-") {
+        payload.billingDay = null;
+      } else {
+        const parsed = parseInt(rawValue, 10);
+        if (isNaN(parsed) || parsed < 1 || parsed > 31) throw new Error("Must be 1-31");
+        payload.billingDay = parsed;
+      }
     } else {
       payload.notes = rawValue;
     }

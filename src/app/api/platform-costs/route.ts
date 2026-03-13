@@ -22,32 +22,33 @@ const SEED_DATA: Array<{
   client?: string;
   notes?: string;
   url?: string;
+  billingDay?: number;
 }> = [
   // TOOLS
-  { service: "slack", label: "Slack", monthlyCost: 8.40, category: "tools" },
-  { service: "google-workspace", label: "Google Workspace (Melhu)", monthlyCost: 14.00, category: "tools", client: "melhu" },
-  { service: "google-workspace", label: "Google Workspace (Outsignal)", monthlyCost: 28.00, category: "tools", client: "outsignal" },
-  { service: "claude-ai", label: "Claude AI", monthlyCost: 18.00, category: "tools", notes: "Pro plan" },
-  { service: "framer", label: "Framer", monthlyCost: 18.00, category: "tools", notes: "Website builder" },
-  { service: "loom", label: "Loom", monthlyCost: 13.71, category: "tools" },
-  { service: "sketch", label: "Sketch", monthlyCost: 13.69, category: "tools" },
-  { service: "upwork", label: "Upwork", monthlyCost: 18.61, category: "tools", notes: "Freelancer fees" },
+  { service: "slack", label: "Slack", monthlyCost: 8.40, category: "tools", billingDay: 1 },
+  { service: "google-workspace", label: "Google Workspace (Melhu)", monthlyCost: 14.00, category: "tools", client: "melhu", billingDay: 1 },
+  { service: "google-workspace", label: "Google Workspace (Outsignal)", monthlyCost: 28.00, category: "tools", client: "outsignal", billingDay: 1 },
+  { service: "claude-ai", label: "Claude AI", monthlyCost: 18.00, category: "tools", notes: "Pro plan", billingDay: 3 },
+  { service: "framer", label: "Framer", monthlyCost: 18.00, category: "tools", notes: "Website builder", billingDay: 3 },
+  { service: "loom", label: "Loom", monthlyCost: 13.71, category: "tools", billingDay: 11 },
+  { service: "sketch", label: "Sketch", monthlyCost: 13.69, category: "tools", billingDay: 29 },
+  { service: "upwork", label: "Upwork", monthlyCost: 18.61, category: "tools", notes: "Freelancer fees", billingDay: 21 },
 
   // API
-  { service: "leadmagic", label: "LeadMagic", monthlyCost: 44.42, category: "api" },
-  { service: "prospeo", label: "Prospeo", monthlyCost: 36.01, category: "api" },
-  { service: "clay", label: "Clay", monthlyCost: 266.31, category: "api", notes: "Cancelling soon" },
+  { service: "leadmagic", label: "LeadMagic", monthlyCost: 44.42, category: "api", billingDay: 9 },
+  { service: "prospeo", label: "Prospeo", monthlyCost: 36.01, category: "api", billingDay: 12 },
+  { service: "clay", label: "Clay", monthlyCost: 266.31, category: "api", notes: "Cancelling soon", billingDay: 17 },
   { service: "apify", label: "Apify", monthlyCost: 23.00, category: "api", notes: "Starter plan", url: "https://console.apify.com" },
   { service: "anthropic-api", label: "Anthropic API", monthlyCost: 0, category: "api", notes: "Pay-per-use", url: "https://console.anthropic.com" },
 
   // EMAIL
-  { service: "cheapinboxes", label: "CheapInboxes (YoopKnows)", monthlyCost: 34.37, category: "email", client: "yoopknows" },
-  { service: "cheapinboxes", label: "CheapInboxes (Rise)", monthlyCost: 52.03, category: "email", client: "rise", notes: "4 charges combined" },
-  { service: "cheapinboxes", label: "CheapInboxes (StingBox)", monthlyCost: 52.94, category: "email", client: "stingbox" },
-  { service: "cheapinboxes", label: "CheapInboxes (Lime)", monthlyCost: 51.11, category: "email", client: "lime-recruitment" },
-  { service: "cheapinboxes", label: "CheapInboxes (MyAcq)", monthlyCost: 51.11, category: "email", client: "myacq" },
-  { service: "cheapinboxes", label: "CheapInboxes (Outsignal)", monthlyCost: 68.15, category: "email", client: "outsignal" },
-  { service: "emailbison", label: "EmailBison", monthlyCost: 378.12, category: "email", notes: "White-label" },
+  { service: "cheapinboxes", label: "CheapInboxes (YoopKnows)", monthlyCost: 34.37, category: "email", client: "yoopknows", billingDay: 2 },
+  { service: "cheapinboxes", label: "CheapInboxes (Rise)", monthlyCost: 52.03, category: "email", client: "rise", notes: "4 charges combined", billingDay: 16 },
+  { service: "cheapinboxes", label: "CheapInboxes (StingBox)", monthlyCost: 52.94, category: "email", client: "stingbox", billingDay: 21 },
+  { service: "cheapinboxes", label: "CheapInboxes (Lime)", monthlyCost: 51.11, category: "email", client: "lime-recruitment", billingDay: 28 },
+  { service: "cheapinboxes", label: "CheapInboxes (MyAcq)", monthlyCost: 51.11, category: "email", client: "myacq", billingDay: 28 },
+  { service: "cheapinboxes", label: "CheapInboxes (Outsignal)", monthlyCost: 68.15, category: "email", client: "outsignal", billingDay: 28 },
+  { service: "emailbison", label: "EmailBison", monthlyCost: 378.12, category: "email", notes: "White-label", billingDay: 29 },
   { service: "resend", label: "Resend", monthlyCost: 0, category: "email", notes: "Free tier" },
 
   // INFRASTRUCTURE
@@ -83,6 +84,7 @@ export async function GET() {
           client: item.client ?? null,
           notes: item.notes ?? null,
           url: item.url ?? null,
+          billingDay: item.billingDay ?? null,
         })),
       });
 
@@ -131,10 +133,11 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { id, monthlyCost, notes } = body as {
+    const { id, monthlyCost, notes, billingDay } = body as {
       id: string;
       monthlyCost?: number;
       notes?: string;
+      billingDay?: number | null;
     };
 
     if (!id) {
@@ -148,9 +151,19 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    if (billingDay !== undefined && billingDay !== null) {
+      if (typeof billingDay !== "number" || billingDay < 1 || billingDay > 31 || !Number.isInteger(billingDay)) {
+        return NextResponse.json(
+          { error: "billingDay must be an integer between 1 and 31" },
+          { status: 400 }
+        );
+      }
+    }
+
     const updateData: Record<string, unknown> = {};
     if (monthlyCost !== undefined) updateData.monthlyCost = monthlyCost;
     if (notes !== undefined) updateData.notes = notes;
+    if (billingDay !== undefined) updateData.billingDay = billingDay;
 
     if (Object.keys(updateData).length === 0) {
       return NextResponse.json(
