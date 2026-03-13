@@ -664,15 +664,18 @@ async function checkTriggerDev(): Promise<ProviderStatus> {
 
 async function checkEmailBison(): Promise<ProviderStatus> {
   const now = new Date().toISOString();
-  const token = process.env.EMAILBISON_ADMIN_TOKEN;
-  if (!token) {
-    return { id: "emailbison", name: "EmailBison", category: "infrastructure", status: "disconnected", configured: false, dashboardUrl: "https://app.outsignal.ai", lastChecked: now };
-  }
+  // Use a workspace API token from DB — admin token only works for write operations
   try {
-    // Admin token can access /workspaces (data endpoints need workspace-scoped tokens)
+    const workspace = await prisma.workspace.findFirst({
+      where: { apiToken: { not: null }, status: "active" },
+      select: { apiToken: true },
+    });
+    if (!workspace?.apiToken) {
+      return { id: "emailbison", name: "EmailBison", category: "infrastructure", status: "disconnected", configured: false, dashboardUrl: "https://app.outsignal.ai", lastChecked: now };
+    }
     const res = await fetchWithTimeout(
-      "https://app.outsignal.ai/api/workspaces",
-      { headers: { Authorization: `Bearer ${token}` } },
+      "https://app.outsignal.ai/api/campaigns?page=1",
+      { headers: { Authorization: `Bearer ${workspace.apiToken}` } },
     );
     if (res.ok) {
       return { id: "emailbison", name: "EmailBison", category: "infrastructure", status: "connected", configured: true, dashboardUrl: "https://app.outsignal.ai", lastChecked: now };
