@@ -159,7 +159,8 @@ const STATIC_NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/financials", label: "Invoices", icon: FileText },
       { href: "/revenue", label: "Revenue", icon: TrendingUp },
-      { href: "/platform-costs", label: "Platform Costs", icon: Wallet },
+      { href: "/platform-costs", label: "Costs", icon: Wallet },
+      { href: "/cashflow", label: "Cashflow", icon: BarChart3 },
     ],
   },
   // WORKSPACES group is inserted dynamically by buildNavGroups()
