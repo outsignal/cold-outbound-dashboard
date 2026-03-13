@@ -1,0 +1,5 @@
+.trigger/
+.planning/
+.next/
+*.md
+!README.md
