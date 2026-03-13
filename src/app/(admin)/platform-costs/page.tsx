@@ -340,7 +340,13 @@ function CategoryView({
             </CardTitle>
           </CardHeader>
           <CardContent className="!px-0">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm table-fixed">
+              <colgroup>
+                <col className="w-[40%]" />
+                <col className="w-[20%]" />
+                <col className="w-[20%]" />
+                <col className="w-[20%]" />
+              </colgroup>
               <thead>
                 <tr className="border-b border-border text-xs text-muted-foreground uppercase tracking-wide">
                   <th className="text-left px-4 py-2">Service</th>
@@ -424,7 +430,12 @@ function ClientView({
             </CardTitle>
           </CardHeader>
           <CardContent className="!px-0">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm table-fixed">
+              <colgroup>
+                <col className="w-[60%]" />
+                <col className="w-[20%]" />
+                <col className="w-[20%]" />
+              </colgroup>
               <thead>
                 <tr className="border-b border-border text-xs text-muted-foreground uppercase tracking-wide">
                   <th className="text-left px-4 py-2">Service</th>
