@@ -1,7 +1,7 @@
 import { schedules } from "@trigger.dev/sdk";
 import { PrismaClient } from "@prisma/client";
 import { generateInsights } from "@/lib/insights/generate";
-import { notifyWeeklyDigest } from "@/lib/notifications";
+import { notifyWeeklyDigest, notifyWeeklyDigestBundled } from "@/lib/notifications";
 import { anthropicQueue } from "./queues";
 import { progressWarmup } from "@/lib/linkedin/rate-limiter";
 import { updateAcceptanceRate } from "@/lib/linkedin/sender";
@@ -10,12 +10,31 @@ import { recoverStuckActions, expireStaleActions } from "@/lib/linkedin/queue";
 // PrismaClient at module scope — not inside run()
 const prisma = new PrismaClient();
 
+/** Digest data returned per workspace for bundled email */
+type WorkspaceDigestData = {
+  workspaceName: string;
+  workspaceSlug: string;
+  topInsights: Array<{ observation: string; category: string; confidence: string }>;
+  bestCampaign: { name: string; replyRate: number } | null;
+  worstCampaign: { name: string; replyRate: number } | null;
+  pendingActions: number;
+  replyCount?: number;
+  avgReplyRate?: number;
+  insightCount?: number;
+};
+
 /**
- * Gather digest data for a workspace and send the weekly digest notification.
- * Replicated from src/app/api/cron/generate-insights/route.ts — uses module-scope prisma.
+ * Gather digest data for a workspace, send Slack notification (per-workspace),
+ * and return the digest data for the bundled email.
  */
-async function sendDigestForWorkspace(workspaceSlug: string): Promise<void> {
+async function sendDigestForWorkspace(workspaceSlug: string): Promise<WorkspaceDigestData | null> {
   try {
+    const workspace = await prisma.workspace.findUnique({
+      where: { slug: workspaceSlug },
+      select: { name: true, slug: true },
+    });
+    if (!workspace) return null;
+
     // Top 3 active insights by priority
     const topInsights = await prisma.insight.findMany({
       where: { workspaceSlug, status: "active" },
@@ -88,6 +107,19 @@ async function sendDigestForWorkspace(workspaceSlug: string): Promise<void> {
       avgReplyRate = Math.round((totalRate / campaigns.length) * 10) / 10;
     }
 
+    const digestData: WorkspaceDigestData = {
+      workspaceName: workspace.name,
+      workspaceSlug,
+      topInsights,
+      bestCampaign,
+      worstCampaign,
+      pendingActions,
+      replyCount,
+      avgReplyRate,
+      insightCount: pendingActions,
+    };
+
+    // Send Slack notification per-workspace (email is now bundled separately)
     await notifyWeeklyDigest({
       workspaceSlug,
       topInsights,
@@ -98,11 +130,14 @@ async function sendDigestForWorkspace(workspaceSlug: string): Promise<void> {
       avgReplyRate,
       insightCount: pendingActions,
     });
+
+    return digestData;
   } catch (err) {
     console.error(
       `[generate-insights] Digest notification failed for ${workspaceSlug}:`,
       err,
     );
+    return null;
   }
 }
 
@@ -128,23 +163,31 @@ export const generateInsightsTask = schedules.task({
     );
 
     // Fan out across all workspaces in parallel — per-workspace error isolation
+    // Insight generation and digest are independent: AI failures must not block digest emails
     const results = await Promise.all(
       workspaces.map(async (ws) => {
+        let count = 0;
+        let insightError: string | undefined;
         try {
-          const count = await generateInsights(ws.slug);
-          await sendDigestForWorkspace(ws.slug);
-          return {
-            workspace: ws.slug,
-            insightsGenerated: count,
-            digestSent: true,
-          };
+          count = await generateInsights(ws.slug);
         } catch (err) {
-          return {
-            workspace: ws.slug,
-            insightsGenerated: 0,
-            error: err instanceof Error ? err.message : String(err),
-          };
+          insightError = err instanceof Error ? err.message : String(err);
+          console.error(`[generate-insights] Insight generation failed for ${ws.slug}:`, err);
         }
+
+        let digestData: WorkspaceDigestData | null = null;
+        try {
+          digestData = await sendDigestForWorkspace(ws.slug);
+        } catch (err) {
+          console.error(`[generate-insights] Digest failed for ${ws.slug}:`, err);
+        }
+
+        return {
+          workspace: ws.slug,
+          insightsGenerated: count,
+          digestData,
+          ...(insightError ? { error: insightError } : {}),
+        };
       }),
     );
 
@@ -154,6 +197,22 @@ export const generateInsightsTask = schedules.task({
     console.log(
       `[generate-insights] Step 1 complete: ${totalInsights} total insights, ${errors.length} workspace errors`,
     );
+
+    // Send bundled email digest (one email with all workspaces)
+    const allDigestData = results
+      .map((r) => r.digestData)
+      .filter((d): d is WorkspaceDigestData => d != null);
+
+    if (allDigestData.length > 0) {
+      try {
+        await notifyWeeklyDigestBundled(allDigestData);
+        console.log(
+          `[generate-insights] Bundled digest email sent for ${allDigestData.length} workspaces`,
+        );
+      } catch (err) {
+        console.error("[generate-insights] Bundled digest email failed:", err);
+      }
+    }
 
     // -----------------------------------------------------------------------
     // Step 2: LinkedIn maintenance (merged from inbox-linkedin-maintenance)
