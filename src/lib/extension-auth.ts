@@ -129,3 +129,29 @@ export function extensionCorsHeaders(request?: NextRequest): Record<string, stri
     ...(allowedOrigin ? { "Vary": "Origin" } : {}),
   };
 }
+
+/**
+ * Ensure a sender has an inviteToken, generating one if null.
+ * Called lazily when viewing sender cards.
+ */
+export async function ensureSenderInviteToken(senderId: string): Promise<string> {
+  // Dynamic import to avoid circular dependency at module level
+  const { prisma } = await import("@/lib/db");
+  const { randomUUID } = await import("crypto");
+
+  const sender = await prisma.sender.findUnique({
+    where: { id: senderId },
+    select: { inviteToken: true },
+  });
+
+  if (sender?.inviteToken) {
+    return sender.inviteToken;
+  }
+
+  const newToken = randomUUID();
+  await prisma.sender.update({
+    where: { id: senderId },
+    data: { inviteToken: newToken },
+  });
+  return newToken;
+}

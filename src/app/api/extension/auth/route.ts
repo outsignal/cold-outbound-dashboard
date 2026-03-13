@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createExtensionToken, extensionCorsHeaders } from "@/lib/extension-auth";
 import { prisma } from "@/lib/db";
-import { randomUUID } from "crypto";
-
 /**
  * OPTIONS /api/extension/auth
  * CORS preflight for Chrome extension popup fetch calls.
@@ -80,24 +78,3 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/**
- * Utility: ensure a sender has an inviteToken, generating one if null.
- * Called lazily when viewing sender cards.
- */
-export async function ensureSenderInviteToken(senderId: string): Promise<string> {
-  const sender = await prisma.sender.findUnique({
-    where: { id: senderId },
-    select: { inviteToken: true },
-  });
-
-  if (sender?.inviteToken) {
-    return sender.inviteToken;
-  }
-
-  const newToken = randomUUID();
-  await prisma.sender.update({
-    where: { id: senderId },
-    data: { inviteToken: newToken },
-  });
-  return newToken;
-}
