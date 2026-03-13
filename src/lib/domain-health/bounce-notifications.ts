@@ -93,6 +93,16 @@ function buildSlackMessage(params: {
     actionLine = "\n*Action taken:* Sender removed from active campaigns. Warmup remains active.";
   } else if (action === "daily_limit_restored") {
     actionLine = "\n*Action taken:* Daily sending limit restored to original value.";
+  } else if (action === "critical_remediation_complete") {
+    actionLine = "\n*Action taken:* Throttled to 1/day, campaigns redistributed";
+  } else if (action === "critical_daily_limit_reduced") {
+    actionLine = "\n*Action taken:* Throttled to 1/day";
+  } else if (action === "critical_recovery_complete") {
+    actionLine = "\n*Action taken:* Daily limit + warmup restored";
+  } else if (action === "skipped_mgmt_disabled") {
+    actionLine = "\n:warning: *Remediation SKIPPED — EMAILBISON_SENDER_MGMT_ENABLED not set*";
+  } else if (action === "skipped_no_sender_id") {
+    actionLine = "\n:warning: *Remediation SKIPPED — no EmailBison sender ID*";
   }
 
   // Build reason/recommendation line
@@ -132,8 +142,8 @@ function buildSlackMessage(params: {
   // Add replacement info for critical transitions
   if (toStatus === "critical" && !recovery) {
     const replacementText = replacementEmail
-      ? `:white_check_mark: *Replacement sender available:* \`${replacementEmail}\``
-      : `:rotating_light: *No healthy replacement senders available — manual action required.*`;
+      ? `:white_check_mark: *Healthiest alternative sender:* \`${replacementEmail}\``
+      : `:rotating_light: *No healthy alternative senders in this workspace.*`;
 
     blocks.push({
       type: "section",
@@ -192,13 +202,23 @@ function buildEmailHtml(params: {
     actionHtml = `<p style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#3f3f46;margin:12px 0 0 0;"><strong>Action Taken:</strong> Sender removed from active campaigns. Warmup sequence remains active.</p>`;
   } else if (action === "daily_limit_restored") {
     actionHtml = `<p style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#16a34a;margin:12px 0 0 0;"><strong>Action Taken:</strong> Daily sending limit has been restored to the original value.</p>`;
+  } else if (action === "critical_remediation_complete") {
+    actionHtml = `<p style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#3f3f46;margin:12px 0 0 0;"><strong>Action Taken:</strong> Throttled to 1/day, campaigns redistributed.</p>`;
+  } else if (action === "critical_daily_limit_reduced") {
+    actionHtml = `<p style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#3f3f46;margin:12px 0 0 0;"><strong>Action Taken:</strong> Throttled to 1/day.</p>`;
+  } else if (action === "critical_recovery_complete") {
+    actionHtml = `<p style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#16a34a;margin:12px 0 0 0;"><strong>Action Taken:</strong> Daily limit + warmup restored.</p>`;
+  } else if (action === "skipped_mgmt_disabled") {
+    actionHtml = `<p style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#dc2626;font-weight:700;margin:12px 0 0 0;">&#x26A0;&#xFE0F; Remediation SKIPPED &mdash; EMAILBISON_SENDER_MGMT_ENABLED not set.</p>`;
+  } else if (action === "skipped_no_sender_id") {
+    actionHtml = `<p style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#dc2626;font-weight:700;margin:12px 0 0 0;">&#x26A0;&#xFE0F; Remediation SKIPPED &mdash; no EmailBison sender ID.</p>`;
   }
 
   let replacementHtml = "";
   if (toStatus === "critical" && !recovery) {
     replacementHtml = replacementEmail
-      ? `<p style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#3f3f46;margin:12px 0 0 0;"><strong>Replacement Sender:</strong> <code style="background:#f4f4f5;padding:2px 6px;border-radius:4px;">${replacementEmail}</code></p>`
-      : `<p style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#dc2626;font-weight:700;margin:12px 0 0 0;">No healthy replacement senders available — manual action required.</p>`;
+      ? `<p style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#3f3f46;margin:12px 0 0 0;"><strong>Healthiest Alternative:</strong> <code style="background:#f4f4f5;padding:2px 6px;border-radius:4px;">${replacementEmail}</code></p>`
+      : `<p style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#dc2626;font-weight:700;margin:12px 0 0 0;">No healthy alternative senders in this workspace.</p>`;
   }
 
   const title = recovery
@@ -521,13 +541,23 @@ export async function sendSenderHealthDigestEmail(
         actionText = "Removed from campaigns";
       } else if (item.action === "daily_limit_restored") {
         actionText = "Daily limit restored";
+      } else if (item.action === "critical_remediation_complete") {
+        actionText = "Throttled to 1/day, campaigns redistributed";
+      } else if (item.action === "critical_daily_limit_reduced") {
+        actionText = "Throttled to 1/day";
+      } else if (item.action === "critical_recovery_complete") {
+        actionText = "Daily limit + warmup restored";
+      } else if (item.action === "skipped_mgmt_disabled") {
+        actionText = '<span style="color:#dc2626;font-weight:700;">Remediation SKIPPED</span>';
+      } else if (item.action === "skipped_no_sender_id") {
+        actionText = '<span style="color:#dc2626;font-weight:700;">SKIPPED — no sender ID</span>';
       }
 
       let replacementText = "";
       if (item.toStatus === "critical" && !recovery && item.replacementEmail) {
-        replacementText = `<br/><span style="font-size:11px;color:#71717a;">Replacement: <code style="background:#f4f4f5;padding:1px 4px;border-radius:3px;">${item.replacementEmail}</code></span>`;
+        replacementText = `<br/><span style="font-size:11px;color:#71717a;">Alternative: <code style="background:#f4f4f5;padding:1px 4px;border-radius:3px;">${item.replacementEmail}</code></span>`;
       } else if (item.toStatus === "critical" && !recovery && !item.replacementEmail) {
-        replacementText = `<br/><span style="font-size:11px;color:#dc2626;font-weight:700;">No replacement available</span>`;
+        replacementText = `<br/><span style="font-size:11px;color:#dc2626;font-weight:700;">No alternative available</span>`;
       }
 
       return `<tr style="border-bottom:1px solid #e4e4e7;">

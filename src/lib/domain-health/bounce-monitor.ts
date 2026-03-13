@@ -130,8 +130,14 @@ export async function evaluateSender(params: {
     let action: string | undefined;
 
     // EmailBison actions (feature-flagged)
-    if (EMAILBISON_MGMT_ENABLED && sender.emailBisonSenderId !== null) {
-      const ebClient = new EmailBisonClient(process.env.EMAILBISON_API_TOKEN ?? "");
+    if (!EMAILBISON_MGMT_ENABLED) {
+      console.warn(`${LOG_PREFIX} ${sender.emailAddress}: EMAILBISON_SENDER_MGMT_ENABLED is not set — skipping ${newStatus} remediation (daily limit / campaign changes will NOT be applied)`);
+      action = "skipped_mgmt_disabled";
+    } else if (sender.emailBisonSenderId === null) {
+      console.warn(`${LOG_PREFIX} ${sender.emailAddress}: no emailBisonSenderId — skipping ${newStatus} remediation`);
+      action = "skipped_no_sender_id";
+    } else {
+      const ebClient = new EmailBisonClient(process.env.EMAILBISON_ADMIN_TOKEN ?? "");
 
       if (newStatus === "warning") {
         // Reduce daily limit by 50%
@@ -268,9 +274,15 @@ export async function evaluateSender(params: {
       let action: string | undefined;
 
       // Restore daily limit if stepping down from warning
-      if (currentStatus === "warning" && EMAILBISON_MGMT_ENABLED && sender.emailBisonSenderId !== null && sender.originalDailyLimit !== null) {
+      if (currentStatus === "warning" && !EMAILBISON_MGMT_ENABLED) {
+        console.warn(`${LOG_PREFIX} ${sender.emailAddress}: EMAILBISON_SENDER_MGMT_ENABLED is not set — skipping daily limit restore on step-down from warning`);
+        action = "skipped_mgmt_disabled";
+      } else if (currentStatus === "warning" && sender.emailBisonSenderId === null) {
+        console.warn(`${LOG_PREFIX} ${sender.emailAddress}: no emailBisonSenderId — skipping daily limit restore on step-down from warning`);
+        action = "skipped_no_sender_id";
+      } else if (currentStatus === "warning" && EMAILBISON_MGMT_ENABLED && sender.emailBisonSenderId !== null && sender.originalDailyLimit !== null) {
         try {
-          const ebClient = new EmailBisonClient(process.env.EMAILBISON_API_TOKEN ?? "");
+          const ebClient = new EmailBisonClient(process.env.EMAILBISON_ADMIN_TOKEN ?? "");
           await ebClient.patchSenderEmail(sender.emailBisonSenderId, { daily_limit: sender.originalDailyLimit });
           action = "daily_limit_restored";
           console.log(`${LOG_PREFIX} ${sender.emailAddress}: restored daily limit to ${sender.originalDailyLimit}`);
@@ -280,9 +292,15 @@ export async function evaluateSender(params: {
       }
 
       // Restore daily limit + warmup if stepping down from critical
-      if (currentStatus === "critical" && EMAILBISON_MGMT_ENABLED && sender.emailBisonSenderId !== null) {
+      if (currentStatus === "critical" && !EMAILBISON_MGMT_ENABLED) {
+        console.warn(`${LOG_PREFIX} ${sender.emailAddress}: EMAILBISON_SENDER_MGMT_ENABLED is not set — skipping critical recovery (daily limit + warmup will NOT be restored)`);
+        action = "skipped_mgmt_disabled";
+      } else if (currentStatus === "critical" && sender.emailBisonSenderId === null) {
+        console.warn(`${LOG_PREFIX} ${sender.emailAddress}: no emailBisonSenderId — skipping critical recovery`);
+        action = "skipped_no_sender_id";
+      } else if (currentStatus === "critical" && EMAILBISON_MGMT_ENABLED && sender.emailBisonSenderId !== null) {
         try {
-          const ebClient = new EmailBisonClient(process.env.EMAILBISON_API_TOKEN ?? "");
+          const ebClient = new EmailBisonClient(process.env.EMAILBISON_ADMIN_TOKEN ?? "");
           // Restore daily_limit
           const restoreLimit = sender.originalDailyLimit ?? 100;
           // Restore warmup
