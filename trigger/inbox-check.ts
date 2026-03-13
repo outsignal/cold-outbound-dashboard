@@ -63,13 +63,16 @@ export const inboxCheckTask = schedules.task({
         });
       }
 
-      if (change.reconnections.length > 0 && !hasNewDisconnections && !hasPersistentDisconnections) {
+      if (change.reconnections.length > 0) {
         await notify({
           type: "system",
           severity: "info",
           title: `${change.reconnections.length} inbox${change.reconnections.length !== 1 ? "es" : ""} reconnected`,
           message: `${change.workspaceName}: ${change.reconnections.slice(0, 5).join(", ")}`,
           workspaceSlug: change.workspaceSlug,
+          metadata: {
+            reconnections: change.reconnections,
+          },
         });
       }
     }

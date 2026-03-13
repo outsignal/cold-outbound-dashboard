@@ -1023,12 +1023,14 @@ export async function notifyInboxDisconnect(params: {
   // Determine header based on what we have
   const headerText = hasNew
     ? "Inbox Disconnection Alert"
-    : "Inbox Still Disconnected";
+    : hasPersistent
+      ? "Inbox Still Disconnected"
+      : "Inboxes Reconnected";
 
   // --- Email to admin only (Slack goes via ops channel in notify()) ---
   // Use ADMIN_EMAIL env var — workspace.notificationEmails are client emails
   const adminEmail = process.env.ADMIN_EMAIL;
-  if (adminEmail && (hasNew || hasPersistent)) {
+  if (adminEmail && (hasNew || hasPersistent || params.reconnections.length > 0)) {
     try {
       const recipients = [adminEmail];
       const verified = verifyEmailRecipients(recipients, "admin", "notifyInboxDisconnect");
@@ -1044,7 +1046,9 @@ export async function notifyInboxDisconnect(params: {
           subjectParts.push(
             `${persistentCount} Still Disconnected`,
           );
-        const subject = `[${params.workspaceName}] ${subjectParts.join(" + ")}`;
+        const subject = subjectParts.length > 0
+          ? `[${params.workspaceName}] ${subjectParts.join(" + ")}`
+          : `Inboxes Reconnected — ${params.workspaceName}`;
 
         // New disconnections HTML — table rows with red status pill
         let newDisconnectionsHtml = "";
