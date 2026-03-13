@@ -3,6 +3,10 @@ import { Inter, Montserrat } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 
+// Force all pages dynamic — admin dashboard has no static pages
+// Prevents OOM during pre-render on Vercel's 8GB builder
+export const dynamic = "force-dynamic";
+
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
